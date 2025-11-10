@@ -1,96 +1,55 @@
 import React, { useState } from "react";
-import { FaHome, FaCalendarAlt, FaUsers, FaTimes, FaBars, FaSearch } from "react-icons/fa";
+import { NavLink } from "react-router-dom";
+import { FaHome, FaCalendarAlt, FaSearch } from "react-icons/fa";
 import "./Sidebar.css";
 
-const AdminSidebar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState("panel");
+const AdminSidebar = ({ isOpen, onClose }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Mantener solo los items que tenías originalmente: Editar Página y Eventos
   const menuItems = [
-    { id: "panel", label: "Panel", icon: FaHome, href: "#panel" },
-    { id: "eventos", label: "Eventos", icon: FaCalendarAlt, href: "#eventos" },
-    { id: "usuarios", label: "Usuarios", icon: FaUsers, href: "#usuarios" },
+    { id: "panel", label: "Editar Página", icon: FaHome, to: "/admin/panel" },
+    { id: "eventos", label: "Eventos", icon: FaCalendarAlt, to: "/admin/events" },
   ];
 
-  const filteredItems = menuItems.filter(item =>
+  const filtered = menuItems.filter((item) =>
     item.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleItemClick = (itemId) => {
-    setActiveItem(itemId);
-    setIsOpen(false);
-  };
-
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
-  };
-
   return (
-    <>
-      {/* Toggle Button for Mobile */}
-      <button 
-        className="sidebar-toggle" 
-        onClick={toggleSidebar}
-        aria-label="Toggle menu"
-      >
-        <FaBars />
-      </button>
+    <aside className={`sidebar ${isOpen ? 'active' : ''}`}>
+      <div className="sidebar-header">
+        <h2 className="sidebar-title">Administrador</h2>
+        <button className="sidebar-close" aria-label="Cerrar menú" onClick={onClose}>×</button>
+      </div>
 
-      {/* Overlay */}
-      <div 
-        className={`sidebar-overlay ${isOpen ? "active" : ""}`}
-        onClick={() => setIsOpen(false)}
-      />
+      <div className="sidebar-search">
+        <FaSearch className="search-icon" />
+        <input
+          type="text"
+          placeholder="Search"
+          className="search-input"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
 
-      {/* Sidebar */}
-      <aside className={`sidebar ${isOpen ? "active" : ""}`}>
-        <div className="sidebar-header">
-          <h2 className="sidebar-title">Administrador</h2>
-          <button 
-            className="sidebar-close" 
-            onClick={() => setIsOpen(false)}
-            aria-label="Close menu"
-          >
-            <FaTimes />
-          </button>
-        </div>
-
-        {/* Search */}
-        <div className="sidebar-search">
-          <FaSearch className="search-icon" />
-          <input
-            type="text"
-            placeholder="Buscar..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-        </div>
-
-        {/* Navigation Menu */}
-        <nav className="sidebar-menu">
-          {filteredItems.length > 0 ? (
-            filteredItems.map((item) => {
-              const IconComponent = item.icon;
-              return (
-                <a
-                  key={item.id}
-                  href={item.href}
-                  className={`sidebar-item ${activeItem === item.id ? "active" : ""}`}
-                  onClick={() => handleItemClick(item.id)}
-                >
-                  <IconComponent className="sidebar-icon" />
-                  <span>{item.label}</span>
-                </a>
-              );
-            })
-          ) : (
-            <div className="no-results">No se encontraron resultados</div>
-          )}
-        </nav>
-      </aside>
-    </>
+      <nav className="sidebar-menu">
+        {filtered.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.id}
+              to={item.to}
+              className={({ isActive }) => `sidebar-item ${isActive ? "active" : ""}`}
+            >
+              <Icon className="sidebar-icon" />
+              <span>{item.label}</span>
+            </NavLink>
+          );
+        })}
+      </nav>
+    </aside>
   );
 };
 

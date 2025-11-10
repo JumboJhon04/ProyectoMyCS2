@@ -2,14 +2,15 @@ import React from "react";
 import AdminSidebar from "./AdminSidebar";
 //import EditorSidebar from "./EditorSidebar";
 //import UserSidebar from "./UserSidebar";
-const SidebarWrapper = ({ role }) => {
+
+const SidebarWrapper = ({ role, isOpen, onClose }) => {
   switch (role) {
     case "admin":
-      return <AdminSidebar />;
+      return <AdminSidebar isOpen={isOpen} onClose={onClose} />;
     case "editor":
-      return <EditorSidebar />;
+      return <EditorSidebar isOpen={isOpen} onClose={onClose} />;
     case "user":
-      return <UserSidebar />;
+      return <UserSidebar isOpen={isOpen} onClose={onClose} />;
     default:
       return null;
   }
