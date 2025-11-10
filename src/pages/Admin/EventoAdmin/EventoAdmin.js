@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useCourses } from '../../../context/CoursesContext';
 import './EventoAdmin.css';
+import NewEventModal from './NewEventModal';
 
 /*
   ============================================
@@ -39,10 +40,10 @@ const EventoAdmin = () => {
     alert('Función de editar próximamente');
   };
 
+  const [showModal, setShowModal] = useState(false);
+
   const handleAddNew = () => {
-    // TODO: Abrir modal o formulario para crear nuevo curso
-    console.log('Agregar nuevo curso');
-    alert('Función de agregar curso próximamente');
+    setShowModal(true);
   };
 
   if (loading) {
@@ -69,7 +70,7 @@ const EventoAdmin = () => {
               <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                 <div>
                   <div style={{fontSize: '0.95rem', fontWeight: 700, color: '#fff'}}>Cursos Activos</div>
-                  <div style={{fontSize: '0.8rem', color: '#e6eefc'}}>Visitors for the current month</div>
+                  <div style={{fontSize: '0.8rem', color: '#e6eefc'}}>Visitantes del mes</div>
                 </div>
                 <div style={{fontSize: '1.5rem', fontWeight: 800, color: '#fff'}}>{courses.length.toLocaleString()}</div>
               </div>
@@ -135,6 +136,7 @@ const EventoAdmin = () => {
             </div>
           )}
         </div>
+        {showModal && <NewEventModal isOpen={showModal} onClose={() => setShowModal(false)} />}
       </main>
     </div>
   );
