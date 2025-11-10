@@ -1,10 +1,11 @@
 import React from "react";
 import { FaBell, FaUser, FaImage } from "react-icons/fa";
 import "./AdminPanel.css";
-import { useUser } from "../../../context/UserContext";
+import { /* useUser */ } from "../../../context/UserContext";
 
 const AdminPanel = () => {
-  const { user, setUser, unreadCount, addNotification, markAllRead } = useUser();
+  // no longer using simulated notifications here
+  // const { user, setUser, unreadCount, addNotification, markAllRead } = useUser();
 
   return (
     <div className="admin-container">
@@ -54,14 +55,7 @@ const AdminPanel = () => {
               <h3>informacion de la pagina</h3>
             </div>
             <textarea className="page-info-textarea" placeholder="informacion de la pagina" rows="8" />
-            <div style={{ marginTop: 12 }}>
-              <button
-                className="btn-primary"
-                onClick={() => addNotification("Notificación de prueba desde front")}
-              >
-                Simular notificación
-              </button>
-            </div>
+            {/* Simular notificación button removed */}
             <div className="pagination">
               <button className="page-btn">1</button>
               <button className="page-btn active">2</button>
