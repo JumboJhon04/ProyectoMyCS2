@@ -1,23 +1,16 @@
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import SidebarWrapper from "./components/Sidebar/SidebarWrapper";
 
 function App() {
+  // Simulación del rol actual (puede venir de login o contexto global)
+  const currentRole = "admin"; // Cambia a "editor" o "user" para probar
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div style={{ display: "flex" }}>
+      <SidebarWrapper role={currentRole} />
+      <div style={{ flex: 1, padding: "20px" }}>
+        <h1>Panel de {currentRole}</h1>
+      </div>
     </div>
   );
 }
