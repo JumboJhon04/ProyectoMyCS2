@@ -9,7 +9,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
   // Mantener solo los items que tenías originalmente: Editar Página y Eventos
   const menuItems = [
     { id: "panel", label: "Editar Página", icon: FaHome, to: "/admin/panel" },
-    { id: "eventos", label: "Eventos", icon: FaCalendarAlt, to: "/admin/events" },
+    { id: "eventos", label: "Cursos", icon: FaCalendarAlt, to: "/admin/events" },
   ];
 
   const filtered = menuItems.filter((item) =>
