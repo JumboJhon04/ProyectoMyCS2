@@ -1,7 +1,7 @@
 import React from 'react';
 import { useUser } from '../../context/UserContext';
 import AdminHeader from './AdminHeader';
-//import EditorHeader from './EditorHeader';
+import ResponsableHeader from './ResponsableHeader';
 //import UserHeader from './UserHeader';
 
 const HeaderWrapper = ({ onToggleSidebar }) => {
@@ -9,9 +9,17 @@ const HeaderWrapper = ({ onToggleSidebar }) => {
 
   if (!user) return null;
 
-  // For now we reuse AdminHeader for all roles. Expand with role-specific headers
-  // (EditorHeader/UserHeader) when those components are available.
-  return <AdminHeader onToggleSidebar={onToggleSidebar} />;
+  // Render a role-specific header like SidebarWrapper: switch on role for consistency
+  switch (user.role) {
+    case 'admin':
+      return <AdminHeader onToggleSidebar={onToggleSidebar} />;
+    case 'responsable':
+      return <ResponsableHeader onToggleSidebar={onToggleSidebar} />;
+    case 'user':
+      return <UserHeader onToggleSidebar={onToggleSidebar} />;
+    default:
+      return null;
+  }
 };
 
 export default HeaderWrapper;
