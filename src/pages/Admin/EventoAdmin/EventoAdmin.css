@@ -352,3 +352,8 @@
     transform: translateY(0);
   }
 }
+
+/* ==============================
+   Override para página EventoAdmin
+   Hacemos que el main-use todo el ancho disponible
+   ============================== */

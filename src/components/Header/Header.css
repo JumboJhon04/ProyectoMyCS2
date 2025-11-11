@@ -114,12 +114,6 @@
 /* compact header tweaks */
 .app-header { backdrop-filter: blur(4px); }
 
-@media (max-width: 480px) {
-  .app-header { padding: 10px 10px; }
-  .sidebar-toggle { margin-right: 8px; }
-}
-
-/* Responsive adjustments */
 @media (max-width: 800px) {
   .app-header { padding: 10px 12px; }
   .user-name { font-size:13px; }
@@ -127,7 +121,17 @@
 }
 
 @media (max-width: 480px) {
+  .app-header { padding: 10px 10px; }
+  .sidebar-toggle { margin-right: 8px; }
   .header-right { gap:8px; }
   .user-info { display:none; }
   .icon-btn { padding:6px; }
+  .greeting-text { display: none; } /* Hide text on small screens */
+}
+
+/* Hide hamburger toggle on desktop */
+@media (min-width: 769px) {
+  .app-header .sidebar-toggle {
+    display: none;
+  }
 }

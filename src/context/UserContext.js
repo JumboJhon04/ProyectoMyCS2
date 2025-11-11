@@ -7,10 +7,10 @@ export const UserProvider = ({ children }) => {
   const [user, setUser] = useState({
     id: 1,
     name: "Wilson Pillapa",
-    // role is a machine-friendly key used by wrappers (admin|editor|user)
-    role: "admin",
-    // displayRole is the human-readable role shown in the UI
-    displayRole: "Administrador",
+  // role is a machine-friendly key used by wrappers (admin|responsable|user)
+  role: "admin",
+  // displayRole is the human-readable role shown in the UI
+  displayRole: "Responsable",
     avatarUrl: "", // leave empty to show placeholder
   });
 
