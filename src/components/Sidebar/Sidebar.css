@@ -19,7 +19,8 @@
 
 /* Header */
 .sidebar-header {
-  padding: 16px 16px;
+  height: 68px; 
+  padding: 0 16px; 
   border-bottom: 1px solid rgba(15,23,42,0.04);
   display: flex;
   align-items: center;
@@ -151,7 +152,7 @@
 /* Toggle Button */
 .sidebar-toggle {
   position: fixed;
-  top: 16px;
+  top: 7px;
   left: 16px;
   z-index: 1001;
   background-color: #ffffff;

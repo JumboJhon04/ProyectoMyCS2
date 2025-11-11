@@ -57,7 +57,7 @@ const EventoAdmin = () => {
   return (
     <div className="admin-container">
       {/* Use the same main wrapper that AdminPanel uses so the sidebar offset (margin-left) applies */}
-      <main className="main-content">
+      <main className="main-content2">
         <div className="admin-header">
           <div>
             <h1 className="admin-title">Administración de Cursos</h1>

@@ -10,7 +10,7 @@ const AdminPanel = () => {
   return (
     <div className="admin-container">
       {/* Main Content (header is shared component) */}
-      <main className="main-content">
+      <main className="main-content1">
         {/* Content Area */}
         <div className="content-area">
           <div className="content-grid">

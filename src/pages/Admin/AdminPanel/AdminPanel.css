@@ -18,10 +18,16 @@
 /* ==========================================
    MAIN CONTENT
    ========================================== */
-
 .main-content {
   flex: 1;
   margin-left: 260px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.main-content1 {
+  flex: 1;
+  margin-left: 0px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
