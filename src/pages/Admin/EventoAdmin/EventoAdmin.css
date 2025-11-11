@@ -66,24 +66,23 @@
   background-color: #333;
   color: white;
   border-radius: 12px;
-  padding: 0.9rem 5rem; /* menos padding horizontal dentro del header */
+  padding: 0.9rem 2rem; /* menos padding horizontal */
   display: flex;
   align-items: center;
-  min-width: 300px; /* ajustado para caber en header */
+  min-width: 250px; 
   max-width: 520px;
   font-size: 1.05rem;
   font-weight: 600;
-  margin: 0; /* cuando está en header no queremos margen extra */
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+  flex-shrink: 0; /* no se achica demasiado */
 }
 
 /* Cuando stats-card aparece dentro del header, alinear con el contenido */
 .header-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start; /* items al inicio */
   align-items: center;
   width: 100%;
-  margin-top: 1rem;
   gap: 1rem;
 }
 
@@ -327,10 +326,6 @@
   .add-course-btn {
     width: 100%;
   }
-
-  .stats-card {
-    margin: 1rem;
-  }
 }
 
 @media (max-width: 600px) {
@@ -343,6 +338,20 @@
 
   .courses-grid {
     grid-template-columns: 1fr;
+  }
+  .header-actions {
+    flex-direction: column; /* apilar elementos */
+    align-items: stretch; /* que ocupen todo el ancho */
+  }
+
+  .stats-card, 
+  .header-actions .add-course-btn {
+    width: 100%; /* ocupan todo el ancho */
+    margin-left: 0; /* quitar auto margin */
+  }
+
+  .header-actions .add-course-btn {
+    margin-top: 0.75rem; /* separación del stats-card */
   }
 }
 
