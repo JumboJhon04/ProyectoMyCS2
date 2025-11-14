@@ -4,6 +4,7 @@ import SidebarWrapper from "./components/Sidebar/SidebarWrapper";
 import AdminPanel from "./pages/Admin/AdminPanel/AdminPanel";
 import EventoAdmin from "./pages/Admin/EventoAdmin/EventoAdmin";
 import ResponsableProfile from "./pages/Responsable/ProfileResponsable/Profile";
+import UserPanelAdmin from "./pages/Admin/UserPanelAdmin/UserPanelAdmin";
 //import ResponsableEvents from "./pages/Responsable/Events";
 //import ResponsableUsers from "./pages/Responsable/Users";
 //import ResponsableCalendar from "./pages/Responsable/Calendar";
@@ -48,6 +49,7 @@ function AppLayout() {
           {/* Admin routes */}
           <Route path="/admin/panel" element={<AdminPanel />} />
           <Route path="/admin/events" element={<EventoAdmin />} />
+          <Route path="/admin/users" element={<UserPanelAdmin />} />
 
           {/* Responsable routes (placeholders) */}
           <Route path="/responsable/ProfileResponsable/profile" element={<ResponsableProfile />} />

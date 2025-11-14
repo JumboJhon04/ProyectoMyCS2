@@ -60,8 +60,6 @@ const AdminPanel = () => {
               <button className="page-btn">1</button>
               <button className="page-btn active">2</button>
               <button className="page-btn">3</button>
-              <button className="page-btn">4</button>
-              <button className="page-btn">5</button>
               <span className="page-dots">...</span>
               <button className="page-btn">20</button>
             </div>
