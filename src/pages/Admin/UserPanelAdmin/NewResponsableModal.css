@@ -1,0 +1,176 @@
+.nr-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.nr-modal{
+  width: 820px;
+  max-width: 100%;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 6px 30px rgba(0,0,0,0.35);
+  padding: 22px 26px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.nr-header h3{
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.nr-form{ 
+  display: flex; 
+  flex-direction: column; 
+}
+
+.nr-grid{ 
+  display: flex; 
+  gap: 24px; 
+}
+
+.nr-column{ 
+  flex: 1; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 14px; 
+}
+
+.nr-label{ 
+  display: flex; 
+  flex-direction: column; 
+  font-size: 13px; 
+  color: #555; 
+}
+
+.nr-label input{ 
+  margin-top: 8px; 
+  padding: 8px 10px; 
+  border: 1px solid #e0e0e0; 
+  border-radius: 3px;
+  font-size: 14px;
+}
+
+.nr-label input[type="date"]{ 
+  padding: 6px 10px; 
+}
+
+.nr-actions{ 
+  display: flex; 
+  justify-content: flex-start; 
+  gap: 12px; 
+  margin-top: 20px; 
+}
+
+.nr-btn{ 
+  padding: 8px 16px; 
+  border-radius: 3px; 
+  cursor: pointer; 
+  border: 0;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.nr-cancel{ 
+  background: #f0f0f0; 
+  color: #333; 
+}
+
+.nr-cancel:hover{
+  background: #e0e0e0;
+}
+
+.nr-create{ 
+  background: #333; 
+  color: #fff; 
+}
+
+.nr-create:hover{
+  background: #000;
+}
+
+/* Tablet */
+@media (max-width: 900px){
+  .nr-overlay{
+    padding: 15px;
+  }
+  
+  .nr-modal{ 
+    padding: 20px; 
+  }
+  
+  .nr-grid{ 
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .nr-actions{
+    flex-wrap: wrap;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px){
+  .nr-overlay{
+    padding: 10px;
+    align-items: flex-start;
+  }
+  
+  .nr-modal{ 
+    padding: 16px;
+    margin-top: 20px;
+    border-radius: 4px;
+  }
+  
+  .nr-header h3{
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .nr-grid{ 
+    gap: 12px;
+  }
+  
+  .nr-column{
+    gap: 12px;
+  }
+  
+  .nr-label{
+    font-size: 12px;
+  }
+  
+  .nr-label input{
+    padding: 10px;
+    font-size: 16px; /* Evita zoom en iOS */
+  }
+  
+  .nr-actions{
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  
+  .nr-btn{
+    width: 100%;
+    padding: 12px 16px;
+    text-align: center;
+  }
+}
+
+/* Muy pequeño */
+@media (max-width: 380px){
+  .nr-modal{
+    padding: 12px;
+  }
+  
+  .nr-header h3{
+    font-size: 15px;
+  }
+}

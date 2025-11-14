@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './UserPanelAdmin.css';
+import NewResponsableModal from './NewResponsableModal';
 
 const SAMPLE_USERS = [
   {
@@ -26,6 +27,7 @@ export default function UserPanelAdmin(){
   const [error, setError] = useState(null);
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,7 +65,7 @@ export default function UserPanelAdmin(){
       <div className="upa-header">
         <div className="upa-top">
           <div className="upa-title">Usuarios Responsables</div>
-          <button className="upa-add-btn">Añadir nuevo responsable</button>
+          <button className="upa-add-btn" onClick={() => setIsModalOpen(true)}>Añadir nuevo responsable</button>
         </div>
 
         <div className="upa-search-row">
@@ -123,6 +125,21 @@ export default function UserPanelAdmin(){
           </table>
         )}
       </div>
+      <NewResponsableModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreate={(data) => {
+          const newUser = {
+            id: Date.now(),
+            name: `${data.nombres} ${data.apellidos}`.trim(),
+            email: data.correo,
+            date: data.fechaNacimiento,
+            phone: data.telefono,
+            role: 'responsable'
+          };
+          setUsers(prev => [newUser, ...prev]);
+        }}
+      />
     </div>
   );
 }
