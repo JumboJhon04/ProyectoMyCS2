@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { FaHome, FaCalendarAlt, FaSearch } from "react-icons/fa";
+import { FaHome, FaCalendarAlt, FaSearch, FaUsers } from "react-icons/fa";
 import "./Sidebar.css";
 
 const AdminSidebar = ({ isOpen, onClose }) => {
@@ -9,7 +9,8 @@ const AdminSidebar = ({ isOpen, onClose }) => {
   // Mantener solo los items que tenías originalmente: Editar Página y Eventos
   const menuItems = [
     { id: "panel", label: "Editar Página", icon: FaHome, to: "/admin/panel" },
-    { id: "eventos", label: "Eventos", icon: FaCalendarAlt, to: "/admin/events" },
+    { id: "eventos", label: "Cursos", icon: FaCalendarAlt, to: "/admin/events" },
+    { id: "users", label: "Usuarios Responsables", icon: FaUsers, to: "/admin/users" },
   ];
 
   const filtered = menuItems.filter((item) =>
