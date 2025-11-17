@@ -4,13 +4,12 @@ import SidebarWrapper from "./components/Sidebar/SidebarWrapper";
 import AdminPanel from "./pages/Admin/AdminPanel/AdminPanel";
 import EventoAdmin from "./pages/Admin/EventoAdmin/EventoAdmin";
 import ResponsableProfile from "./pages/Responsable/ProfileResponsable/Profile";
-//import ResponsableEvents from "./pages/Responsable/Events";
-//import ResponsableUsers from "./pages/Responsable/Users";
-//import ResponsableCalendar from "./pages/Responsable/Calendar";
 import { UserProvider, useUser } from "./context/UserContext";
 import { CoursesProvider } from "./context/CoursesContext";
 import HeaderWrapper from "./components/Header/HeaderWrapper";
 import UserPanel from './pages/User/UserPanel/UserPanel';
+import UserEvents from './pages/User/EventoUser/UserEvents';
+
 
 function App() {
   return (
@@ -44,17 +43,23 @@ function AppLayout() {
 
         <Routes>
           {/* Redirect root to a role-specific default */}
-          <Route path="/" element={<Navigate to={roleKey === 'responsable' ? '/responsable/profile' : (roleKey === 'admin' ? '/admin/panel' : '/user/panel') } replace />} />
+          <Route path="/" element={
+            <Navigate to={
+              roleKey === 'responsable' ? '/responsable/profile' : 
+              (roleKey === 'admin' ? '/admin/panel' : '/user/panel')
+            } replace />
+          } />
 
           {/* Admin routes */}
           <Route path="/admin/panel" element={<AdminPanel />} />
           <Route path="/admin/events" element={<EventoAdmin />} />
 
-          {/* Responsable routes (placeholders) */}
-          <Route path="/responsable/ProfileResponsable/profile" element={<ResponsableProfile />} />
+          {/* Responsable routes */}
+          <Route path="/responsable/profile" element={<ResponsableProfile />} />
 
           {/* User routes */}
           <Route path="/user/panel" element={<UserPanel />} />
+          <Route path="/user/events" element={<UserEvents />} />
         </Routes>
       </main>
     </div>
