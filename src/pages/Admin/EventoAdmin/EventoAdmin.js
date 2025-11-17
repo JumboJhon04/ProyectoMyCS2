@@ -3,44 +3,25 @@ import { useCourses } from '../../../context/CoursesContext';
 import './EventoAdmin.css';
 import NewEventModal from './NewEventModal';
 
-/*
-  ============================================
-  GESTIÓN DE CURSOS
-  ============================================
-  
-  Este componente usa CoursesContext para manejar los cursos.
-  
-  Por defecto está en MODO MOCK (no requiere backend).
-  Para usar API real, cambia mockMode a false en CoursesContext.js
-  
-  El CoursesContext maneja:
-  - Carga de cursos (mock o API)
-  - Crear, editar y eliminar cursos
-  - Toggle entre modo mock y modo API
-  
-  ============================================
-*/
-
 const EventoAdmin = () => {
-  const { courses, loading, error, mockMode, deleteCourse, loadCourses } = useCourses();
+  const { courses, loading, error, deleteCourse } = useCourses();
+  const [showModal, setShowModal] = useState(false);
 
   const handleDelete = async (id) => {
     if (!window.confirm('¿Estás seguro de eliminar este curso?')) return;
     
     try {
       await deleteCourse(id);
+      alert('Curso eliminado exitosamente');
     } catch (err) {
       alert('No se pudo eliminar el curso');
     }
   };
 
   const handleEdit = (courseId) => {
-    // TODO: Abrir modal o formulario para editar
     console.log('Editar curso:', courseId);
     alert('Función de editar próximamente');
   };
-
-  const [showModal, setShowModal] = useState(false);
 
   const handleAddNew = () => {
     setShowModal(true);
@@ -54,9 +35,19 @@ const EventoAdmin = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="admin-container">
+        <div className="error-message">
+          <p>Error al cargar eventos: {error}</p>
+          <button onClick={() => window.location.reload()}>Reintentar</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="admin-container">
-      {/* Use the same main wrapper that AdminPanel uses so the sidebar offset (margin-left) applies */}
       <main className="main-content2">
         <div className="admin-header">
           <div>
@@ -65,14 +56,15 @@ const EventoAdmin = () => {
           </div>
 
           <div className="header-actions">
-            {/* Estadística rápida: Cursos Activos (moved into header actions) */}
             <div className="stats-card" role="region" aria-label="Cursos activos">
               <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                 <div>
                   <div style={{fontSize: '0.95rem', fontWeight: 700, color: '#fff'}}>Cursos Activos</div>
-                  <div style={{fontSize: '0.8rem', color: '#e6eefc'}}>Visitantes del mes</div>
+                  <div style={{fontSize: '0.8rem', color: '#e6eefc'}}>Total de eventos</div>
                 </div>
-                <div style={{fontSize: '1.5rem', fontWeight: 800, color: '#fff'}}>{courses.length.toLocaleString()}</div>
+                <div style={{fontSize: '1.5rem', fontWeight: 800, color: '#fff'}}>
+                  {courses.length.toLocaleString()}
+                </div>
               </div>
             </div>
 
@@ -136,7 +128,13 @@ const EventoAdmin = () => {
             </div>
           )}
         </div>
-        {showModal && <NewEventModal isOpen={showModal} onClose={() => setShowModal(false)} />}
+        
+        {showModal && (
+          <NewEventModal 
+            isOpen={showModal} 
+            onClose={() => setShowModal(false)} 
+          />
+        )}
       </main>
     </div>
   );
