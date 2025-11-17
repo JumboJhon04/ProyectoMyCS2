@@ -1,7 +1,7 @@
 import React from "react";
 import AdminSidebar from "./AdminSidebar";
 import ResponsableSidebar from "./ResponsableSidebar";
-//import UserSidebar from "./UserSidebar";
+import UserSidebar from "./UserSidebar";
 
 const SidebarWrapper = ({ role, isOpen, onClose }) => {
   switch (role) {
@@ -9,6 +9,8 @@ const SidebarWrapper = ({ role, isOpen, onClose }) => {
       return <AdminSidebar isOpen={isOpen} onClose={onClose} />;
     case "responsable":
       return <ResponsableSidebar isOpen={isOpen} onClose={onClose} />;
+    case "user":
+      return <UserSidebar isOpen={isOpen} onClose={onClose} />;
     default:
       return null;
   }

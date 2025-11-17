@@ -10,6 +10,7 @@ import ResponsableProfile from "./pages/Responsable/ProfileResponsable/Profile";
 import { UserProvider, useUser } from "./context/UserContext";
 import { CoursesProvider } from "./context/CoursesContext";
 import HeaderWrapper from "./components/Header/HeaderWrapper";
+import UserPanel from './pages/User/UserPanel/UserPanel';
 
 function App() {
   return (
@@ -43,7 +44,7 @@ function AppLayout() {
 
         <Routes>
           {/* Redirect root to a role-specific default */}
-          <Route path="/" element={<Navigate to={roleKey === 'responsable' ? '/responsable/profile' : (roleKey === 'admin' ? '/admin/panel' : '/') } replace />} />
+          <Route path="/" element={<Navigate to={roleKey === 'responsable' ? '/responsable/profile' : (roleKey === 'admin' ? '/admin/panel' : '/user/panel') } replace />} />
 
           {/* Admin routes */}
           <Route path="/admin/panel" element={<AdminPanel />} />
@@ -51,6 +52,9 @@ function AppLayout() {
 
           {/* Responsable routes (placeholders) */}
           <Route path="/responsable/ProfileResponsable/profile" element={<ResponsableProfile />} />
+
+          {/* User routes */}
+          <Route path="/user/panel" element={<UserPanel />} />
         </Routes>
       </main>
     </div>
