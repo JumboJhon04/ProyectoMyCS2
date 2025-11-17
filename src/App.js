@@ -7,9 +7,10 @@ import ResponsableProfile from "./pages/Responsable/ProfileResponsable/Profile";
 import { UserProvider, useUser } from "./context/UserContext";
 import { CoursesProvider } from "./context/CoursesContext";
 import HeaderWrapper from "./components/Header/HeaderWrapper";
-import UserPanel from './pages/User/UserPanel/UserPanel';
-import UserEvents from './pages/User/EventoUser/UserEvents';
-
+import UserPanel from './pages/User/Estudiante/UserPanel/UserPanel';
+import UserEvents from './pages/User/Estudiante/EventoUser/UserEvents';
+import UserTests from './pages/User/Estudiante/UserTest/UserTest';
+import CourseDetail from './pages/User/Estudiante/CourseDetail/CourseDetail';
 
 function App() {
   return (
@@ -31,15 +32,18 @@ function AppLayout() {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  // Users don't have sidebar, only header navigation
+  const showSidebar = roleKey !== 'user';
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <SidebarWrapper role={roleKey} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      {showSidebar && <SidebarWrapper role={roleKey} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />}
 
-      <main className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+      <main className={showSidebar ? "main-content" : ""} style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto', width: '100%' }}>
         <HeaderWrapper onToggleSidebar={() => setIsSidebarOpen((v) => !v)} />
 
         {/* overlay controlled by state: clicking it closes the sidebar */}
-        <div className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} onClick={() => setIsSidebarOpen(false)} />
+        {showSidebar && <div className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} onClick={() => setIsSidebarOpen(false)} />}
 
         <Routes>
           {/* Redirect root to a role-specific default */}
@@ -60,6 +64,8 @@ function AppLayout() {
           {/* User routes */}
           <Route path="/user/panel" element={<UserPanel />} />
           <Route path="/user/events" element={<UserEvents />} />
+          <Route path="/user/tests" element={<UserTests />} />
+          <Route path="/user/course/:courseId" element={<CourseDetail />} />
         </Routes>
       </main>
     </div>

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import './UserHeader.css';
 
@@ -9,49 +10,46 @@ const getInitials = (name) => {
   return initials.length > 2 ? initials.substring(0, 2) : initials;
 }
 
-const UserHeader = ({ onToggleSidebar}) => {
+const UserHeader = () => {
     const { user } = useUser();
-    const [activeLink, setActiveLink] = useState("Inicio");
     const userInitials = getInitials(user?.name);
+    const location = useLocation();
 
     return (
         <header className="user-header-container">
-            {/* Sidebar toggle button */}
+            {/* Left side */}
             <div className="user-header-left">
                 <h2>Plataforma</h2>
             </div>
 
             {/* Navigation links */}
             <nav className="user-header-nav">
-                <a
-                    href="#"
-                    className={activeLink === "Inicio" ? "active" : ""}
-                    onClick={() => setActiveLink("Inicio")}
+                <NavLink
+                    to="/user/panel"
+                    className={({ isActive }) => isActive ? "active" : ""}
                 >
                     Inicio
-                </a>
-                <a
-                    href="#"
-                    className={activeLink === "Modulos" ? "active" : ""}
-                    onClick={() => setActiveLink("Modulos")}
+                </NavLink>
+                <NavLink
+                    to="/user/events"
+                    className={({ isActive }) => isActive ? "active" : ""}
                 >
                     Modulos
-                </a>
-                <a
-                    href="#"
-                    className={activeLink === "Test" ? "active" : ""}
-                    onClick={() => setActiveLink("Test")}
+                </NavLink>
+                <NavLink
+                    to="/user/tests"
+                    className={({ isActive }) => isActive ? "active" : ""}
                 >
                     Test
-                </a>
-                </nav>
+                </NavLink>
+            </nav>
 
-                {/* User info */}
-                <div className="user-header-right">
-                    <div className="user-avatar-initials">
-                        {userInitials || 'U'}
-                    </div>
+            {/* User info */}
+            <div className="user-header-right">
+                <div className="user-avatar-initials">
+                    {userInitials || 'FT'}
                 </div>
+            </div>
         </header>
     );
 };

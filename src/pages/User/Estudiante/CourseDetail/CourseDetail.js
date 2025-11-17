@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useCourses } from '../../../context/CoursesContext';
+import { useCourses } from '../../../../context/CoursesContext';
 import './CourseDetail.css';
 
 const CourseDetail = () => {

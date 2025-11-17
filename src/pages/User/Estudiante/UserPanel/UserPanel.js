@@ -1,18 +1,33 @@
 import React, { useState } from 'react';
-import { useUser } from '../../../context/UserContext';
-import './UserPanel.css'; // Importamos los estilos para este dashboard
+import { useUser } from '../../../../context/UserContext';
+import { useCourses } from '../../../../context/CoursesContext';
+import './UserPanel.css';
 
 // Iconos de Material Icons (asegúrate de tenerlos importados en tu proyecto)
 // Por ejemplo, en tu index.html:
 // <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-const UserDashboard = () => {
+const UserPanel = () => {
   const { user } = useUser();
-  // Estado para el conmutador de rol, 'user' es el rol de la imagen
-  const [activeRole, setActiveRole] = useState('user');
+  const { courses } = useCourses();
+  const [activeRole, setActiveRole] = useState('student');
 
-  // Obtenemos solo el primer nombre para el saludo
-  const firstName = user ? user.name.split(' ')[0] : 'Usuario';
+  // Obtener el primer nombre para el saludo
+  const firstName = user?.name ? user.name.split(' ')[0] : 'Fulanito';
+
+  // Calcular progreso mock para cada curso
+  const coursesWithProgress = courses.map((course, index) => ({
+    ...course,
+    progress: [70, 40, 20][index % 3] || 50,
+    lessons: course.meta?.lessons || 20
+  }));
+
+  // Próximas pruebas mock
+  const upcomingExams = [
+    { id: 1, name: 'Prueba Python', date: '15/11/2025 08:00', icon: '💻' },
+    { id: 2, name: 'Prueba Java', date: '15/11/2025 09:00', icon: '☕' },
+    { id: 3, name: 'Prueba Álgebra', date: '15/11/2025 10:00', icon: '√' }
+  ];
 
   return (
     <div className="dashboard-user-container">
@@ -127,4 +142,4 @@ const UserDashboard = () => {
   );
 };
 
-export default UserDashboard;
+export default UserPanel;

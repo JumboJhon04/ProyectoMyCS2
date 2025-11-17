@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCourses } from '../../../context/CoursesContext';
+import { useCourses } from '../../../../context/CoursesContext';
 import './UserEvents.css';
 
 const UserEvents = () => {
@@ -116,7 +116,10 @@ const UserEvents = () => {
                 </div>
 
                 {/* Botón de acción */}
-                <button className="continue-btn">
+                <button 
+                  className="continue-btn"
+                  onClick={() => navigate(`/user/course/${course.id}`)}
+                >
                   {course.status === 'completed' ? 'Revisar' : 'Continuar'}
                 </button>
               </div>
