@@ -8,7 +8,7 @@ const ResponsableSidebar = ({ isOpen, onClose }) => {
 
   const menuItems = [
     { id: "perfil", label: "PERFIL", icon: FaUser, to: "/responsable/ProfileResponsable/profile" },
-    { id: "eventos", label: "CURSOS", icon: FaRegFileAlt, to: "/responsable/events" },
+  { id: "eventos", label: "CURSOS", icon: FaRegFileAlt, to: "/responsable/EventoResponsable/EventoResponsable" },
     { id: "usuarios", label: "USUARIOS", icon: FaUsers, to: "/responsable/users" },
     { id: "calendar", label: "CALENDARIO", icon: FaCalendarAlt, to: "/responsable/calendar" },
     { id: "salir", label: "SALIR", icon: FaSignOutAlt, to: "/logout" },

@@ -1,16 +1,19 @@
 import React, { useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import SidebarWrapper from "./components/Sidebar/SidebarWrapper";
 import AdminPanel from "./pages/Admin/AdminPanel/AdminPanel";
 import EventoAdmin from "./pages/Admin/EventoAdmin/EventoAdmin";
 import ResponsableProfile from "./pages/Responsable/ProfileResponsable/Profile";
+import EventoResponsable from "./pages/Responsable/EventoResponsable/EventoResponsable";
 import UserPanelAdmin from "./pages/Admin/UserPanelAdmin/UserPanelAdmin";
-//import ResponsableEvents from "./pages/Responsable/Events";
 //import ResponsableUsers from "./pages/Responsable/Users";
 //import ResponsableCalendar from "./pages/Responsable/Calendar";
 import { UserProvider, useUser } from "./context/UserContext";
 import { CoursesProvider } from "./context/CoursesContext";
 import HeaderWrapper from "./components/Header/HeaderWrapper";
+import Landing from "./pages/Landing";
+import AuthLogin from "./pages/Auth/Login";
+import AuthRegister from "./pages/Auth/Register";
 
 function App() {
   return (
@@ -32,19 +35,32 @@ function AppLayout() {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  const location = useLocation();
+  // ocultar header/sidebar en rutas de autenticación para mostrar páginas limpias
+  const authPaths = ['/', '/login', '/register'];
+  const isAuthRoute = authPaths.includes(location.pathname);
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <SidebarWrapper role={roleKey} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      {/* Hide sidebar on auth pages (landing, login, register) */}
+      {!isAuthRoute && (
+        <SidebarWrapper role={roleKey} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      )}
 
-      <main className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
-        <HeaderWrapper onToggleSidebar={() => setIsSidebarOpen((v) => !v)} />
+  <main className="main-content" style={{ flex: 1, display: isAuthRoute ? 'block' : 'flex', flexDirection: 'column', overflow: 'auto', marginLeft: isAuthRoute ? 0 : undefined }}>
+        {/* Hide header on auth pages */}
+        {!isAuthRoute && <HeaderWrapper onToggleSidebar={() => setIsSidebarOpen((v) => !v)} />}
 
         {/* overlay controlled by state: clicking it closes the sidebar */}
-        <div className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} onClick={() => setIsSidebarOpen(false)} />
+        {!isAuthRoute && <div className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} onClick={() => setIsSidebarOpen(false)} />}
 
         <Routes>
-          {/* Redirect root to a role-specific default */}
-          <Route path="/" element={<Navigate to={roleKey === 'responsable' ? '/responsable/profile' : (roleKey === 'admin' ? '/admin/panel' : '/') } replace />} />
+          {/* Root: mostrar Landing con dos botones */}
+          <Route path="/" element={<Landing />} />
+
+          {/* Auth route (login) */}
+          <Route path="/login" element={<AuthLogin />} />
+          <Route path="/register" element={<AuthRegister />} />
 
           {/* Admin routes */}
           <Route path="/admin/panel" element={<AdminPanel />} />
@@ -53,6 +69,7 @@ function AppLayout() {
 
           {/* Responsable routes (placeholders) */}
           <Route path="/responsable/ProfileResponsable/profile" element={<ResponsableProfile />} />
+          <Route path="/responsable/EventoResponsable/EventoResponsable" element={<EventoResponsable />} />
         </Routes>
       </main>
     </div>
