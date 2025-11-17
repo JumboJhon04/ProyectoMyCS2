@@ -9,8 +9,6 @@ const SidebarWrapper = ({ role, isOpen, onClose }) => {
       return <AdminSidebar isOpen={isOpen} onClose={onClose} />;
     case "responsable":
       return <ResponsableSidebar isOpen={isOpen} onClose={onClose} />;
-    case "user":
-      return <UserSidebar isOpen={isOpen} onClose={onClose} />;
     default:
       return null;
   }

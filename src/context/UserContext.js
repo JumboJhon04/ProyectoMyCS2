@@ -8,7 +8,7 @@ export const UserProvider = ({ children }) => {
     id: 1,
     name: "Wilson Pillapa",
   // role is a machine-friendly key used by wrappers (admin|responsable|user)
-  role: "admin",
+  role: "user",
   // displayRole is the human-readable role shown in the UI
   displayRole: "Responsable",
     avatarUrl: "", // leave empty to show placeholder
