@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCourses } from '../../../../context/CoursesContext';
-import './UserEvents.css';
+import './EstudianteEvents.css';
 
-const UserEvents = () => {
+const EstudianteEvents = () => {
   const { courses } = useCourses();
   const navigate = useNavigate();
   const [filter, setFilter] = useState('all'); // all, in-progress, completed
@@ -131,4 +131,4 @@ const UserEvents = () => {
   );
 };
 
-export default UserEvents;
+export default EstudianteEvents;

@@ -1,9 +1,9 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useCourses } from '../../../../context/CoursesContext';
-import './CourseDetail.css';
+import './EstudianteCourseDetail.css';
 
-const CourseDetail = () => {
+const EstudianteCourseDetail = () => {
   const { courseId } = useParams();
   const { courses } = useCourses();
   const navigate = useNavigate();
@@ -172,4 +172,4 @@ const CourseDetail = () => {
   );
 };
 
-export default CourseDetail;
+export default EstudianteCourseDetail;

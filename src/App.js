@@ -7,10 +7,10 @@ import ResponsableProfile from "./pages/Responsable/ProfileResponsable/Profile";
 import { UserProvider, useUser } from "./context/UserContext";
 import { CoursesProvider } from "./context/CoursesContext";
 import HeaderWrapper from "./components/Header/HeaderWrapper";
-import UserPanel from './pages/User/Estudiante/UserPanel/UserPanel';
-import UserEvents from './pages/User/Estudiante/EventoUser/UserEvents';
-import UserTests from './pages/User/Estudiante/UserTest/UserTest';
-import CourseDetail from './pages/User/Estudiante/CourseDetail/CourseDetail';
+import EstudiantePanel from './pages/User/Estudiante/EstudiantePanel/EstudiantePanel';
+import EstudianteEvents from './pages/User/Estudiante/EventoEstudiante/EstudianteEvents';
+import EstudianteTests from './pages/User/Estudiante/EstudianteTest/EstudianteTest';
+import EstudianteCourseDetail from './pages/User/Estudiante/EstudianteCourseDetail/EstudianteCourseDetail';
 
 function App() {
   return (
@@ -62,10 +62,10 @@ function AppLayout() {
           <Route path="/responsable/profile" element={<ResponsableProfile />} />
 
           {/* User routes */}
-          <Route path="/user/panel" element={<UserPanel />} />
-          <Route path="/user/events" element={<UserEvents />} />
-          <Route path="/user/tests" element={<UserTests />} />
-          <Route path="/user/course/:courseId" element={<CourseDetail />} />
+          <Route path="/user/panel" element={<EstudiantePanel />} />
+          <Route path="/user/events" element={<EstudianteEvents />} />
+          <Route path="/user/tests" element={<EstudianteTests />} />
+          <Route path="/user/course/:courseId" element={<EstudianteCourseDetail />} />
         </Routes>
       </main>
     </div>

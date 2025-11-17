@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useUser } from '../../../../context/UserContext';
 import { useCourses } from '../../../../context/CoursesContext';
-import './UserPanel.css';
+import './EstudiantePanel.css';
 
 // Iconos de Material Icons (asegúrate de tenerlos importados en tu proyecto)
 // Por ejemplo, en tu index.html:
 // <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-const UserPanel = () => {
+const EstudiantePanel = () => {
   const { user } = useUser();
   const { courses } = useCourses();
   const [activeRole, setActiveRole] = useState('student');
@@ -142,4 +142,4 @@ const UserPanel = () => {
   );
 };
 
-export default UserPanel;
+export default EstudiantePanel;

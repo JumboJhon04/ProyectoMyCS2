@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import './UserTest.css';
+import './EstudianteTest.css';
 
-const UserTests = () => {
+const EstudianteTests = () => {
   const [filter, setFilter] = useState('all'); // all, pending, completed
 
   // Mock de tests/exámenes pendientes
@@ -229,4 +229,4 @@ const UserTests = () => {
   );
 };
 
-export default UserTests;
+export default EstudianteTests;
