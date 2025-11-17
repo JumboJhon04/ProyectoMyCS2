@@ -1,6 +1,6 @@
-import React, { useState} from "react";
-import { useUser} from "../../context/UserContext";
-import '.UserHeader.css';
+import React, { useState } from "react";
+import { useUser } from "../../context/UserContext";
+import './UserHeader.css';
 
 const getInitials = (name) => {
   if (!name) return "";

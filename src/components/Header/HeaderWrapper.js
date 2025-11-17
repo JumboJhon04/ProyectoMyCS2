@@ -3,6 +3,7 @@ import { useUser } from '../../context/UserContext';
 import AdminHeader from './AdminHeader';
 import ResponsableHeader from './ResponsableHeader';
 import Header from './Header';
+import UserHeader from './UserHeader';
 
 const HeaderWrapper = ({ onToggleSidebar }) => {
   const { user } = useUser();
@@ -16,7 +17,7 @@ const HeaderWrapper = ({ onToggleSidebar }) => {
     case 'responsable':
       return <ResponsableHeader onToggleSidebar={onToggleSidebar} />;
     case 'user':
-      return <Header onToggleSidebar={onToggleSidebar} />;
+      return <UserHeader onToggleSidebar={onToggleSidebar} />;
     default:
       return null;
   }
