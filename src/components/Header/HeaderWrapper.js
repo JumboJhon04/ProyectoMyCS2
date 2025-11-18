@@ -1,11 +1,15 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { useUser } from '../../context/UserContext';
 import AdminHeader from './AdminHeader';
 import ResponsableHeader from './ResponsableHeader';
-//import UserHeader from './UserHeader';
+import Header from './Header';
+import EstudianteHeader from './EstudianteHeader';
+import ProfesorHeader from './ProfesorHeader';
 
 const HeaderWrapper = ({ onToggleSidebar }) => {
   const { user } = useUser();
+  const location = useLocation();
 
   if (!user) return null;
 
@@ -16,7 +20,10 @@ const HeaderWrapper = ({ onToggleSidebar }) => {
     case 'responsable':
       return <ResponsableHeader onToggleSidebar={onToggleSidebar} />;
     case 'user':
-      return <UserHeader onToggleSidebar={onToggleSidebar} />;
+      // Determinar si es Estudiante o Profesor basado en el subRole del usuario o la ruta actual
+      // Prioridad: subRole > ruta actual
+      const isProfesor = user?.subRole === 'profesor' || location.pathname.startsWith('/profesor');
+      return isProfesor ? <ProfesorHeader /> : <EstudianteHeader />;
     default:
       return null;
   }

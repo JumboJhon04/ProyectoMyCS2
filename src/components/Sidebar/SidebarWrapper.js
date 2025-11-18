@@ -1,7 +1,7 @@
 import React from "react";
 import AdminSidebar from "./AdminSidebar";
 import ResponsableSidebar from "./ResponsableSidebar";
-//import UserSidebar from "./UserSidebar";
+import UserSidebar from "./UserSidebar";
 
 const SidebarWrapper = ({ role, isOpen, onClose }) => {
   switch (role) {
