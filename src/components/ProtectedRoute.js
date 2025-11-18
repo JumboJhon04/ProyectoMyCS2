@@ -1,25 +1,19 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import { useUser } from '../context/UserContext';
 
-const ProtectedRoute = ({ children, requireAdmin = false, requireResponsable = false }) => {
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+export default function ProtectedRoute({ children, requireAdmin = false, requireResponsable = false }) {
+  const { user: contextUser } = useUser();
+  const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
 
-  if (!isAuthenticated || !user) {
-    return <Navigate to="/login" replace />;
-  }
+  const user = contextUser || storedUser;
 
-  // Solo admin puede acceder a rutas de admin
-  if (requireAdmin && user.codigoRol !== 'ADM') {
-    return <Navigate to="/" replace />;
-  }
+  if (!isAuthenticated || !user) return <Navigate to="/login" replace />;
 
-  // Responsable o Admin pueden acceder a rutas de responsable
-  if (requireResponsable && user.codigoRol !== 'RES' && user.codigoRol !== 'ADM') {
-    return <Navigate to="/" replace />;
-  }
+  if (requireAdmin && user.codigoRol !== 'ADM') return <Navigate to="/" replace />;
+
+  if (requireResponsable && user.codigoRol !== 'RES' && user.codigoRol !== 'ADM') return <Navigate to="/" replace />;
 
   return children;
-};
-
-export default ProtectedRoute;
+}

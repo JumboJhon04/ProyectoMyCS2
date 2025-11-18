@@ -41,17 +41,10 @@ export const UserProvider = ({ children }) => {
 
   const unreadCount = notifications.filter((n) => n.unread).length;
 
-  // Función para cambiar el subRole entre 'estudiante' y 'profesor'
-  const setSubRole = (newSubRole) => {
-    setUser((prevUser) => ({
-      ...prevUser,
-      subRole: newSubRole,
-    }));
-  };
-
+  // Roles se determinan a partir de `user.codigoRol` (p.ej. 'EST' -> estudiante, 'DOC' -> docente)
   return (
     <UserContext.Provider
-      value={{ user, setUser, setSubRole, notifications, addNotification, markAllRead, unreadCount }}
+      value={{ user, setUser, notifications, addNotification, markAllRead, unreadCount }}
     >
       {children}
     </UserContext.Provider>

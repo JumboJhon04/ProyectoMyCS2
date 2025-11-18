@@ -65,8 +65,12 @@ export default function AuthLogin() {
       // Redirigir según el rol
       if (data.data.codigoRol === 'ADM') {
         navigate('/admin/panel');
-      } else if (data.data.codigoRol === 'RES') {  
+      } else if (data.data.codigoRol === 'RES') {
         navigate('/responsable/profile');
+      } else if (data.data.codigoRol === 'DOC') {
+        navigate('/profesor/panel');
+      } else if (data.data.codigoRol === 'EST') {
+        navigate('/user/panel');
       } else {
         navigate('/');
       }
