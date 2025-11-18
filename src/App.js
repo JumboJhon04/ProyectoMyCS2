@@ -6,12 +6,13 @@ import EventoAdmin from "./pages/Admin/EventoAdmin/EventoAdmin";
 import UserPanelAdmin from "./pages/Admin/UserPanelAdmin/UserPanelAdmin";
 import ResponsableProfile from "./pages/Responsable/ProfileResponsable/Profile";
 import EventoResponsable from "./pages/Responsable/EventoResponsable/EventoResponsable";
-import UserPanelAdmin from "./pages/Admin/UserPanelAdmin/UserPanelAdmin";
 import UsersResponsable from "./pages/Responsable/UsersResponsable/UsersResponsable";
 import { UserProvider, useUser } from "./context/UserContext";
 import { CoursesProvider } from "./context/CoursesContext";
 import HeaderWrapper from "./components/Header/HeaderWrapper";
 import Landing from "./pages/Landing";
+import Courses from "./pages/Courses";
+import Contact from "./pages/Contact";
 import AuthLogin from "./pages/Auth/Login";
 import AuthRegister from "./pages/Auth/Register";
 // Componente de ruta protegida
@@ -90,9 +91,9 @@ function AppLayout() {
   };
   const roleKey = getRoleKey();
 
-  // Ocultar header/sidebar en rutas de autenticación
-  const authPaths = ['/', '/login', '/register'];
-  const isAuthRoute = authPaths.includes(location.pathname);
+  // Ocultar header/sidebar en rutas de autenticación (considerar /courses y /contact como públicas)
+  const authPaths = ['/', '/login', '/register', '/courses', '/contact'];
+  const isAuthRoute = authPaths.includes(location.pathname) || location.pathname.startsWith('/courses');
 
   // Mostrar sidebar sólo cuando hay usuario y no es usuario tipo 'user' (estudiante)
   const showSidebar = Boolean(user) && roleKey !== 'user' && !isAuthRoute;

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
+import PublicHeader from '../../components/PublicHeader/PublicHeader';
 import { useUser } from '../../context/UserContext'; // IMPORTAR
+
 import './login.css';
 
 export default function AuthLogin() {
@@ -78,8 +80,10 @@ export default function AuthLogin() {
   };
 
   return (
-    <div className="auth-login-root">
-      <div className="auth-login-card">
+    <div>
+      <PublicHeader />
+      <div className="auth-login-root">
+        <div className="auth-login-card">
         <div className="auth-login-left">
           <div className="auth-login-topicon">
             <FaUser size={36} />
@@ -148,6 +152,7 @@ export default function AuthLogin() {
           <Link to="/register" className="auth-register-btn">Registrarse</Link>
         </div>
       </div>
+    </div>
     </div>
   );
 }

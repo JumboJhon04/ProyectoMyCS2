@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './register.css';
 import imgRegistro from '../../assets/icons/imgRegistro.jpg';
+import PublicHeader from '../../components/PublicHeader/PublicHeader';
 
 export default function AuthRegister() {
   const navigate = useNavigate();
@@ -97,9 +98,11 @@ export default function AuthRegister() {
   };
 
   return (
-    <div className="auth-register-root">
-      <div className="auth-register-wrap">
-        <div className="auth-register-form">
+    <div>
+      <PublicHeader />
+      <div className="auth-register-root">
+        <div className="auth-register-wrap">
+          <div className="auth-register-form">
           <div className="auth-register-inner">
             <form onSubmit={handleSubmit}>
               <div className="auth-register-grid">
@@ -240,6 +243,7 @@ export default function AuthRegister() {
           <div className="auth-register-image" aria-hidden="true" style={{ backgroundImage: `url(${imgRegistro})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
         </div>
       </div>
-    </div>
+      </div>
+      </div>
   );
 }

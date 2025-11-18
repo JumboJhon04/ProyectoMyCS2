@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 const UserContext = createContext(null);
 
 export const UserProvider = ({ children }) => {
+
   // Inicializar desde localStorage
   const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem('user');
@@ -15,7 +16,6 @@ export const UserProvider = ({ children }) => {
       }
     }
     return null;
-
   });
 
   const [notifications, setNotifications] = useState([
