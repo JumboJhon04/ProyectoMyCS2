@@ -2,6 +2,7 @@ const { pool } = require('../config/database');
 
 // Obtener todas las carreras con su facultad
 const obtenerCarreras = async (req, res) => {
+  console.log('🔔 GET /api/carreras called');
   try {
     const [rows] = await pool.execute(
       `SELECT 
