@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "r
 import SidebarWrapper from "./components/Sidebar/SidebarWrapper";
 import AdminPanel from "./pages/Admin/AdminPanel/AdminPanel";
 import EventoAdmin from "./pages/Admin/EventoAdmin/EventoAdmin";
+import UserPanelAdmin from "./pages/Admin/UserPanelAdmin/UserPanelAdmin";
 import ResponsableProfile from "./pages/Responsable/ProfileResponsable/Profile";
 import EventoResponsable from "./pages/Responsable/EventoResponsable/EventoResponsable";
 import UserPanelAdmin from "./pages/Admin/UserPanelAdmin/UserPanelAdmin";
@@ -13,7 +14,6 @@ import HeaderWrapper from "./components/Header/HeaderWrapper";
 import Landing from "./pages/Landing";
 import AuthLogin from "./pages/Auth/Login";
 import AuthRegister from "./pages/Auth/Register";
-
 // Componente de ruta protegida
 function ProtectedRoute({ children, requireAdmin = false, requireResponsable = false }) {
   const { user: contextUser } = useUser();
@@ -59,7 +59,6 @@ function AppLayout() {
   const { user, setUser } = useUser();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
-
   // Sincronizar usuario de localStorage con el contexto al cargar
   React.useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -89,12 +88,23 @@ function AppLayout() {
     
     return 'admin';
   };
-
   const roleKey = getRoleKey();
 
   // Ocultar header/sidebar en rutas de autenticación
   const authPaths = ['/', '/login', '/register'];
   const isAuthRoute = authPaths.includes(location.pathname);
+
+  // Mostrar sidebar sólo cuando hay usuario y no es usuario tipo 'user' (estudiante)
+  const showSidebar = Boolean(user) && roleKey !== 'user' && !isAuthRoute;
+
+  // Ruta por defecto según rol
+  const defaultForRole = () => {
+    if (!user) return '/'; // landing
+    if (roleKey === 'responsable') return '/responsable/profile';
+    if (roleKey === 'admin') return '/admin/panel';
+    if (user?.subRole === 'profesor') return '/profesor/panel';
+    return '/user/panel';
+  };
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>

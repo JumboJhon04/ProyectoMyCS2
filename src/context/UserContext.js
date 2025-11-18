@@ -15,6 +15,7 @@ export const UserProvider = ({ children }) => {
       }
     }
     return null;
+
   });
 
   const [notifications, setNotifications] = useState([
@@ -40,9 +41,17 @@ export const UserProvider = ({ children }) => {
 
   const unreadCount = notifications.filter((n) => n.unread).length;
 
+  // Función para cambiar el subRole entre 'estudiante' y 'profesor'
+  const setSubRole = (newSubRole) => {
+    setUser((prevUser) => ({
+      ...prevUser,
+      subRole: newSubRole,
+    }));
+  };
+
   return (
     <UserContext.Provider
-      value={{ user, setUser, notifications, addNotification, markAllRead, unreadCount }}
+      value={{ user, setUser, setSubRole, notifications, addNotification, markAllRead, unreadCount }}
     >
       {children}
     </UserContext.Provider>

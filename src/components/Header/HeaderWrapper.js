@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../context/UserContext';
 import AdminHeader from './AdminHeader';
 import ResponsableHeader from './ResponsableHeader';
-//import UserHeader from './UserHeader';
+import Header from './Header';
+import EstudianteHeader from './EstudianteHeader';
+import ProfesorHeader from './ProfesorHeader';
 
 const HeaderWrapper = ({ onToggleSidebar }) => {
   const navigate = useNavigate();
@@ -41,6 +43,7 @@ const HeaderWrapper = ({ onToggleSidebar }) => {
       return <ResponsableHeader onToggleSidebar={onToggleSidebar} onLogout={handleLogout} />;
     case 'user':
       return <UserHeader onToggleSidebar={onToggleSidebar} onLogout={handleLogout} />;
+
     default:
       return null;
   }
