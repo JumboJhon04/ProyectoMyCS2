@@ -11,12 +11,10 @@ const crearEvento = async (req, res) => {
     const { 
       title, type, attendanceRequired, passingGrade,
       capacity, hours, modality, cost, description,
-      teacher, objective, topics, startDate, endDate,
-      carreras // ✅ NUEVO: Array de IDs de carreras
+      docente, objective, topics, startDate, endDate, carreras
     } = req.body;
     
     console.log('📝 Creando evento:', title);
-    console.log('🎓 Carreras seleccionadas:', carreras);
     
     if (!title || !type) {
       return res.status(400).json({ 
@@ -60,9 +58,7 @@ const crearEvento = async (req, res) => {
       }
     }
 
-    // ✅ CONTENIDO SIN CAREER (solo teacher y topics)
     const contenidoObject = {
-      teacher: teacher || '',
       topics: topicsArray
     };
 
@@ -84,8 +80,9 @@ const crearEvento = async (req, res) => {
         COSTO, 
         ES_SOLO_INTERNOS, 
         ESTADO,
-        ASISTENCIAMINIMA
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'CREADO', ?)`,
+        ASISTENCIAMINIMA,
+        Docente
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'CREADO', ?, ?)`,
       [
         title,
         objective || description || '',
@@ -99,14 +96,15 @@ const crearEvento = async (req, res) => {
         passingGrade || null,
         cost && parseFloat(cost) > 0 ? 1 : 0,
         cost || 0,
-        attendanceRequired || null
+        attendanceRequired || null,
+        docente || null
       ]
     );
 
     const eventoId = eventoResult.insertId;
     console.log('✅ Evento creado con ID:', eventoId);
 
-    // ✅ GUARDAR CARRERAS EN evento_carrera
+    // Guardar carreras
     if (carreras) {
       let carrerasArray = [];
       if (typeof carreras === 'string') {
@@ -126,7 +124,7 @@ const crearEvento = async (req, res) => {
             [eventoId, carreraId]
           );
         }
-        console.log(`✅ ${carrerasArray.length} carreras asociadas al evento`);
+        console.log(`✅ ${carrerasArray.length} carreras asociadas`);
       }
     }
 
@@ -175,20 +173,16 @@ const actualizarEvento = async (req, res) => {
     await connection.beginTransaction();
     
     const eventoId = req.params.id;
-    
-    console.log('🔍 BACKEND - req.body completo:', req.body);
-    console.log('🔍 BACKEND - carreras recibido (raw):', req.body.carreras);
-    console.log('🔍 BACKEND - tipo de carreras:', typeof req.body.carreras);
-    
     const { 
       title, type, attendanceRequired, passingGrade,
       capacity, hours, modality, cost, description,
-      teacher, objective, topics, isPaid,
-      startDate, endDate,
-      carreras
+      docente, 
+      objective, topics, isPaid,
+      startDate, endDate, carreras
     } = req.body;
     
-    console.log('📝 BACKEND - carreras extraído:', carreras);
+    console.log('📝 Actualizando evento ID:', eventoId);
+    console.log('👨‍🏫 Docente:', docente);
     
     if (!title || !type) {
       return res.status(400).json({ 
@@ -226,14 +220,14 @@ const actualizarEvento = async (req, res) => {
       }
     }
 
+    // ✅ CONTENIDO SOLO CON TOPICS (sin teacher)
     const contenidoObject = {
-      teacher: teacher || '',
       topics: topicsArray
     };
 
     const contenidoJSON = JSON.stringify(contenidoObject);
 
-    // ✅ ACTUALIZAR EVENTO
+    // ✅ ACTUALIZAR EVENTO CON CAMPO DOCENTE
     const [result] = await connection.execute(
       `UPDATE evento SET
         TITULO = ?,
@@ -248,7 +242,8 @@ const actualizarEvento = async (req, res) => {
         CAPACIDAD = ?,
         COSTO = ?,
         ES_PAGADO = ?,
-        ASISTENCIAMINIMA = ?
+        ASISTENCIAMINIMA = ?,
+        Docente = ?
       WHERE SECUENCIAL = ?`,
       [
         title,
@@ -264,6 +259,7 @@ const actualizarEvento = async (req, res) => {
         cost || 0,
         isPaid ? 1 : 0,
         attendanceRequired || null,
+        docente || null, // ✅ AGREGAR DOCENTE
         eventoId
       ]
     );
@@ -275,19 +271,14 @@ const actualizarEvento = async (req, res) => {
       });
     }
 
-    console.log('✅ BACKEND - Evento actualizado en BD');
+    console.log('✅ Evento actualizado');
 
-    // ✅ PROCESAR CARRERAS CON LOGS DETALLADOS
-    console.log('🎓 BACKEND - Procesando carreras...');
-    console.log('🎓 BACKEND - Valor de carreras:', carreras);
-    console.log('🎓 BACKEND - Tipo de carreras:', typeof carreras);
-
-    // Primero eliminar carreras antiguas
-    const [deleteResult] = await connection.execute(
+    // Actualizar carreras
+    console.log('🎓 Procesando carreras...');
+    await connection.execute(
       'DELETE FROM evento_carrera WHERE SECUENCIALEVENTO = ?',
       [eventoId]
     );
-    console.log(`🗑️ BACKEND - ${deleteResult.affectedRows} carreras antiguas eliminadas`);
 
     if (carreras) {
       let carrerasArray = [];
@@ -295,43 +286,22 @@ const actualizarEvento = async (req, res) => {
       if (typeof carreras === 'string') {
         try {
           carrerasArray = JSON.parse(carreras);
-          console.log('✅ BACKEND - Carreras parseadas de string:', carrerasArray);
         } catch (e) {
-          console.error('❌ BACKEND - Error parseando carreras:', e);
-          if (carreras.trim()) {
-            carrerasArray = [carreras];
-          }
+          carrerasArray = [];
         }
       } else if (Array.isArray(carreras)) {
         carrerasArray = carreras;
-        console.log('✅ BACKEND - Carreras ya es array:', carrerasArray);
       }
-
-      console.log('🎓 BACKEND - Array final de carreras:', carrerasArray);
-      console.log('🎓 BACKEND - Cantidad de carreras:', carrerasArray.length);
 
       if (carrerasArray.length > 0) {
-        for (let i = 0; i < carrerasArray.length; i++) {
-          const carreraId = carrerasArray[i];
-          console.log(`  📌 BACKEND - Insertando carrera ${i + 1}: ID=${carreraId}`);
-          
-          try {
-            const [insertResult] = await connection.execute(
-              'INSERT INTO evento_carrera (SECUENCIALEVENTO, SECUENCIALCARRERA) VALUES (?, ?)',
-              [eventoId, carreraId]
-            );
-            console.log(`  ✅ BACKEND - Carrera ${carreraId} insertada con ID: ${insertResult.insertId}`);
-          } catch (insertError) {
-            console.error(`  ❌ BACKEND - Error insertando carrera ${carreraId}:`, insertError);
-            throw insertError;
-          }
+        for (const carreraId of carrerasArray) {
+          await connection.execute(
+            'INSERT INTO evento_carrera (SECUENCIALEVENTO, SECUENCIALCARRERA) VALUES (?, ?)',
+            [parseInt(eventoId), parseInt(carreraId)]
+          );
         }
-        console.log(`🎓 BACKEND - ${carrerasArray.length} carreras insertadas exitosamente`);
-      } else {
-        console.log('⚠️ BACKEND - No hay carreras para insertar');
+        console.log(`✅ ${carrerasArray.length} carreras asociadas`);
       }
-    } else {
-      console.log('⚠️ BACKEND - Carreras es null o undefined');
     }
 
     // Actualizar imagen si existe
@@ -349,12 +319,9 @@ const actualizarEvento = async (req, res) => {
          VALUES (?, ?, 'PORTADA')`,
         [eventoId, imageUrl]
       );
-      
-      console.log('✅ BACKEND - Imagen actualizada');
     }
 
     await connection.commit();
-    console.log('✅ BACKEND - Transaction committed');
 
     res.json({
       success: true,
@@ -369,9 +336,8 @@ const actualizarEvento = async (req, res) => {
   } catch (error) {
     if (connection) {
       await connection.rollback();
-      console.log('🔄 BACKEND - Transaction rolled back');
     }
-    console.error('❌ BACKEND - Error al actualizar evento:', error);
+    console.error('❌ Error al actualizar evento:', error);
     res.status(500).json({ 
       error: 'Error al actualizar el evento',
       details: error.message
@@ -401,6 +367,7 @@ const obtenerEventos = async (req, res) => {
         e.FECHAINICIO,
         e.FECHAFIN,
         e.ESTADO,
+        e.Docente,
         MAX(ie.URL_IMAGEN) as URL_IMAGEN
        FROM evento e
        LEFT JOIN imagen_evento ie ON e.SECUENCIAL = ie.SECUENCIALEVENTO 
@@ -409,7 +376,7 @@ const obtenerEventos = async (req, res) => {
        ORDER BY e.SECUENCIAL DESC`
     );
 
-    // ✅ OBTENER CARRERAS DE CADA EVENTO
+    // Obtener carreras de cada evento
     for (let evento of eventos) {
       const [carreras] = await pool.execute(
         `SELECT c.SECUENCIAL, c.NOMBRE_CARRERA
