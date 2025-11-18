@@ -100,7 +100,7 @@ export const CoursesProvider = ({ children }) => {
         title: evento.TITULO,
         description: evento.DESCRIPCION || 'Sin descripción',
         imageUrl: evento.URL_IMAGEN 
-          ? `http://localhost:5000/${evento.URL_IMAGEN}`
+          ? evento.URL_IMAGEN  // Ya viene con URL completa del backend
           : '/placeholder-course.jpg',
         price: parseFloat(evento.COSTO) || 0,
         rating: 3,

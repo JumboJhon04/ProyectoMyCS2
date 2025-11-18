@@ -1,4 +1,6 @@
 const { pool } = require('../config/database');
+const fs = require('fs');
+const path = require('path');
 
 // Crear evento
 const crearEvento = async (req, res) => {
@@ -159,6 +161,69 @@ const crearEvento = async (req, res) => {
       error: 'Error al guardar el evento',
       details: error.message
     });
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
+// Actualizar solo la imagen de un evento
+const actualizarImagenEvento = async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const eventoId = req.params.id;
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Se requiere un archivo de imagen' });
+    }
+
+    // Obtener imágenes anteriores
+    const [previousImages] = await connection.execute(
+      `SELECT URL_IMAGEN FROM imagen_evento WHERE SECUENCIALEVENTO = ? AND TIPO_IMAGEN = 'PORTADA'`,
+      [eventoId]
+    );
+
+    // Eliminar registros anteriores de portada
+    await connection.execute(
+      `DELETE FROM imagen_evento WHERE SECUENCIALEVENTO = ? AND TIPO_IMAGEN = 'PORTADA'`,
+      [eventoId]
+    );
+
+    // Intentar eliminar archivos físicos anteriores (no bloquear si falla)
+    for (const img of previousImages) {
+      try {
+        const filePath = path.join(process.cwd(), img.URL_IMAGEN);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (e) {
+        console.warn('No se pudo borrar archivo anterior:', e.message);
+      }
+    }
+
+    // Insertar nueva imagen
+    const imageUrl = `uploads/eventos/${req.file.filename}`;
+    const [insertResult] = await connection.execute(
+      `INSERT INTO imagen_evento (SECUENCIALEVENTO, URL_IMAGEN, TIPO_IMAGEN) VALUES (?, ?, 'PORTADA')`,
+      [eventoId, imageUrl]
+    );
+
+    await connection.commit();
+
+    res.json({
+      success: true,
+      message: 'Imagen del evento actualizada',
+      data: {
+        imagenId: insertResult.insertId,
+        imageUrl
+      }
+    });
+  } catch (error) {
+    if (connection) await connection.rollback();
+    console.error('❌ Error al actualizar imagen del evento:', error);
+    res.status(500).json({ error: 'Error al actualizar la imagen', details: error.message });
   } finally {
     if (connection) connection.release();
   }
@@ -533,5 +598,6 @@ module.exports = {
   obtenerEventos,
   obtenerEvento,
   actualizarEvento,
-  eliminarEvento
+  eliminarEvento,
+  actualizarImagenEvento
 };
