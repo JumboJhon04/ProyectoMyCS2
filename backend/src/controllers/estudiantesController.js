@@ -190,5 +190,6 @@ module.exports = {
   obtenerEstudiantes,
   obtenerEstudiante,
   actualizarEstudiante,
-  obtenerEventosDeUsuario
+  obtenerEventosDeUsuario,
+  crearInscripcion
 };
