@@ -103,6 +103,53 @@
     color: #475569;
     font-weight: 500;
   }
+
+  /* Información adicional del curso */
+  .course-additional-info {
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  }
+
+  .course-additional-info > div {
+    font-size: 0.95rem;
+    color: #475569;
+    line-height: 1.6;
+  }
+
+  .course-additional-info strong {
+    color: #0f1724;
+    font-weight: 600;
+    margin-right: 0.5rem;
+  }
+
+  /* Botón de comprar */
+  .btn {
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+  }
+
+  .btn-primary {
+    background: #333;
+    color: #ffffff;
+  }
+
+  .btn-primary:hover {
+    background: #333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
   
   /* Logo del curso */
   .course-header-right {
