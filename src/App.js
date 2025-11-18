@@ -3,19 +3,22 @@ import { BrowserRouter as Router, useLocation } from "react-router-dom";
 import SidebarWrapper from "./components/Sidebar/SidebarWrapper";
 import { UserProvider, useUser } from "./context/UserContext";
 import { CoursesProvider } from "./context/CoursesContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import HeaderWrapper from "./components/Header/HeaderWrapper";
 import AppRoutes from './routes/AppRoutes';
 // ProtectedRoute moved to `src/components/ProtectedRoute.js`
 
 function App() {
   return (
-    <UserProvider>
-      <CoursesProvider>
-        <Router>
-          <AppLayout />
-        </Router>
-      </CoursesProvider>
-    </UserProvider>
+    <ThemeProvider>
+      <UserProvider>
+        <CoursesProvider>
+          <Router>
+            <AppLayout />
+          </Router>
+        </CoursesProvider>
+      </UserProvider>
+    </ThemeProvider>
   );
 }
 
