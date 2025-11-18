@@ -112,7 +112,9 @@ function AppLayout() {
           display: isAuthRoute ? 'block' : 'flex', 
           flexDirection: 'column', 
           overflow: 'auto', 
-          marginLeft: isAuthRoute ? 0 : undefined 
+          // If the sidebar is visible we allow the CSS rule to apply (margin-left: 260px).
+          // If there is no sidebar (e.g. estudiante/docente pages) force marginLeft to 0
+          marginLeft: showSidebar ? undefined : 0
         }}
       >
         {/* Hide header on auth pages */}

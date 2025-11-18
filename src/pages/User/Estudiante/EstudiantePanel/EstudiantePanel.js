@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../../context/UserContext';
 import { useCourses } from '../../../../context/CoursesContext';
+import { useEffect, useState } from 'react';
 import UserPanel from '../../UserPanel';
 import './EstudiantePanel.css';
 
@@ -9,23 +10,44 @@ const EstudiantePanel = () => {
   const { user } = useUser();
   const { courses } = useCourses();
   const navigate = useNavigate();
+  const [studentEvents, setStudentEvents] = useState([]);
 
-  // Obtener el primer nombre para el saludo
-  const firstName = user?.name ? user.name.split(' ')[0] : 'Fulanito';
+  // Obtener el primer nombre para el saludo (usa datos reales)
+  const firstName = user?.nombres ? user.nombres.split(' ')[0] : (user?.name ? user.name.split(' ')[0] : 'Fulanito');
 
-  // Calcular progreso mock para cada curso
-  const coursesWithProgress = courses.slice(0, 3).map((course, index) => ({
-    ...course,
+  // Usar SOLO eventos reales del estudiante (no mostrar cursos globales si el usuario no está inscrito)
+  const coursesWithProgress = studentEvents.map((course, index) => ({
+    id: course.eventoId || course.id,
+    title: course.TITULO || course.title || course.name,
+    imageUrl: course.URL_IMAGEN || course.imageUrl || 'https://via.placeholder.com/50',
     progress: [70, 40, 90][index % 3] || 50,
-    lessons: course.meta?.lessons || 20
+    lessons: course.HORAS || course.lessons || course.meta?.lessons || 20
   }));
 
-  // Próximas pruebas mock - vinculadas a los cursos del contexto
-  const upcomingExams = [
-    { id: 1, name: 'Prueba Python - Variables y Funciones', courseId: 1, date: '15/11/2025 08:00', icon: '💻' },
-    { id: 2, name: 'Examen Java - POO', courseId: 2, date: '15/11/2025 09:00', icon: '☕' },
-    { id: 3, name: 'Prueba JavaScript - Fundamentos', courseId: 3, date: '15/11/2025 10:00', icon: '📜' }
-  ].filter(exam => courses.some(c => c.id === exam.courseId));
+  // Próximas pruebas: derivadas de los eventos del estudiante (si hay fechas)
+  const upcomingExams = (studentEvents || []).slice(0,3).map((ev, i) => ({
+    id: i+1,
+    name: `Actividad: ${ev.TITULO || ev.title}`,
+    courseId: ev.eventoId || ev.id,
+    date: ev.FECHAINICIO || ev.startDate || 'Sin fecha',
+    icon: '📌'
+  }));
+
+  // Cargar eventos reales del estudiante (si está autenticado)
+  useEffect(() => {
+    const fetchEvents = async () => {
+      if (!user || !user.id) return;
+      try {
+        const res = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/eventos`);
+        if (!res.ok) return;
+        const json = await res.json();
+        if (json && json.data) setStudentEvents(json.data);
+      } catch (e) {
+        console.warn('No se pudieron cargar los eventos del estudiante:', e.message);
+      }
+    };
+    fetchEvents();
+  }, [user]);
 
   return (
     <div className="dashboard-user-container">
@@ -38,7 +60,7 @@ const EstudiantePanel = () => {
         
         {/* Columna Izquierda: Cursos */}
         <main className="course-list-main">
-          {coursesWithProgress.map((course) => (
+          {coursesWithProgress.length > 0 ? coursesWithProgress.map((course) => (
             <div 
               key={course.id} 
               className="course-card" 
@@ -59,9 +81,12 @@ const EstudiantePanel = () => {
                 </div>
               </div>
             </div>
-          ))}
-          
-          <button className="view-all-btn" onClick={() => navigate('/user/events')}>Ver todos los módulos</button>
+          )) : (
+            <div style={{ padding: 20 }}>
+              <p>No estás inscrito en ningún evento por el momento.</p>
+              <button className="view-all-btn" onClick={() => navigate('/user/events')}>Ver eventos disponibles</button>
+            </div>
+          )}
         </main>
 
         {/* Columna Derecha: Próximas Pruebas */}
