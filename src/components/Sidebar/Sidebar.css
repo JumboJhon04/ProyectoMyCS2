@@ -1,0 +1,288 @@
+/* ==========================================
+   SIDEBAR STYLES - LIGHT GRAY THEME
+   ========================================== */
+
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 260px;
+  background: linear-gradient(180deg, #fbfdff, #f1f5f9);
+  border-right: 1px solid rgba(15,23,42,0.06);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow .18s;
+  z-index: 1000;
+  box-shadow: 0 8px 20px rgba(12,18,28,0.06);
+}
+
+/* Header */
+.sidebar-header {
+  height: 68px; 
+  padding: 0 16px; 
+  border-bottom: 1px solid rgba(15,23,42,0.04);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: transparent;
+}
+
+.sidebar-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f1724;
+  letter-spacing: 0;
+}
+
+.sidebar-close {
+  display: none;
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #475569;
+  padding: 6px;
+  border-radius: 8px;
+  transition: background .12s, transform .12s;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-close:hover { background: rgba(2,6,23,0.04); transform: translateY(-1px); }
+
+/* Search */
+.sidebar-search {
+  padding: 12px 16px 18px 16px;
+  position: relative;
+  background-color: transparent;
+  border-bottom: none;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px; /* place the icon inside the input padding */
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9aa4b2;
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 12px 10px 44px; /* leave space for the icon */
+  height: 40px;
+  line-height: 40px;
+  border: 1px solid rgba(15,23,42,0.06);
+  border-radius: 10px;
+  font-size: 14px;
+  color: #0b1220;
+  background-color: #fff;
+  transition: box-shadow .12s, border-color .12s, transform .06s;
+  font-family: inherit;
+  box-sizing: border-box;
+  box-shadow: 0 6px 18px rgba(12,18,28,0.04);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #999999;
+  box-shadow: none;
+}
+
+.search-input::placeholder {
+  color: #b7c2cc;
+  font-weight: 500;
+}
+
+/* Navigation Menu */
+.sidebar-menu {
+  flex: 1;
+  padding: 4px 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 18px;
+  color: #0f1724;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background .12s, transform .08s;
+  position: relative;
+  cursor: pointer;
+  margin: 0 8px;
+  border-radius: 8px;
+  background-color: transparent;
+}
+
+.sidebar-item:hover { background-color: rgba(15,23,42,0.04); transform: translateY(-1px); }
+
+.sidebar-item.active {
+  background: linear-gradient(90deg, rgba(99,102,241,0.06), rgba(99,102,241,0.02));
+  color: #0f1724;
+  font-weight: 700;
+  box-shadow: inset 4px 0 0 0 rgba(99,102,241,0.95);
+}
+
+.sidebar-item.active::before { display: none; }
+
+.sidebar-icon {
+  font-size: 16px;
+  margin-right: 12px;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+/* No Results */
+.no-results {
+  padding: 20px;
+  text-align: center;
+  color: #999999;
+  font-size: 14px;
+}
+
+/* Toggle Button */
+.sidebar-toggle {
+  position: fixed;
+  top: 7px;
+  left: 16px;
+  z-index: 1001;
+  background-color: #ffffff;
+  border: 1px solid rgba(15,23,42,0.06);
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+  display: none;
+  box-shadow: 0 6px 18px rgba(12,18,28,0.06);
+  transition: transform .12s, box-shadow .12s;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  color: #111827;
+  font-size: 18px;
+}
+
+.sidebar-toggle:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(12,18,28,0.08); }
+
+.sidebar-toggle:active { transform: translateY(0) scale(0.98); }
+
+/* Overlay */
+/* Overlay sits in the DOM but doesn't capture events unless active.
+   This prevents an invisible overlay from blocking interaction on mobile. */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(2,6,23,0.36);
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none; /* don't block clicks when hidden */
+  transition: opacity 0.22s ease;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  pointer-events: auto; /* allow clicks to close the drawer */
+}
+
+/* Scrollbar */
+.sidebar-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border-radius: 3px;
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb:hover {
+  background: #a0a0a0;
+}
+
+/* ==========================================
+   RESPONSIVE DESIGN
+   ========================================== */
+
+/* Tablets */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 240px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    width: 280px;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+
+  .sidebar-close {
+    display: flex;
+  }
+
+  .sidebar-toggle {
+    display: flex;
+  }
+
+  .sidebar-overlay {
+    display: block;
+  }
+
+  /* Hide toggle when sidebar is active.
+     Avoid relying on :has() for compatibility; if you need a global rule
+     toggle a class on <body> from JS instead (e.g. document.body.classList).
+  */
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .sidebar-title {
+    font-size: 15px;
+  }
+
+  .sidebar-item {
+    font-size: 13px;
+  }
+}
+
+/* ==========================================
+   ANIMATIONS
+   ========================================== */
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.sidebar.active {
+  animation: slideIn 0.3s ease-out;
+}

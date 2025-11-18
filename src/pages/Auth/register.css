@@ -1,0 +1,210 @@
+.auth-register-root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #d7d8da 0%, #dbe2e7 100%);
+  padding: 24px;
+  position: relative;
+}
+
+.auth-register-root::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 20% 80%, rgba(101, 163, 213, 0.08) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(138, 191, 230, 0.06) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.auth-register-wrap {
+  width: 1000px;
+  display: flex;
+  gap: 40px;
+  align-items: stretch;
+  position: relative;
+  z-index: 1;
+}
+
+.auth-register-form {
+  flex: 0 0 480px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 10px 40px rgba(13, 38, 76, 0.08),
+              0 2px 8px rgba(13, 38, 76, 0.04);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.auth-register-form:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 48px rgba(13, 38, 76, 0.12),
+              0 4px 12px rgba(13, 38, 76, 0.06);
+}
+
+.auth-register-inner {
+  width: 100%;
+}
+
+.auth-register-form-title {
+  margin: 0 0 24px;
+  font-size: 22px;
+  font-weight: 600;
+  color: #1a3b5d;
+  letter-spacing: -0.3px;
+}
+
+.auth-register-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 20px;
+}
+
+.auth-register-group {
+  position: relative;
+}
+
+.auth-register-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #5a6b7d;
+  margin-bottom: 8px;
+  transition: color 0.2s ease;
+}
+
+.auth-register-group input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1.5px solid #e5e8ec;
+  background: #fafbfc;
+  font-size: 14px;
+  color: #2c3e50;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.auth-register-group input:hover {
+  border-color: #d1d8e0;
+  background: #fff;
+}
+
+.auth-register-group input:focus {
+  border-color: #65a3d5;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(101, 163, 213, 0.1);
+}
+
+.auth-register-group input:focus + label,
+.auth-register-group:focus-within label {
+  color: #1a3b5d;
+}
+
+.auth-register-actions {
+  text-align: center;
+  margin-top: 28px;
+}
+
+.auth-register-submit {
+  background: linear-gradient(135deg, #333 0%, #585555 100%);
+  color: #fff;
+  padding: 13px 36px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(44, 62, 80, 0.2);
+}
+
+.auth-register-submit:hover {
+  background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(44, 62, 80, 0.3);
+}
+
+.auth-register-submit:active {
+  transform: translateY(0);
+}
+
+.auth-register-info {
+  flex: 1;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.auth-register-info h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 16px;
+  color: #333;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.auth-register-info p {
+  color: #4a6580;
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.auth-register-image {
+  height: 240px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ffffff 0%, #f5f9fd 40%, #e8f3fc 100%);
+  display: block;
+  box-shadow: 0 4px 16px rgba(13, 38, 76, 0.06);
+  transition: transform 0.3s ease;
+}
+
+.auth-register-image:hover {
+  transform: scale(1.02);
+}
+
+@media (max-width: 980px) {
+  .auth-register-wrap {
+    width: 100%;
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .auth-register-info {
+    order: 1;
+    width: 100%;
+    padding: 0;
+    text-align: center;
+  }
+  
+  .auth-register-form {
+    order: 2;
+    flex: none;
+    width: 100%;
+    padding: 24px;
+  }
+
+  .auth-register-form-title {
+    font-size: 20px;
+  }
+
+  .auth-register-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  
+  .auth-register-image {
+    height: 200px;
+  }
+
+  .auth-register-info h1 {
+    font-size: 28px;
+  }
+}

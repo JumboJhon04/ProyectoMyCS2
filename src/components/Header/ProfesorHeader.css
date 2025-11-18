@@ -1,0 +1,6 @@
+/* src/components/Header/ProfesorHeader.css */
+/* Reutiliza todos los estilos definidos en UserHeader.css */
+@import url("../Header/UserHeader.css"); 
+
+/* Cualquier ajuste específico para el Profesor iría aquí */
+/* Por ahora, no se requiere ninguno, ya que la navegación es similar. */

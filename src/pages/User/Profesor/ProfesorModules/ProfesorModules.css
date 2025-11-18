@@ -1,0 +1,257 @@
+/* src/pages/User/Profesor/ProfesorModules/ProfesorModules.css */
+.user-modules-container {
+    padding: 2rem;
+    background-color: #f8f8f8;
+    min-height: calc(100vh - 75px);
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.events-header {
+    margin-bottom: 2rem;
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.events-title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 0.5rem 0;
+}
+
+.events-subtitle {
+    font-size: 1rem;
+    color: #666;
+    margin: 0;
+}
+
+/* --- Selector de Rol Alternativo --- */
+.role-switcher-modules {
+    display: flex;
+    margin: 1.5rem 0;
+    border: 1px solid #ddd;
+    border-radius: 7px;
+    overflow: hidden;
+    width: fit-content;
+}
+
+.role-btn-module {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    background-color: #fff;
+    color: #666;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+    font-family: inherit;
+}
+
+.role-btn-module:not(:last-child) {
+    border-right: 1px solid #ddd;
+}
+
+.role-btn-module.active {
+    background-color: #f0f0f0;
+    color: #333;
+    font-weight: 600;
+}
+
+/* --- Resumen de Estadísticas --- */
+.modules-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 2rem;
+}
+
+.summary-card {
+    background: #fcfcfc;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+.summary-card svg, .summary-card .icon {
+    font-size: 1.5rem;
+    color: #007bff;
+}
+
+.summary-card p {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0;
+}
+
+.summary-card strong {
+    font-size: 1.5rem;
+    color: #333;
+}
+
+/* --- Fila de Filtros --- */
+.modules-filters-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    align-items: center;
+}
+
+.search-input-wrapper {
+    position: relative;
+    flex-grow: 1;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+}
+
+.search-input-module {
+    width: 100%;
+    padding: 0.7rem 1rem 0.7rem 2.5rem; /* Espacio para el icono */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.filter-select-module {
+    padding: 0.7rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    background-color: #fff;
+    cursor: pointer;
+}
+
+/* --- Grid de Módulos (similar al EventoEstudiante) --- */
+.modules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.module-card {
+    /* Replicamos el estilo de .event-card de EstudianteEvents */
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+}
+
+.module-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+.card-image-container {
+    position: relative;
+    height: 180px;
+    overflow: hidden;
+    background-color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.course-level {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #000;
+    color: #fff;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.course-level.intermedio { background-color: #ffc107; color: #333; }
+.course-level.principiante { background-color: #28a745; }
+
+.card-body-modulos {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    gap: 0.8rem;
+}
+
+.card-body-modulos h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.module-description {
+    font-size: 0.95rem;
+    color: #666;
+    line-height: 1.5;
+}
+
+.module-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+    margin-top: 10px;
+}
+
+.module-type { color: #007bff; font-weight: 600; }
+.module-lessons { color: #666; }
+
+.module-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.action-btn-students, .action-btn-view {
+    padding: 0.7rem 1rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.action-btn-students {
+    background-color: #e6f7ff;
+    color: #007bff;
+}
+
+.action-btn-view {
+    background-color: #333;
+    color: #fff;
+}
+
+.action-btn-students:hover { background-color: #cceeff; }
+.action-btn-view:hover { background-color: #555; }

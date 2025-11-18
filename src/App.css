@@ -1,38 +1,36 @@
-.App {
-  text-align: center;
+/* Basic reset and body styles */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8fafc;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* Main content container */
+.main-content {
+  transition: margin-left 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+/* Desktop-first: main content has a margin to accommodate the sidebar */
+@media (min-width: 769px) {
+  .main-content {
+    margin-left: 260px; /* Default sidebar width */
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+/* Tablets: adjust margin for slightly smaller sidebar */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .main-content {
+    margin-left: 240px; /* Tablet sidebar width */
   }
-  to {
-    transform: rotate(360deg);
+}
+
+/* Mobile: sidebar is hidden, so no margin */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
   }
 }
