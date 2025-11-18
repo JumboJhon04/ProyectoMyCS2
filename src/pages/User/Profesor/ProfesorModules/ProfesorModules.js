@@ -12,21 +12,13 @@ const mockModules = [
 ];
 
 const ProfesorModules = () => {
-    const { user, setSubRole } = useUser();
+    const { user } = useUser();
     const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMateria, setSelectedMateria] = useState('Todas');
     const [selectedDificultad, setSelectedDificultad] = useState('Dificultad');
 
-    const handleRoleChange = (newRole) => {
-        if (newRole === 'estudiante') {
-            setSubRole('estudiante');
-            navigate('/user/events');
-        } else if (newRole === 'profesor') {
-            setSubRole('profesor');
-            navigate('/profesor/modules');
-        }
-    };
+    // role switching by subRole removed; navigation should be based on actual codigoRol
 
     // Adaptamos el CourseCard del estudiante para el profesor (usamos un componente sencillo por ahora)
     const ModuleCard = ({ module }) => {
@@ -69,21 +61,7 @@ const ProfesorModules = () => {
                     <p className="events-subtitle">Explora y mejora tus cursos con los siguientes módulos</p>
                 </div>
                 
-                {/* Selector de Rol */}
-                <div className="role-switcher-modules">
-                    <button 
-                        className={`role-btn-module ${user?.subRole === 'estudiante' ? 'active' : ''}`}
-                        onClick={() => handleRoleChange('estudiante')}
-                    >
-                        <FaUserGraduate /> Estudiante
-                    </button>
-                    <button 
-                        className={`role-btn-module ${user?.subRole === 'profesor' ? 'active' : ''}`}
-                        onClick={() => handleRoleChange('profesor')}
-                    >
-                        <FaChalkboardTeacher /> Docente
-                    </button>
-                </div>
+                {/* role switcher removed: roles now come from backend via codigoRol */}
 
                 {/* Resumen de estadísticas (similar a la segunda imagen del estudiante) */}
                 <div className="modules-summary">

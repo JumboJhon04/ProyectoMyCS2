@@ -1,29 +1,34 @@
 import React from "react";
 import AdminSidebar from "./AdminSidebar";
 import ResponsableSidebar from "./ResponsableSidebar";
-
-// import UserSidebar from "./UserSidebar";
-
+import UserSidebar from "./UserSidebar";
+import EstudianteSidebar from "./UserSidebar";
+import ProfesorSidebar from "./AdminSidebar"; // fallback if no specific profesor sidebar exists
 
 const SidebarWrapper = ({ role, isOpen, onClose }) => {
-  // Mapeo de roles provenientes de la BD
-  const roleMap = {
+  // Soportar tanto códigos desde la BD (ADM, RES, EST, DOC)
+  // como claves ya mapeadas por el frontend (admin, responsable, profesor, estudiante, user)
+  const bdMap = {
     'ADM': 'admin',
     'RES': 'responsable',
     'EST': 'estudiante',
+    'DOC': 'docente'
   };
 
-  // Convertimos el role recibido desde BD al que usa tu frontend
-  const mappedRole = roleMap[role] || role;
+  let mappedRole = bdMap[role] || role;
 
-  // Renderizamos el sidebar según el role ya mapeado
+  // Normalizar algunos alias
+  if (mappedRole === 'user') mappedRole = 'estudiante';
+
   switch (mappedRole) {
-    case "admin":
+    case 'admin':
       return <AdminSidebar isOpen={isOpen} onClose={onClose} />;
-    case "responsable":
+    case 'responsable':
       return <ResponsableSidebar isOpen={isOpen} onClose={onClose} />;
-    case "user":
-      return <UserSidebar isOpen={isOpen} onClose={onClose} />;
+    case 'docente':
+      return <ProfesorSidebar isOpen={isOpen} onClose={onClose} />;
+    case 'estudiante':
+      return <EstudianteSidebar isOpen={isOpen} onClose={onClose} />;
     default:
       return null;
   }
