@@ -12,6 +12,8 @@ import { UserProvider, useUser } from "./context/UserContext";
 import { CoursesProvider } from "./context/CoursesContext";
 import HeaderWrapper from "./components/Header/HeaderWrapper";
 import Landing from "./pages/Landing";
+import Courses from "./pages/Courses";
+import Contact from "./pages/Contact";
 import AuthLogin from "./pages/Auth/Login";
 import AuthRegister from "./pages/Auth/Register";
 
@@ -36,9 +38,10 @@ function AppLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const location = useLocation();
-  // ocultar header/sidebar en rutas de autenticación para mostrar páginas limpias
-  const authPaths = ['/', '/login', '/register'];
-  const isAuthRoute = authPaths.includes(location.pathname);
+  // ocultar header/sidebar en rutas públicas limpias (landing, login, register, courses, contact)
+  const authPaths = ['/', '/login', '/register', '/courses', '/contact'];
+  // también tratar rutas que comienzan con /courses (detalle) como públicas
+  const isAuthRoute = authPaths.includes(location.pathname) || location.pathname.startsWith('/courses');
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
@@ -61,6 +64,8 @@ function AppLayout() {
           {/* Auth route (login) */}
           <Route path="/login" element={<AuthLogin />} />
           <Route path="/register" element={<AuthRegister />} />
+          <Route path="/courses" element={<Courses />} />
+          <Route path="/contact" element={<Contact />} />
 
           {/* Admin routes */}
           <Route path="/admin/panel" element={<AdminPanel />} />

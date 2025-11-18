@@ -1,13 +1,16 @@
 import React from 'react';
 import './register.css';
 import imgRegistro from '../../assets/icons/imgRegistro.jpg';
+import PublicHeader from '../../components/PublicHeader/PublicHeader';
 
 export default function AuthRegister() {
 
   return (
-    <div className="auth-register-root">
-      <div className="auth-register-wrap">
-        <div className="auth-register-form">
+    <div>
+      <PublicHeader />
+      <div className="auth-register-root">
+        <div className="auth-register-wrap">
+          <div className="auth-register-form">
           <div className="auth-register-inner">
             <div className="auth-register-grid">
               <div className="auth-register-group">
@@ -59,6 +62,7 @@ export default function AuthRegister() {
           <div className="auth-register-image" aria-hidden="true" style={{ backgroundImage: `url(${imgRegistro})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
         </div>
       </div>
-    </div>
+      </div>
+      </div>
   );
 }
