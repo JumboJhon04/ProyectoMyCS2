@@ -1,22 +1,25 @@
 const express = require('express');
 const router = express.Router();
 const upload = require('../config/multer');
-const { 
-  crearEvento, 
-  obtenerImagenes, 
+const {
+  crearEvento,
   obtenerEventos,
-  actualizarImagenEvento 
+  obtenerEvento,
+  actualizarEvento,
+  eliminarEvento,
+  obtenerImagenes,
+  actualizarImagenEvento
 } = require('../controllers/eventoController');
-// Ruta para crear evento completo con imagen
+
+// Rutas
 router.post('/', upload.single('image'), crearEvento);
-
-// Ruta para obtener todas las imágenes
-router.get('/imagenes', obtenerImagenes);
-
-// Ruta para obtener todos los eventos
 router.get('/', obtenerEventos);
+router.get('/imagenes', obtenerImagenes);
+router.get('/:id', obtenerEvento);
+router.put('/:id', upload.single('image'), actualizarEvento);
+router.delete('/:id', eliminarEvento);
 
-// Ruta para actualizar imagen de un evento específico
-router.put('/:id/imagen', actualizarImagenEvento);
+// Ruta para actualizar solo la imagen de un evento
+router.put('/:id/imagen', upload.single('image'), actualizarImagenEvento);
 
 module.exports = router;
