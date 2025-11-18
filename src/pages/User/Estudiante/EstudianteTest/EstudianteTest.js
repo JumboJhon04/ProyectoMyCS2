@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
+import { useCourses } from '../../../../context/CoursesContext';
 import './EstudianteTest.css';
 
 const EstudianteTests = () => {
+  const { courses } = useCourses();
   const [filter, setFilter] = useState('all'); // all, pending, completed
 
-  // Mock de tests/exámenes pendientes
+  // Mock de tests/exámenes pendientes - vinculados a los cursos del contexto
   const tests = [
     {
       id: 1,
       title: 'Prueba Python - Variables y Funciones',
-      course: 'Curso Python',
+      courseId: 1,
+      course: 'Curso de Python',
       date: '15/11/2025',
       time: '08:00',
       duration: '60 min',
@@ -21,7 +24,8 @@ const EstudianteTests = () => {
     {
       id: 2,
       title: 'Examen Java - POO',
-      course: 'Curso Java',
+      courseId: 2,
+      course: 'Curso de Java',
       date: '15/11/2025',
       time: '09:00',
       duration: '90 min',
@@ -32,20 +36,22 @@ const EstudianteTests = () => {
     },
     {
       id: 3,
-      title: 'Prueba Álgebra - Ecuaciones',
-      course: 'Curso Álgebra',
+      title: 'Prueba JavaScript - Fundamentos',
+      courseId: 3,
+      course: 'Curso de JavaScript',
       date: '15/11/2025',
       time: '10:00',
       duration: '45 min',
       questions: 15,
       status: 'pending',
-      icon: '√',
+      icon: '📜',
       daysLeft: 0
     },
     {
       id: 4,
       title: 'Test Python - Listas y Diccionarios',
-      course: 'Curso Python',
+      courseId: 1,
+      course: 'Curso de Python',
       date: '18/11/2025',
       time: '14:00',
       duration: '45 min',
@@ -57,7 +63,8 @@ const EstudianteTests = () => {
     {
       id: 5,
       title: 'Examen Final - JavaScript',
-      course: 'Curso JavaScript',
+      courseId: 3,
+      course: 'Curso de JavaScript',
       date: '10/11/2025',
       time: '11:00',
       duration: '120 min',
@@ -67,7 +74,7 @@ const EstudianteTests = () => {
       icon: '📜',
       daysLeft: -5
     }
-  ];
+  ].filter(test => courses.some(c => c.id === test.courseId));
 
   // Filtrar tests
   const filteredTests = tests.filter(test => {

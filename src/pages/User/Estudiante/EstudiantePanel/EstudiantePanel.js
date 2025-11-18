@@ -14,18 +14,18 @@ const EstudiantePanel = () => {
   const firstName = user?.name ? user.name.split(' ')[0] : 'Fulanito';
 
   // Calcular progreso mock para cada curso
-  const coursesWithProgress = courses.map((course, index) => ({
+  const coursesWithProgress = courses.slice(0, 3).map((course, index) => ({
     ...course,
-    progress: [70, 40, 20][index % 3] || 50,
+    progress: [70, 40, 90][index % 3] || 50,
     lessons: course.meta?.lessons || 20
   }));
 
-  // Próximas pruebas mock
+  // Próximas pruebas mock - vinculadas a los cursos del contexto
   const upcomingExams = [
-    { id: 1, name: 'Prueba Python', date: '15/11/2025 08:00', icon: '💻' },
-    { id: 2, name: 'Prueba Java', date: '15/11/2025 09:00', icon: '☕' },
-    { id: 3, name: 'Prueba Álgebra', date: '15/11/2025 10:00', icon: '√' }
-  ];
+    { id: 1, name: 'Prueba Python - Variables y Funciones', courseId: 1, date: '15/11/2025 08:00', icon: '💻' },
+    { id: 2, name: 'Examen Java - POO', courseId: 2, date: '15/11/2025 09:00', icon: '☕' },
+    { id: 3, name: 'Prueba JavaScript - Fundamentos', courseId: 3, date: '15/11/2025 10:00', icon: '📜' }
+  ].filter(exam => courses.some(c => c.id === exam.courseId));
 
   return (
     <div className="dashboard-user-container">
@@ -38,43 +38,28 @@ const EstudiantePanel = () => {
         
         {/* Columna Izquierda: Cursos */}
         <main className="course-list-main">
-          
-          {/* Tarjeta de Curso 1: Python */}
-          <div className="course-card">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg" alt="Python" className="course-icon" />
-            <div className="course-details">
-              <h3>Curso Python</h3>
-              <p className="course-info">Programación • 20 lecciones</p>
-              <div className="progress-bar-container">
-                <div className="progress-bar" style={{ width: '70%' }}></div>
+          {coursesWithProgress.map((course) => (
+            <div 
+              key={course.id} 
+              className="course-card" 
+              onClick={() => navigate(`/user/course/${course.id}`)}
+              style={{ cursor: 'pointer' }}
+            >
+              <img 
+                src={course.imageUrl || 'https://via.placeholder.com/50'} 
+                alt={course.title} 
+                className="course-icon"
+                onError={(e) => { e.target.src = 'https://via.placeholder.com/50'; }}
+              />
+              <div className="course-details">
+                <h3>{course.title}</h3>
+                <p className="course-info">Programación • {course.lessons} lecciones</p>
+                <div className="progress-bar-container">
+                  <div className="progress-bar" style={{ width: `${course.progress}%` }}></div>
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Tarjeta de Curso 2: Java */}
-          <div className="course-card">
-            <img src="https://upload.wikimedia.org/wikipedia/en/3/30/Java_programming_language_logo.svg" alt="Java" className="course-icon" />
-            <div className="course-details">
-              <h3>Curso Java</h3>
-              <p className="course-info">Programación • 25 lecciones</p>
-              <div className="progress-bar-container">
-                <div className="progress-bar" style={{ width: '40%' }}></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Tarjeta de Curso 3: Álgebra */}
-          <div className="course-card">
-            {/* Reemplaza con un ícono real de álgebra */}
-            <div className="course-icon-placeholder">√x</div>
-            <div className="course-details">
-              <h3>Curso Algebra</h3>
-              <p className="course-info">Matemáticas • 10 lecciones</p>
-              <div className="progress-bar-container">
-                <div className="progress-bar" style={{ width: '90%' }}></div>
-              </div>
-            </div>
-          </div>
+          ))}
           
           <button className="view-all-btn" onClick={() => navigate('/user/events')}>Ver todos los módulos</button>
         </main>
@@ -83,29 +68,18 @@ const EstudiantePanel = () => {
         <aside className="upcoming-exams-sidebar">
           <h3>Próximas Pruebas</h3>
           
-          <div className="exam-item">
-            <span className="exam-icon">💻</span>
-            <div className="exam-details">
-              <p>Prueba Python</p>
-              <span className="exam-date">15/11/2025 08:00</span>
-            </div>
-          </div>
-          
-          <div className="exam-item">
-            <span className="exam-icon">💻</span>
-            <div className="exam-details">
-              <p>Prueba Java</p>
-              <span className="exam-date">15/11/2025 09:00</span>
-            </div>
-          </div>
-
-          <div className="exam-item">
-            <span className="exam-icon">√x</span>
-            <div className="exam-details">
-              <p>Prueba Algebra</p>
-              <span className="exam-date">15/11/2025 10:00</span>
-            </div>
-          </div>
+          {upcomingExams.map((exam) => {
+            const course = courses.find(c => c.id === exam.courseId);
+            return (
+              <div key={exam.id} className="exam-item">
+                <span className="exam-icon">{exam.icon}</span>
+                <div className="exam-details">
+                  <p>{exam.name}</p>
+                  <span className="exam-date">{exam.date}</span>
+                </div>
+              </div>
+            );
+          })}
         </aside>
 
       </div>
