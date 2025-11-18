@@ -15,12 +15,29 @@ export const CoursesProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Cargar eventos al montar el componente
   useEffect(() => {
     fetchCourses();
   }, []);
 
-  // Función para obtener todos los eventos
+  const mapCodigoToType = (codigo) => {
+    const tipos = {
+      'CUR': 'Curso',
+      'TALL': 'Taller',
+      'SEM': 'Seminario',
+      'CONF': 'Conferencia'
+    };
+    return tipos[codigo] || 'Curso';
+  };
+
+  const mapCodigoToModalidad = (codigo) => {
+    const modalidades = {
+      'PRES': 'Presencial',
+      'VIRT': 'Virtual',
+      'HIB': 'Híbrido'
+    };
+    return modalidades[codigo] || 'Presencial';
+  };
+
   const fetchCourses = async () => {
     try {
       setLoading(true);
@@ -31,23 +48,53 @@ export const CoursesProvider = ({ children }) => {
         throw new Error(data.error || 'Error al cargar eventos');
       }
 
-      // Mapear los datos de la BD al formato que usa el frontend
-      const mappedCourses = data.data.map(evento => ({
-        id: evento.SECUENCIAL,
-        title: evento.TITULO,
-        description: evento.DESCRIPCION || 'Sin descripción',
-        imageUrl: evento.URL_IMAGEN 
-          ? `http://localhost:5000/${evento.URL_IMAGEN}`
-          : '/placeholder-course.jpg',
-        price: parseFloat(evento.COSTO) || 0,
-        rating: 3, // Por defecto, puedes cambiarlo según tu lógica
-        meta: {
-          type: mapCodigoToType(evento.CODIGOTIPOEVENTO),
-          attendanceRequired: evento.ASISTENCIAMINIMA || '',
-          passingGrade: evento.NOTAAPROBACION || null,
-          isPaid: evento.ES_PAGADO === 1
+      const mappedCourses = data.data.map(evento => {
+        let contenidoData = {
+          career: '',
+          teacher: '',
+          topics: [],
+          objective: ''
+        };
+
+        // ✅ PARSEAR CONTENIDO CORRECTAMENTE
+        if (evento.CONTENIDO) {
+          try {
+            const parsed = JSON.parse(evento.CONTENIDO);
+            contenidoData = {
+              career: parsed.career || '',
+              teacher: parsed.teacher || '',
+              topics: Array.isArray(parsed.topics) ? parsed.topics : [],
+              objective: parsed.objective || ''
+            };
+          } catch (e) {
+            console.warn('Error parseando CONTENIDO:', e);
+          }
         }
-      }));
+
+        return {
+          id: evento.SECUENCIAL,
+          title: evento.TITULO,
+          description: evento.DESCRIPCION || 'Sin descripción',
+          imageUrl: evento.URL_IMAGEN 
+            ? `http://localhost:5000/${evento.URL_IMAGEN}`
+            : '/placeholder-course.jpg',
+          price: parseFloat(evento.COSTO) || 0,
+          rating: 3,
+          meta: {
+            type: mapCodigoToType(evento.CODIGOTIPOEVENTO),
+            attendanceRequired: evento.ASISTENCIAMINIMA || '',
+            passingGrade: evento.NOTAAPROBACION || null,
+            capacity: evento.CAPACIDAD || '',
+            hours: evento.HORAS || '',
+            modality: mapCodigoToModalidad(evento.CODIGOMODALIDAD),
+            isPaid: evento.ES_PAGADO === 1,
+            career: contenidoData.career,
+            teacher: contenidoData.teacher,
+            objective: contenidoData.objective || evento.DESCRIPCION || '',
+            topics: contenidoData.topics
+          }
+        };
+      });
 
       setCourses(mappedCourses);
       setError(null);
@@ -60,28 +107,14 @@ export const CoursesProvider = ({ children }) => {
     }
   };
 
-  // Mapear código de tipo a nombre
-  const mapCodigoToType = (codigo) => {
-    const tipos = {
-      'CUR': 'Curso',
-      'TALL': 'Taller',
-      'SEM': 'Seminario',
-      'CONF': 'Conferencia'
-    };
-    return tipos[codigo] || 'Curso';
-  };
-
-  // Función para agregar un nuevo evento
   const addCourse = async (newCourse) => {
     try {
-      // Crear FormData para enviar archivo
       const formData = new FormData();
       formData.append('title', newCourse.title);
       formData.append('type', newCourse.type);
       formData.append('attendanceRequired', newCourse.attendanceRequired || '');
       formData.append('passingGrade', newCourse.passingGrade || '');
       
-      // Agregar la imagen
       if (newCourse.imageFile) {
         formData.append('image', newCourse.imageFile);
       }
@@ -97,9 +130,7 @@ export const CoursesProvider = ({ children }) => {
         throw new Error(data.error || 'Error al crear evento');
       }
 
-      // Recargar la lista de eventos después de crear uno nuevo
       await fetchCourses();
-      
       return data;
     } catch (error) {
       console.error('Error al crear evento:', error);
@@ -107,44 +138,69 @@ export const CoursesProvider = ({ children }) => {
     }
   };
 
-  // Función para eliminar un evento (opcional)
+  const updateCourse = async (id, updatedData) => {
+    try {
+      const formData = new FormData();
+      
+      formData.append('title', updatedData.title);
+      formData.append('type', updatedData.meta?.type || 'Curso');
+      formData.append('description', updatedData.description || '');
+      formData.append('attendanceRequired', updatedData.meta?.attendanceRequired || '');
+      formData.append('passingGrade', updatedData.meta?.passingGrade || '');
+      formData.append('capacity', updatedData.meta?.capacity || '');
+      formData.append('hours', updatedData.meta?.hours || '');
+      formData.append('modality', updatedData.meta?.modality || '');
+      formData.append('cost', updatedData.price || 0);
+      formData.append('isPaid', updatedData.meta?.isPaid ? '1' : '0');
+      formData.append('career', updatedData.meta?.career || '');
+      formData.append('teacher', updatedData.meta?.teacher || '');
+      formData.append('objective', updatedData.meta?.objective || '');
+      
+      // ✅ ENVIAR TOPICS COMO JSON STRING
+      const topicsArray = Array.isArray(updatedData.meta?.topics) 
+        ? updatedData.meta.topics 
+        : [];
+      formData.append('topics', JSON.stringify(topicsArray));
+
+      if (updatedData.imageFile) {
+        formData.append('image', updatedData.imageFile);
+      }
+
+      const response = await fetch(`http://localhost:5000/api/eventos/${id}`, {
+        method: 'PUT',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al actualizar evento');
+      }
+
+      await fetchCourses();
+      return data;
+    } catch (error) {
+      console.error('Error al actualizar evento:', error);
+      throw error;
+    }
+  };
+
   const deleteCourse = async (id) => {
     try {
       const response = await fetch(`http://localhost:5000/api/eventos/${id}`, {
         method: 'DELETE'
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Error al eliminar evento');
+        throw new Error(data.error || 'Error al eliminar evento');
       }
 
-      // Actualizar el estado local
       setCourses(courses.filter(course => course.id !== id));
+      return data;
     } catch (error) {
       console.error('Error al eliminar evento:', error);
-      throw error;
-    }
-  };
-
-  // Función para actualizar un evento (opcional)
-  const updateCourse = async (id, updatedData) => {
-    try {
-      const response = await fetch(`http://localhost:5000/api/eventos/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updatedData)
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al actualizar evento');
-      }
-
-      // Recargar eventos
-      await fetchCourses();
-    } catch (error) {
-      console.error('Error al actualizar evento:', error);
       throw error;
     }
   };
@@ -156,7 +212,7 @@ export const CoursesProvider = ({ children }) => {
     addCourse,
     deleteCourse,
     updateCourse,
-    fetchCourses // Para recargar manualmente si es necesario
+    fetchCourses
   };
 
   return (

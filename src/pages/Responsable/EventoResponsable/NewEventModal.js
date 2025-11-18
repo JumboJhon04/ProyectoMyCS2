@@ -2,11 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useCourses } from '../../../context/CoursesContext';
 import './EventoResponsable.css';
 
-// Este modal ahora funciona como editor (modo edición).
-// Props:
-// - isOpen: boolean
-// - onClose: fn
-// - course: objeto del curso a editar
 const NewEventModal = ({ isOpen, onClose, course }) => {
   const { updateCourse } = useCourses();
   const [title, setTitle] = useState('');
@@ -15,34 +10,58 @@ const NewEventModal = ({ isOpen, onClose, course }) => {
   const [passingGrade, setPassingGrade] = useState('');
   const [capacity, setCapacity] = useState('');
   const [hours, setHours] = useState('');
-  const [modality, setModality] = useState('');
+  const [modality, setModality] = useState('Presencial');
   const [cost, setCost] = useState('');
   const [career, setCareer] = useState('');
   const [teacher, setTeacher] = useState('');
   const [objective, setObjective] = useState('');
   const [topics, setTopics] = useState(['']);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (course) {
       setTitle(course.title || '');
-      setType((course.meta && course.meta.type) || 'Curso');
-      setAttendanceRequired((course.meta && course.meta.attendanceRequired) || '');
-      setPassingGrade((course.meta && course.meta.passingGrade) || '');
-      setCapacity((course.meta && course.meta.capacity) || '');
-      setHours((course.meta && course.meta.hours) || '');
-      setModality((course.meta && course.meta.modality) || '');
+      setType(course.meta?.type || 'Curso');
+      setAttendanceRequired(course.meta?.attendanceRequired || '');
+      setPassingGrade(course.meta?.passingGrade || '');
+      setCapacity(course.meta?.capacity || '');
+      setHours(course.meta?.hours || '');
+      setModality(course.meta?.modality || 'Presencial');
       setCost(course.price != null ? String(course.price) : '');
-      setCareer((course.meta && course.meta.career) || '');
-      setTeacher((course.meta && course.meta.teacher) || '');
-      setObjective((course.meta && course.meta.objective) || '');
-      setTopics((course.meta && course.meta.topics) || ['']);
+      setCareer(course.meta?.career || '');
+      setTeacher(course.meta?.teacher || '');
+      setObjective(course.meta?.objective || '');
+      
+      // ✅ ASEGURAR QUE TOPICS SEA SIEMPRE UN ARRAY
+      const coursTopics = course.meta?.topics;
+      if (Array.isArray(coursTopics) && coursTopics.length > 0) {
+        setTopics(coursTopics);
+      } else {
+        setTopics(['']);
+      }
+      
+      setImagePreview(course.imageUrl || '');
+      setImageFile(null);
       setError(null);
     }
   }, [course]);
 
   if (!isOpen || !course) return null;
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleTopicChange = (index, value) => {
     setTopics((prev) => {
@@ -52,29 +71,41 @@ const NewEventModal = ({ isOpen, onClose, course }) => {
     });
   };
 
-  const addTopic = () => setTopics((prev) => [...prev, '']);
+  const addTopic = () => {
+    setTopics((prev) => [...prev, '']);
+  };
+
+  const removeTopic = (index) => {
+    if (topics.length > 1) {
+      setTopics((prev) => prev.filter((_, i) => i !== index));
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    if (!title.trim()) return setError('El nombre del evento es obligatorio');
+    
+    if (!title.trim()) {
+      return setError('El nombre del evento es obligatorio');
+    }
 
     const updated = {
       title: title.trim(),
-      description: objective || course.description || '',
-      imageUrl: course.imageUrl || '',
-      price: cost ? Number(cost) : course.price || 0,
+      description: objective || '',
+      price: cost ? Number(cost) : 0,
+      imageFile: imageFile,
       meta: {
         type,
         attendanceRequired,
-        passingGrade: passingGrade ? Number(passingGrade) : (course.meta && course.meta.passingGrade) || null,
+        passingGrade: passingGrade ? Number(passingGrade) : null,
         capacity,
         hours,
         modality,
         career,
         teacher,
         objective,
-          topics: topics.filter((t) => t && t.trim()),
+        topics: topics.filter((t) => t && t.trim()), // ✅ Filtrar vacíos
+        isPaid: cost && Number(cost) > 0
       },
     };
 
@@ -86,103 +117,233 @@ const NewEventModal = ({ isOpen, onClose, course }) => {
     } catch (err) {
       console.error(err);
       setSaving(false);
-      setError('Error guardando cambios. Intente de nuevo.');
+      setError(err.message || 'Error guardando cambios. Intente de nuevo.');
     }
   };
 
   return (
-    <div className="modal-overlay" role="presentation" onClick={onClose}>
-      <div className="modal edit-modal" role="dialog" aria-modal="true" aria-label="Editar Evento" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label="Cerrar">×</button>
-        <h3 className="modal-title">EDITAR</h3>
+    <div className="modal-overlay" onClick={onClose}>
+      <div 
+        className="modal edit-modal" 
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          position: 'relative'
+        }}
+      >
+        <button className="modal-close" onClick={onClose}>×</button>
+        <h3 className="modal-title">EDITAR EVENTO</h3>
 
         <form className="modal-form" onSubmit={handleSubmit}>
-          <div className="modal-left">
-            <div className="two-col-grid">
-              <label>
-                Nombre del evento:
-                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Nombre del evento" />
-              </label>
+          <div className="modal-content">
+            {/* Imagen */}
+            <div className="form-group">
+              <label>Imagen del evento:</label>
+              {imagePreview && (
+                <div style={{ marginBottom: '10px' }}>
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '200px',
+                      objectFit: 'cover',
+                      borderRadius: '8px'
+                    }} 
+                  />
+                </div>
+              )}
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={handleImageChange}
+              />
+            </div>
 
-              <label>
-                Tipo de evento:
+            {/* Nombre y Tipo */}
+            <div className="two-col-grid">
+              <div className="form-group">
+                <label>Nombre del evento: *</label>
+                <input 
+                  value={title} 
+                  onChange={(e) => setTitle(e.target.value)} 
+                  placeholder="Nombre del evento" 
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Tipo de evento: *</label>
                 <select value={type} onChange={(e) => setType(e.target.value)}>
                   <option>Curso</option>
                   <option>Taller</option>
                   <option>Seminario</option>
                   <option>Conferencia</option>
                 </select>
-              </label>
-            </div>
-
-            <div className="two-col-grid">
-              <label>
-                Asistencia de aprobación:
-                <input value={attendanceRequired} onChange={(e) => setAttendanceRequired(e.target.value)} placeholder="70%" />
-              </label>
-
-              <label>
-                Nota de aprobación:
-                <input value={passingGrade} onChange={(e) => setPassingGrade(e.target.value)} placeholder="7.00" />
-              </label>
-            </div>
-
-            <div className="two-col-grid">
-              <label>
-                Capacidad máxima:
-                <input value={capacity} onChange={(e) => setCapacity(e.target.value)} placeholder="Capacidad máxima" />
-              </label>
-              <label>
-                Número de horas:
-                <input value={hours} onChange={(e) => setHours(e.target.value)} placeholder="Horas" />
-              </label>
-            </div>
-
-            <div className="two-col-grid">
-              <label>
-                Modalidad:
-                <input value={modality} onChange={(e) => setModality(e.target.value)} placeholder="Presencial / Online" />
-              </label>
-              <label>
-                Costo:
-                <input value={cost} onChange={(e) => setCost(e.target.value)} placeholder="Costo" />
-              </label>
-            </div>
-
-            <div className="two-col-grid">
-              <label>
-                Carrera:
-                <input value={career} onChange={(e) => setCareer(e.target.value)} placeholder="Carrera" />
-              </label>
-              <label>
-                Docente:
-                <input value={teacher} onChange={(e) => setTeacher(e.target.value)} placeholder="Docente" />
-              </label>
-            </div>
-
-            <label>
-              Objetivo:
-              <textarea value={objective} onChange={(e) => setObjective(e.target.value)} placeholder="Objetivo" />
-            </label>
-
-            <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
-              <div style={{flex:1}}>
-                <label>Temas:</label>
-                <div style={{display: 'flex', gap: 8}}>
-                  {topics.slice(0,3).map((t, i) => (
-                    <input key={i} value={t} onChange={(e) => handleTopicChange(i, e.target.value)} placeholder={`Tema ${i+1}`} />
-                  ))}
-                </div>
               </div>
-              <button type="button" className="btn-select" onClick={addTopic} title="Agregar tema">+</button>
             </div>
 
-            {error && <div className="form-error">{error}</div>}
+            {/* Asistencia y Nota */}
+            <div className="two-col-grid">
+              <div className="form-group">
+                <label>Asistencia de aprobación (%):</label>
+                <input 
+                  type="number"
+                  value={attendanceRequired} 
+                  onChange={(e) => setAttendanceRequired(e.target.value)} 
+                  placeholder="70" 
+                  min="0"
+                  max="100"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Nota de aprobación:</label>
+                <input 
+                  type="number"
+                  step="0.01"
+                  value={passingGrade} 
+                  onChange={(e) => setPassingGrade(e.target.value)} 
+                  placeholder="7.00" 
+                  min="0"
+                  max="10"
+                />
+              </div>
+            </div>
+
+            {/* Capacidad y Horas */}
+            <div className="two-col-grid">
+              <div className="form-group">
+                <label>Capacidad máxima:</label>
+                <input 
+                  type="number"
+                  value={capacity} 
+                  onChange={(e) => setCapacity(e.target.value)} 
+                  placeholder="30" 
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Número de horas:</label>
+                <input 
+                  type="number"
+                  value={hours} 
+                  onChange={(e) => setHours(e.target.value)} 
+                  placeholder="40" 
+                />
+              </div>
+            </div>
+
+            {/* Modalidad y Costo */}
+            <div className="two-col-grid">
+              <div className="form-group">
+                <label>Modalidad:</label>
+                <select value={modality} onChange={(e) => setModality(e.target.value)}>
+                  <option>Presencial</option>
+                  <option>Virtual</option>
+                  <option>Híbrido</option>
+                </select>
+              </div>
+              
+              <div className="form-group">
+                <label>Costo ($):</label>
+                <input 
+                  type="number"
+                  step="0.01"
+                  value={cost} 
+                  onChange={(e) => setCost(e.target.value)} 
+                  placeholder="0.00" 
+                  min="0"
+                />
+              </div>
+            </div>
+
+            {/* Carrera y Docente */}
+            <div className="two-col-grid">
+              <div className="form-group">
+                <label>Carrera:</label>
+                <input 
+                  value={career} 
+                  onChange={(e) => setCareer(e.target.value)} 
+                  placeholder="Ingeniería en Sistemas" 
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Docente:</label>
+                <input 
+                  value={teacher} 
+                  onChange={(e) => setTeacher(e.target.value)} 
+                  placeholder="Nombre del docente" 
+                />
+              </div>
+            </div>
+
+            {/* Objetivo */}
+            <div className="form-group">
+              <label>Objetivo:</label>
+              <textarea 
+                value={objective} 
+                onChange={(e) => setObjective(e.target.value)} 
+                placeholder="Describe el objetivo del evento" 
+                rows="3"
+              />
+            </div>
+
+            {/* Temas */}
+            <div className="form-group">
+              <label>Temas:</label>
+              {Array.isArray(topics) && topics.map((t, i) => (
+                <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                  <input 
+                    value={t} 
+                    onChange={(e) => handleTopicChange(i, e.target.value)} 
+                    placeholder={`Tema ${i + 1}`}
+                    style={{ flex: 1 }}
+                  />
+                  {topics.length > 1 && (
+                    <button 
+                      type="button" 
+                      className="btn-danger" 
+                      onClick={() => removeTopic(i)}
+                      style={{ padding: '8px 12px' }}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button 
+                type="button" 
+                className="btn-secondary" 
+                onClick={addTopic}
+                style={{ marginTop: '8px' }}
+              >
+                + Agregar tema
+              </button>
+            </div>
+
+            {error && (
+              <div style={{ 
+                color: 'red', 
+                padding: '10px', 
+                backgroundColor: '#ffe6e6',
+                borderRadius: '4px',
+                marginTop: '10px'
+              }}>
+                {error}
+              </div>
+            )}
           </div>
 
           <div className="modal-actions">
-            <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Guardando...' : 'Guardar cambios'}</button>
-            <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn-primary" disabled={saving}>
+              {saving ? 'Guardando...' : 'Guardar cambios'}
+            </button>
+            <button type="button" className="btn-secondary" onClick={onClose}>
+              Cancelar
+            </button>
           </div>
         </form>
       </div>

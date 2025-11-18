@@ -1,15 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../config/multer');
-const { crearEvento, obtenerImagenes, obtenerEventos } = require('../controllers/eventoController');
+const upload = require('../middleware/uploadMiddleware'); // Tu middleware de multer
+const {
+  crearEvento,
+  obtenerEventos,
+  obtenerEvento,
+  actualizarEvento,
+  eliminarEvento,
+  obtenerImagenes
+} = require('../controllers/eventoController');
 
-// Ruta para crear evento completo con imagen
+// Rutas
 router.post('/', upload.single('image'), crearEvento);
-
-// Ruta para obtener todas las imágenes
-router.get('/imagenes', obtenerImagenes);
-
-// Ruta para obtener todos los eventos
 router.get('/', obtenerEventos);
+router.get('/imagenes', obtenerImagenes);
+router.get('/:id', obtenerEvento);
+router.put('/:id', upload.single('image'), actualizarEvento);
+router.delete('/:id', eliminarEvento);
 
 module.exports = router;
