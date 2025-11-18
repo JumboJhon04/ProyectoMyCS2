@@ -1,0 +1,234 @@
+/* src/pages/User/Profesor/ProfesorTest/ProfesorTest.css */
+/* Importar los estilos base del Test de Estudiante para la coherencia visual */
+@import url("../../Estudiante/EstudianteTest/EstudianteTest.css");
+
+/* Adaptaciones para la vista de Profesor */
+
+.professor-test-container {
+  /* Reusa user-tests-container del EstudianteTest.css */
+  /* Dejar vacío para que herede de EstudianteTest.css */
+  width: 100%;
+  min-height: 100vh;
+  background: #f8fafc;
+  padding-bottom: 3rem;
+}
+
+.tests-header-profesor {
+    /* Reusa tests-header de EstudianteTest.css */
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 2rem 2.5rem;
+    background: #ffffff;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* Título y subtítulo ya usan las clases tests-title y tests-subtitle */
+
+.add-test-btn {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+}
+
+.add-test-btn:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 123, 255, 0.4);
+}
+
+.tests-filters-profesor {
+    /* Reusa tests-filters de EstudianteTest.css */
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-btn-profesor {
+    /* Reusa filter-btn de EstudianteTest.css */
+    padding: 0.7rem 1.25rem;
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 8px;
+    color: #334155;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.filter-btn-profesor.active {
+    /* Reusa filter-btn.active de EstudianteTest.css */
+    background: #0f1724;
+    color: #ffffff;
+    border-color: #0f1724;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+}
+
+.search-input-test {
+    padding: 0.7rem 1.25rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    flex-grow: 1;
+}
+
+/* --- Estadísticas (simulando los stat-card) --- */
+.tests-stats-profesor {
+    /* Reusa tests-stats de EstudianteTest.css */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    padding: 2rem 2.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.stat-card-profesor {
+    /* Reusa stat-card de EstudianteTest.css */
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
+}
+
+/* Colores adaptados para el profesor */
+.stat-card-profesor.urgent-profesor { border-left: 4px solid #ff4444; }
+.stat-card-profesor.warning-profesor { border-left: 4px solid #f59e0b; }
+.stat-card-profesor.success-profesor { border-left: 4px solid #10b981; }
+
+.stat-icon-profesor { 
+    /* Reusa stat-icon de EstudianteTest.css */
+    font-size: 2.5rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8fafc;
+    border-radius: 12px;
+    color: #0f1724; /* Color oscuro para el icono del profesor */
+}
+
+/* --- Lista de Tests del Profesor --- */
+.tests-list-profesor {
+    /* Reusa tests-list de EstudianteTest.css */
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.test-card-profesor {
+    /* Reusa test-card de EstudianteTest.css */
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: 12px;
+    padding: 1.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    position: relative;
+}
+
+.test-card-profesor.activa { border-left: 4px solid #007bff; }
+.test-card-profesor.inactiva { border-left: 4px solid #94a3b8; opacity: 0.8; }
+.test-card-profesor.pendiente { border-left: 4px solid #f59e0b; }
+
+
+.test-card-content-profesor {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.75rem;
+}
+
+.test-info-profesor { flex: 1; min-width: 0; }
+.test-title-profesor { font-size: 1.2rem; font-weight: 600; color: #0f1724; margin: 0 0 0.3rem 0; line-height: 1.3; }
+.test-course-profesor { font-size: 0.9rem; color: #64748b; margin: 0; font-weight: 500; }
+
+.test-details-profesor {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.test-actions-profesor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    align-items: flex-end;
+}
+
+.btn-primary-test-profesor, .btn-secondary-test-profesor {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.btn-primary-test-profesor {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: #ffffff;
+    border: none;
+}
+.btn-secondary-test-profesor {
+    background: #f8fafc;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    color: #475569;
+}
+
+.status-badge {
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+}
+.status-badge.activa { background-color: #e6f7ff; color: #007bff; border: 1px solid #91d5ff; }
+.status-badge.inactiva { background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
+.status-badge.pendiente { background-color: #fffbe6; color: #b45309; border: 1px solid #fce38a; }
+
+/* Responsive (mantener la coherencia con EstudianteTest.css) */
+@media (max-width: 1024px) {
+    .test-card-content-profesor {
+      flex-wrap: wrap;
+    }
+    .test-actions-profesor {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+    .btn-primary-test-profesor,
+    .btn-secondary-test-profesor {
+        flex: 1;
+    }
+}
