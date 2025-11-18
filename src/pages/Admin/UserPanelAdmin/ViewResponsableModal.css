@@ -53,7 +53,7 @@
   position: relative;
   padding: 24px 28px;
   border-bottom: 1px solid #e0e0e0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #333 0%, #333 100%);
 }
 
 .vrm-header h3 {
@@ -108,7 +108,7 @@
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #333 0%, #77717a 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -130,7 +130,7 @@
 .vrm-role-badge {
   display: inline-block;
   padding: 6px 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #333 0%, #6d6970 100%);
   color: white;
   border-radius: 20px;
   font-size: 13px;
@@ -171,7 +171,7 @@
   padding: 16px;
   background: #f8f9fa;
   border-radius: 8px;
-  border-left: 3px solid #667eea;
+  border-left: 3px solid #333;
 }
 
 .vrm-label {
@@ -189,7 +189,7 @@
 }
 
 .vrm-email {
-  color: #667eea;
+  color: #333;
   word-break: break-all;
 }
 

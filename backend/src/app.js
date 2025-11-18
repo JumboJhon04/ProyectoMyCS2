@@ -8,6 +8,8 @@ const eventoRoutes = require('./routes/eventoRoutes');
 const authRoutes = require('./routes/authRoutes'); // NUEVA LÍNEA
 const carrerasRoutes = require('./routes/carrerasRoutes');
 const configRoutes = require('./routes/configRoutes'); // NUEVA LÍNEA
+const estudiantesRoutes = require('./routes/estudiantesRoutes');
+const docentesRoutes = require('./routes/docentesRoutes');
 
 
 const app = express();
@@ -31,6 +33,8 @@ app.use('/api/eventos', eventoRoutes);
 app.use('/api/auth', authRoutes); // NUEVA LÍNEA
 app.use('/api/carreras', carrerasRoutes);
 app.use('/api/config', configRoutes); // NUEVA LÍNEA
+app.use('/api/estudiantes', estudiantesRoutes);
+app.use('/api/docentes', docentesRoutes);
 
 
 // Ruta de prueba
