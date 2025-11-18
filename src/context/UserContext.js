@@ -3,17 +3,19 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 const UserContext = createContext(null);
 
 export const UserProvider = ({ children }) => {
-  // Mock user for testing (you can replace with fetch to /api/me)
-  const [user, setUser] = useState({
-    id: 1,
-    name: "Wilson Pillapa",
-  // role is a machine-friendly key used by wrappers (admin|responsable|user)
-  role: "user",
-  // displayRole is the human-readable role shown in the UI
-  displayRole: "Responsable",
-  // subRole is used to switch between Estudiante and Profesor for users
-  subRole: "estudiante", // 'estudiante' or 'profesor'
-    avatarUrl: "", // leave empty to show placeholder
+  // Inicializar desde localStorage
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        return JSON.parse(storedUser);
+      } catch (e) {
+        console.error('Error parsing user from localStorage:', e);
+        return null;
+      }
+    }
+    return null;
+
   });
 
   const [notifications, setNotifications] = useState([
@@ -22,9 +24,11 @@ export const UserProvider = ({ children }) => {
   ]);
 
   useEffect(() => {
-    // In a real app you'd load user & notifications from API here.
-    // This mock keeps initial state for testing.
-  }, []);
+    // Sincronizar con localStorage cuando el usuario cambia
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+    }
+  }, [user]);
 
   const addNotification = (text) => {
     const n = { id: Date.now(), text, unread: true, createdAt: new Date().toISOString() };

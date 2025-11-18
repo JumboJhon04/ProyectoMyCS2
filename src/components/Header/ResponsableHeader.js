@@ -1,15 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { FaBell, FaBars } from 'react-icons/fa';
+import { FaBell, FaBars, FaSignOutAlt } from 'react-icons/fa';
 import { useUser } from '../../context/UserContext';
 import './Header.css';
 
-export default function ResponsableHeader({ onToggleSidebar }) {
+export default function ResponsableHeader({ onToggleSidebar, onLogout }) {
   const { user, unreadCount, markAllRead, notifications = [] } = useUser();
   const [showNotif, setShowNotif] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const panelRef = useRef(null);
+  const userMenuRef = useRef(null);
 
   useEffect(() => {
-    const onDocClick = () => setShowNotif(false);
+    const onDocClick = (e) => {
+      if (panelRef.current && !panelRef.current.contains(e.target)) {
+        setShowNotif(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setShowUserMenu(false);
+      }
+    };
     document.addEventListener('click', onDocClick);
     return () => document.removeEventListener('click', onDocClick);
   }, []);
@@ -17,16 +26,31 @@ export default function ResponsableHeader({ onToggleSidebar }) {
   const toggleNotifications = (e) => {
     e.stopPropagation();
     setShowNotif((v) => !v);
+    setShowUserMenu(false);
   };
 
-  const initials = user?.name
+  const toggleUserMenu = (e) => {
+    e.stopPropagation();
+    setShowUserMenu((v) => !v);
+    setShowNotif(false);
+  };
+
+  const handleLogout = () => {
+    setShowUserMenu(false);
+    onLogout();
+  };
+
+  // Obtener iniciales del usuario
+  const initials = user?.nombres && user?.apellidos
+    ? `${user.nombres[0]}${user.apellidos[0]}`.toUpperCase()
+    : user?.name
     ? user.name
         .split(' ')
         .map((n) => n[0])
         .slice(0, 2)
         .join('')
         .toUpperCase()
-    : '';
+    : 'U';
 
   const onPanelClick = (e) => e.stopPropagation();
 
@@ -39,11 +63,14 @@ export default function ResponsableHeader({ onToggleSidebar }) {
 
         <div className="greeting header-greeting">
           <span className="wave">👋</span>
-          <span className="greeting-text">HOLA, {user?.displayRole ? user.displayRole.toUpperCase() : (user?.role || '').toUpperCase()}</span>
+          <span className="greeting-text">
+            HOLA, {user?.nombres ? user.nombres.toUpperCase() : user?.displayRole ? user.displayRole.toUpperCase() : (user?.role || '').toUpperCase()}
+          </span>
         </div>
       </div>
 
       <div className="header-right">
+        {/* Notificaciones */}
         <div style={{ position: 'relative' }}>
           <button
             className="icon-btn notification"
@@ -78,11 +105,49 @@ export default function ResponsableHeader({ onToggleSidebar }) {
           )}
         </div>
 
-        <div className="user-avatar" title={user?.name}>
-          {user?.avatarUrl ? (
-            <img src={user.avatarUrl} alt={`${user?.name} avatar`} />
-          ) : (
-            <span>{initials}</span>
+        {/* Avatar y menú de usuario */}
+        <div style={{ position: 'relative' }}>
+          <div 
+            className="user-avatar" 
+            title={user?.nombres ? `${user.nombres} ${user.apellidos}` : user?.name}
+            onClick={toggleUserMenu}
+            style={{ cursor: 'pointer' }}
+          >
+            {user?.avatarUrl || user?.FOTO_PERFIL ? (
+              <img src={user.avatarUrl || user.FOTO_PERFIL} alt={`${user?.nombres || user?.name} avatar`} />
+            ) : (
+              <span>{initials}</span>
+            )}
+          </div>
+
+          {showUserMenu && (
+            <div 
+              className="user-menu-panel" 
+              ref={userMenuRef} 
+              onClick={onPanelClick}
+            >
+              <div className="user-menu-header">
+                <div className="user-menu-name">
+                  {user?.nombres && user?.apellidos 
+                    ? `${user.nombres} ${user.apellidos}`
+                    : user?.name || 'Usuario'
+                  }
+                </div>
+                <div className="user-menu-email">
+                  {user?.correo || user?.email || ''}
+                </div>
+                <div className="user-menu-role">
+                  {user?.rol || user?.displayRole || user?.role || 'Responsable'}
+                </div>
+              </div>
+              
+              <div className="user-menu-divider"></div>
+              
+              <button className="user-menu-item logout" onClick={handleLogout}>
+                <FaSignOutAlt />
+                <span>Cerrar Sesión</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
