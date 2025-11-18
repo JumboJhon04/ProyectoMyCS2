@@ -1,14 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './UserPanelAdmin.css';
 import NewResponsableModal from './NewResponsableModal';
+import ViewResponsableModal from './ViewResponsableModal';
 
 export default function UserPanelAdmin(){
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [query, setQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   // Cargar responsables desde el backend
   const loadResponsables = async () => {
@@ -47,8 +49,12 @@ export default function UserPanelAdmin(){
 
   const handleCreateResponsable = (newResponsable) => {
     console.log('Responsable creado:', newResponsable);
-    // Recargar la lista de responsables
     loadResponsables();
+  };
+
+  const handleViewInfo = (user) => {
+    setSelectedUser(user);
+    setIsViewModalOpen(true);
   };
 
   return (
@@ -122,7 +128,11 @@ export default function UserPanelAdmin(){
                     <td data-label="Fecha de nacimiento">{user.date || 'N/A'}</td>
                     <td data-label="Teléfono">{user.TELEFONO || 'N/A'}</td>
                     <td data-label="Ver">
-                      <a className="upa-link" style={{cursor:'pointer'}}>
+                      <a 
+                        className="upa-link" 
+                        onClick={() => handleViewInfo(user)}
+                        style={{cursor:'pointer'}}
+                      >
                         ver información
                       </a>
                     </td>
@@ -134,10 +144,21 @@ export default function UserPanelAdmin(){
         )}
       </div>
 
+      {/* Modal para crear nuevo responsable */}
       <NewResponsableModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onCreate={handleCreateResponsable}
+      />
+
+      {/* Modal para ver información del responsable */}
+      <ViewResponsableModal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setSelectedUser(null);
+        }}
+        responsable={selectedUser}
       />
     </div>
   );
