@@ -3,32 +3,31 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import UserPanel from '../../UserPanel';
 import EventoProfesor from '../EventoProfesor/EventoProfesor';
+import { useUser } from '../../../../context/UserContext';
+import { useEffect, useState } from 'react';
 import { FaDatabase, FaChartLine } from 'react-icons/fa'; // Iconos de ejemplo para los cursos
 import './ProfesorPanel.css';
 
-// Mock de datos para los cursos que imparte el profesor
-const professorEvents = [
-  { 
-    id: 1, 
-    title: "Base de Datos", 
-    students: 30, 
-    nextClassDate: "20/11/2025", 
-    nextClassTime: "08:00", 
-    icon: FaDatabase,
-    imageUrl: 'https://via.placeholder.com/50/007bff/FFFFFF?text=DB' // Placeholder
-  },
-  { 
-    id: 2, 
-    title: "Análisis de Datos", 
-    students: 25, 
-    nextClassDate: "21/11/2025", 
-    nextClassTime: "08:00", 
-    icon: FaChartLine,
-    imageUrl: 'https://via.placeholder.com/50/28a745/FFFFFF?text=AD' // Placeholder
-  },
-];
-
+// Eventos que dictará el profesor (se cargarán desde backend)
 const ProfesorPanel = () => {
+  const { user } = useUser();
+  const [professorEvents, setProfessorEvents] = useState([]);
+  
+  useEffect(() => {
+    const fetchEvents = async () => {
+      if (!user || !user.id) return;
+      try {
+        const res = await fetch(`http://localhost:5000/api/docentes/${user.id}/eventos`);
+        if (!res.ok) return;
+        const json = await res.json();
+        if (json && json.data) setProfessorEvents(json.data);
+      } catch (e) {
+        console.warn('No se pudieron cargar los eventos del docente:', e.message);
+      }
+    };
+    fetchEvents();
+  }, [user]);
+
   const navigate = useNavigate();
 
   const handleViewAllModules = () => {
@@ -39,7 +38,7 @@ const ProfesorPanel = () => {
     <div className="dashboard-user-container"> {/* Reutiliza el contenedor principal */}
       
       {/* Usamos UserPanel para la sección de bienvenida y cambio de rol */}
-      <UserPanel userName="Fulanito" role="Docente" message="Continúa enseñando" />
+      <UserPanel userName={user?.nombres ? user.nombres.split(' ')[0] : 'Fulanito'} role="Docente" message="Continúa enseñando" />
 
       {/* --- Contenido Principal (Cursos y Opciones Rápidas) --- */}
       <div className="dashboard-content-grid"> {/* Reutiliza el grid de EstudiantePanel */}
@@ -47,18 +46,21 @@ const ProfesorPanel = () => {
         {/* Columna Izquierda: Lista de Cursos del Profesor (Eventos) */}
         <main className="course-list-main"> {/* Reutiliza la clase de lista */}
           <div className="profesor-events-list">
-            {professorEvents.map(event => (
+            {professorEvents.length > 0 ? professorEvents.map(ev => (
               <EventoProfesor
-                key={event.id}
-                id={event.id}
-                title={event.title}
-                students={event.students}
-                nextClassDate={event.nextClassDate}
-                nextClassTime={event.nextClassTime}
-                icon={event.icon}
-                imageUrl={event.imageUrl}
+                key={ev.eventoId || ev.SECUENCIAL || ev.id}
+                id={ev.eventoId || ev.SECUENCIAL || ev.id}
+                title={ev.TITULO || ev.title}
+                students={ev.CAPACIDAD || ev.students || 0}
+                nextClassDate={ev.FECHAINICIO || ev.nextClassDate}
+                nextClassTime={ev.FECHAFIN || ev.nextClassTime}
+                imageUrl={ev.URL_IMAGEN || ev.imageUrl}
               />
-            ))}
+            )) : (
+              <div style={{ padding: 20 }}>
+                <p>No tienes eventos asignados actualmente.</p>
+              </div>
+            )}
           </div>
           <button className="view-all-btn" onClick={handleViewAllModules}>Ver todos los módulos</button> {/* Reutiliza el botón */}
         </main>
