@@ -3,11 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "r
 import SidebarWrapper from "./components/Sidebar/SidebarWrapper";
 import AdminPanel from "./pages/Admin/AdminPanel/AdminPanel";
 import EventoAdmin from "./pages/Admin/EventoAdmin/EventoAdmin";
+import UserPanelAdmin from "./pages/Admin/UserPanelAdmin/UserPanelAdmin";
 import ResponsableProfile from "./pages/Responsable/ProfileResponsable/Profile";
 import EventoResponsable from "./pages/Responsable/EventoResponsable/EventoResponsable";
-import UserPanelAdmin from "./pages/Admin/UserPanelAdmin/UserPanelAdmin";
-//import ResponsableUsers from "./pages/Responsable/Users";
-//import ResponsableCalendar from "./pages/Responsable/Calendar";
+import UsersResponsable from "./pages/Responsable/UsersResponsable/UsersResponsable";
 import { UserProvider, useUser } from "./context/UserContext";
 import { CoursesProvider } from "./context/CoursesContext";
 import HeaderWrapper from "./components/Header/HeaderWrapper";
@@ -16,6 +15,34 @@ import Courses from "./pages/Courses";
 import Contact from "./pages/Contact";
 import AuthLogin from "./pages/Auth/Login";
 import AuthRegister from "./pages/Auth/Register";
+// Componente de ruta protegida
+function ProtectedRoute({ children, requireAdmin = false, requireResponsable = false }) {
+  const { user: contextUser } = useUser();
+  const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+  
+  // Usar el usuario del contexto si está disponible, sino usar el del localStorage
+  const user = contextUser || storedUser;
+
+  if (!isAuthenticated || !user) {
+    console.log('No autenticado o sin usuario. isAuthenticated:', isAuthenticated, 'user:', user);
+    return <Navigate to="/login" replace />;
+  }
+
+  // Verificar si requiere permisos de admin
+  if (requireAdmin && user.codigoRol !== 'ADM') {
+    console.log('No es admin. codigoRol:', user.codigoRol);
+    return <Navigate to="/" replace />;
+  }
+
+  // Verificar si requiere permisos de responsable
+  if (requireResponsable && user.codigoRol !== 'RES' && user.codigoRol !== 'ADM') {
+    console.log('No es responsable ni admin. codigoRol:', user.codigoRol);
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
 
 function App() {
   return (
@@ -30,51 +57,150 @@ function App() {
 }
 
 function AppLayout() {
-  const { user } = useUser();
-
-  // map role to a value SidebarWrapper understands; default to 'admin'
-  const roleKey = user?.role || 'admin';
-
+  const { user, setUser } = useUser();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
   const location = useLocation();
-  // ocultar header/sidebar en rutas públicas limpias (landing, login, register, courses, contact)
+  // Sincronizar usuario de localStorage con el contexto al cargar
+  React.useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    const isAuthenticated = localStorage.getItem('isAuthenticated');
+    
+    if (storedUser && isAuthenticated === 'true' && !user) {
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+    }
+  }, [user, setUser]);
+
+  // Mapear codigoRol de la BD al formato que usa tu app
+  const getRoleKey = () => {
+    if (user?.role) return user.role;
+    
+    if (user?.codigoRol) {
+      const roleMap = {
+        'ADM': 'admin',
+        'RES': 'responsable',  // CAMBIADO: DOC -> RES
+        'DOC': 'docente',  // Mantener DOC por compatibilidad
+        'EST': 'user',
+        'INV': 'user',
+        'OTRO': 'user'
+      };
+      return roleMap[user.codigoRol] || 'user';
+    }
+    
+    return 'admin';
+  };
+  const roleKey = getRoleKey();
+
+  // Ocultar header/sidebar en rutas de autenticación (considerar /courses y /contact como públicas)
   const authPaths = ['/', '/login', '/register', '/courses', '/contact'];
-  // también tratar rutas que comienzan con /courses (detalle) como públicas
   const isAuthRoute = authPaths.includes(location.pathname) || location.pathname.startsWith('/courses');
+
+  // Mostrar sidebar sólo cuando hay usuario y no es usuario tipo 'user' (estudiante)
+  const showSidebar = Boolean(user) && roleKey !== 'user' && !isAuthRoute;
+
+  // Ruta por defecto según rol
+  const defaultForRole = () => {
+    if (!user) return '/'; // landing
+    if (roleKey === 'responsable') return '/responsable/profile';
+    if (roleKey === 'admin') return '/admin/panel';
+    if (user?.subRole === 'profesor') return '/profesor/panel';
+    return '/user/panel';
+  };
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
-      {/* Hide sidebar on auth pages (landing, login, register) */}
+      {/* Hide sidebar on auth pages */}
       {!isAuthRoute && (
-        <SidebarWrapper role={roleKey} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        <SidebarWrapper 
+          role={roleKey} 
+          isOpen={isSidebarOpen} 
+          onClose={() => setIsSidebarOpen(false)} 
+        />
       )}
 
-  <main className="main-content" style={{ flex: 1, display: isAuthRoute ? 'block' : 'flex', flexDirection: 'column', overflow: 'auto', marginLeft: isAuthRoute ? 0 : undefined }}>
+      <main 
+        className="main-content" 
+        style={{ 
+          flex: 1, 
+          display: isAuthRoute ? 'block' : 'flex', 
+          flexDirection: 'column', 
+          overflow: 'auto', 
+          marginLeft: isAuthRoute ? 0 : undefined 
+        }}
+      >
         {/* Hide header on auth pages */}
-        {!isAuthRoute && <HeaderWrapper onToggleSidebar={() => setIsSidebarOpen((v) => !v)} />}
+        {!isAuthRoute && (
+          <HeaderWrapper onToggleSidebar={() => setIsSidebarOpen((v) => !v)} />
+        )}
 
-        {/* overlay controlled by state: clicking it closes the sidebar */}
-        {!isAuthRoute && <div className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} onClick={() => setIsSidebarOpen(false)} />}
+        {/* overlay controlled by state */}
+        {!isAuthRoute && (
+          <div 
+            className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} 
+            onClick={() => setIsSidebarOpen(false)} 
+          />
+        )}
 
         <Routes>
-          {/* Root: mostrar Landing con dos botones */}
+          {/* Rutas públicas */}
           <Route path="/" element={<Landing />} />
-
-          {/* Auth route (login) */}
           <Route path="/login" element={<AuthLogin />} />
           <Route path="/register" element={<AuthRegister />} />
-          <Route path="/courses" element={<Courses />} />
-          <Route path="/contact" element={<Contact />} />
 
-          {/* Admin routes */}
-          <Route path="/admin/panel" element={<AdminPanel />} />
-          <Route path="/admin/events" element={<EventoAdmin />} />
-          <Route path="/admin/users" element={<UserPanelAdmin />} />
+          {/* Rutas protegidas de Admin */}
+          <Route 
+            path="/admin/panel" 
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <AdminPanel />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/events" 
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <EventoAdmin />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/users" 
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <UserPanelAdmin />
+              </ProtectedRoute>
+            } 
+          />
 
-          {/* Responsable routes (placeholders) */}
-          <Route path="/responsable/ProfileResponsable/profile" element={<ResponsableProfile />} />
-          <Route path="/responsable/EventoResponsable/EventoResponsable" element={<EventoResponsable />} />
+          {/* Rutas protegidas de Responsable */}
+          <Route 
+            path="/responsable/profile" 
+            element={
+              <ProtectedRoute requireResponsable={true}>
+                <ResponsableProfile />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/responsable/events" 
+            element={
+              <ProtectedRoute requireResponsable={true}>
+                <EventoResponsable />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/responsable/users" 
+            element={
+              <ProtectedRoute requireResponsable={true}>
+                <UsersResponsable />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Ruta por defecto: redirigir a login si no está autenticado */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
     </div>
