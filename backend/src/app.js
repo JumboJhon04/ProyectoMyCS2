@@ -6,6 +6,8 @@ const { testConnection } = require('./config/database');
 // Importar rutas
 const eventoRoutes = require('./routes/eventoRoutes');
 const authRoutes = require('./routes/authRoutes'); // NUEVA LÍNEA
+const configRoutes = require('./routes/configRoutes'); // NUEVA LÍNEA
+
 
 const app = express();
 
@@ -26,6 +28,7 @@ app.use((req, res, next) => {
 // Rutas
 app.use('/api/eventos', eventoRoutes);
 app.use('/api/auth', authRoutes); // NUEVA LÍNEA
+app.use('/api/config', configRoutes); // NUEVA LÍNEA
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
