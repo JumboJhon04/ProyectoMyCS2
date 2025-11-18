@@ -11,6 +11,10 @@ import EstudiantePanel from './pages/User/Estudiante/EstudiantePanel/EstudianteP
 import EstudianteEvents from './pages/User/Estudiante/EventoEstudiante/EstudianteEvents';
 import EstudianteTests from './pages/User/Estudiante/EstudianteTest/EstudianteTest';
 import EstudianteCourseDetail from './pages/User/Estudiante/EstudianteCourseDetail/EstudianteCourseDetail';
+import ProfesorPanel from './pages/User/Profesor/ProfesorPanel/ProfesorPanel';
+import ProfesorModules from './pages/User/Profesor/ProfesorModules/ProfesorModules';
+import ProfesorTest from './pages/User/Profesor/ProfesorTest/ProfesorTest';
+import ProfesorCourseDetail from './pages/User/Profesor/ProfesorCourseDetail/ProfesorCourseDetail';
 
 function App() {
   return (
@@ -50,7 +54,8 @@ function AppLayout() {
           <Route path="/" element={
             <Navigate to={
               roleKey === 'responsable' ? '/responsable/profile' : 
-              (roleKey === 'admin' ? '/admin/panel' : '/user/panel')
+              (roleKey === 'admin' ? '/admin/panel' : 
+              (user?.subRole === 'profesor' ? '/profesor/panel' : '/user/panel'))
             } replace />
           } />
 
@@ -61,11 +66,17 @@ function AppLayout() {
           {/* Responsable routes */}
           <Route path="/responsable/profile" element={<ResponsableProfile />} />
 
-          {/* User routes */}
+          {/* Estudiante routes */}
           <Route path="/user/panel" element={<EstudiantePanel />} />
           <Route path="/user/events" element={<EstudianteEvents />} />
           <Route path="/user/tests" element={<EstudianteTests />} />
           <Route path="/user/course/:courseId" element={<EstudianteCourseDetail />} />
+
+          {/* Profesor routes */}
+          <Route path="/profesor/panel" element={<ProfesorPanel />} />
+          <Route path="/profesor/modules" element={<ProfesorModules />} />
+          <Route path="/profesor/test" element={<ProfesorTest />} />
+          <Route path="/profesor/course/:courseId" element={<ProfesorCourseDetail />} />
         </Routes>
       </main>
     </div>

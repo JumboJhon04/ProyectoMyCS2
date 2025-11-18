@@ -1,50 +1,51 @@
-import React from "react";
-import { NavLink, useLocation } from "react-router-dom";
-import { useUser } from "../../context/UserContext";
-import './UserHeader.css';
-
+// src/components/Header/ProfesorHeader.js
+import React from 'react';
+import { NavLink } from 'react-router-dom';
+import { useUser } from '../../context/UserContext';
+// Reutilizamos la lógica de iniciales de UserHeader.js
 const getInitials = (name) => {
   if (!name) return "";
   const names = name.split(" ");
   const initials = names.map((n) => n.charAt(0).toUpperCase()).join("");
-  return initials.length > 2 ? initials.substring(0, 2) : initials;
+  // La imagen muestra solo dos letras (FT)
+  return initials.length > 2 ? initials.substring(0, 2) : initials; 
 }
 
-const UserHeader = () => {
+const ProfesorHeader = () => {
     const { user } = useUser();
-    const userInitials = getInitials(user?.name);
-    const location = useLocation();
+    // Usaremos un mock de usuario si el real no existe, pero FT parece ser el mock en las imágenes.
+    const userInitials = getInitials(user?.name || 'Fulanito Test'); 
 
     return (
-        <header className="user-header-container">
+        <header className="user-header-container"> {/* Reutiliza la clase principal de estilos */}
             {/* Left side */}
             <div className="user-header-left">
                 <h2>Plataforma</h2>
             </div>
 
-            {/* Navigation links */}
+            {/* Navigation links - Adaptadas para las rutas del Profesor */}
             <nav className="user-header-nav">
                 <NavLink
-                    to="/user/panel"
+                    to="/profesor/panel"
                     className={({ isActive }) => isActive ? "active" : ""}
                 >
                     Inicio
                 </NavLink>
                 <NavLink
-                    to="/user/events"
+                    to="/profesor/modules"
                     className={({ isActive }) => isActive ? "active" : ""}
                 >
                     Modulos
                 </NavLink>
                 <NavLink
-                    to="/user/tests"
+                    to="/profesor/test"
                     className={({ isActive }) => isActive ? "active" : ""}
                 >
                     Test
                 </NavLink>
             </nav>
 
-            {/* User info */}
+            {/* User info - El FT del mockup */}
             <div className="user-header-right">
                 <div className="user-avatar-initials">
                     {userInitials || 'FT'}
@@ -54,4 +55,4 @@ const UserHeader = () => {
     );
 };
 
-export default UserHeader;
+export default ProfesorHeader;

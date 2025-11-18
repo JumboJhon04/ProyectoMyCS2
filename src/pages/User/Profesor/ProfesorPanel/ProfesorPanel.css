@@ -1,0 +1,57 @@
+/* src/pages/User/Profesor/ProfesorPanel/ProfesorPanel.css */
+
+/* Importar el estilo general del dashboard para mantener la consistencia */
+@import url("../../Estudiante/EstudiantePanel/EstudiantePanel.css"); 
+
+/* Las clases .dashboard-user-container, .dashboard-content-grid, .welcome-section, 
+   .role-switcher, .course-list-main y .view-all-btn ya se manejan en los imports. */
+
+/* Estilos específicos para las tarjetas de evento del profesor */
+.profesor-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Estilos para el panel de Opciones Rápidas (simulando Upcoming Exams) */
+.quick-options-panel {
+    /* Estilos del upcoming-exams-sidebar */
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+    border: 1px solid #f0f0f0;
+    height: fit-content;
+}
+
+.quick-options-panel h3 {
+    font-size: 1.1rem;
+    color: #333;
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.quick-option-btn {
+    width: 100%;
+    padding: 0.8rem;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: #333;
+    transition: all 0.2s;
+}
+
+.quick-option-btn:hover {
+    background-color: #e0e0e0;
+    border-color: #bbb;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}

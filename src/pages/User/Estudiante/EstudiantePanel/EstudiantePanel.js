@@ -1,16 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../../context/UserContext';
 import { useCourses } from '../../../../context/CoursesContext';
+import UserPanel from '../../UserPanel';
 import './EstudiantePanel.css';
-
-// Iconos de Material Icons (asegúrate de tenerlos importados en tu proyecto)
-// Por ejemplo, en tu index.html:
-// <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
 const EstudiantePanel = () => {
   const { user } = useUser();
   const { courses } = useCourses();
-  const [activeRole, setActiveRole] = useState('student');
+  const navigate = useNavigate();
 
   // Obtener el primer nombre para el saludo
   const firstName = user?.name ? user.name.split(' ')[0] : 'Fulanito';
@@ -33,34 +31,7 @@ const EstudiantePanel = () => {
     <div className="dashboard-user-container">
       
       {/* --- Sección de Bienvenida y Roles --- */}
-      <section className="welcome-section">
-        <h1>¡Bienvenido, {firstName}!</h1>
-        <p>Continúa aprendiendo</p>
-
-        <div className="role-switcher">
-          <button
-            className={`role-btn ${activeRole === 'student' ? 'active' : ''}`}
-            onClick={() => setActiveRole('student')}
-          >
-            <span className="material-icons">person</span>
-            Estudiante
-          </button>
-          <button
-            className={`role-btn ${activeRole === 'teacher' ? 'active' : ''}`}
-            onClick={() => setActiveRole('teacher')}
-          >
-            <span className="material-icons">school</span>
-            Docente
-          </button>
-          <button
-            className={`role-btn ${activeRole === 'user' ? 'active' : ''}`}
-            onClick={() => setActiveRole('user')}
-          >
-            <span className="material-icons">account_circle</span>
-            Usuario
-          </button>
-        </div>
-      </section>
+      <UserPanel userName={firstName} role="Estudiante" message="Continúa aprendiendo" />
 
       {/* --- Contenido Principal (Cursos y Pruebas) --- */}
       <div className="dashboard-content-grid">
@@ -105,7 +76,7 @@ const EstudiantePanel = () => {
             </div>
           </div>
           
-          <button className="view-all-btn">Ver todos los módulos</button>
+          <button className="view-all-btn" onClick={() => navigate('/user/events')}>Ver todos los módulos</button>
         </main>
 
         {/* Columna Derecha: Próximas Pruebas */}

@@ -11,6 +11,8 @@ export const UserProvider = ({ children }) => {
   role: "user",
   // displayRole is the human-readable role shown in the UI
   displayRole: "Responsable",
+  // subRole is used to switch between Estudiante and Profesor for users
+  subRole: "estudiante", // 'estudiante' or 'profesor'
     avatarUrl: "", // leave empty to show placeholder
   });
 
@@ -35,9 +37,17 @@ export const UserProvider = ({ children }) => {
 
   const unreadCount = notifications.filter((n) => n.unread).length;
 
+  // Función para cambiar el subRole entre 'estudiante' y 'profesor'
+  const setSubRole = (newSubRole) => {
+    setUser((prevUser) => ({
+      ...prevUser,
+      subRole: newSubRole,
+    }));
+  };
+
   return (
     <UserContext.Provider
-      value={{ user, setUser, notifications, addNotification, markAllRead, unreadCount }}
+      value={{ user, setUser, setSubRole, notifications, addNotification, markAllRead, unreadCount }}
     >
       {children}
     </UserContext.Provider>

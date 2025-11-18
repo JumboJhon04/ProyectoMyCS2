@@ -1,0 +1,313 @@
+/* src/pages/User/Profesor/ProfesorCourseDetail/ProfesorCourseDetail.css */
+
+/* Replicamos la base del contenedor de la página */
+.professor-course-detail-page {
+    width: 100%;
+    min-height: 100vh;
+    background: #f8fafc;
+    padding-bottom: 3rem;
+}
+
+/* --- 1. HEADER DEL CURSO (Imagen de Fondo) --- */
+
+.course-detail-header-profesor {
+    /* Basado en la imagen: Banner con superposición */
+    height: 300px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.header-overlay-profesor {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.4); /* Capa oscura para que el texto resalte */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 2.5rem 3rem;
+    color: #fff;
+}
+
+.course-tags-profesor {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.tag-profesor {
+    padding: 0.4rem 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    backdrop-filter: blur(2px);
+}
+
+/* Colores para las etiquetas de nivel */
+.tag-profesor.level-intermedio { background: #ffc107; color: #333; }
+.tag-profesor.level-principiante { background: #28a745; color: #fff; }
+
+.course-detail-title-profesor {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0 0 5px 0;
+    line-height: 1.2;
+}
+
+.course-detail-description-profesor {
+    font-size: 1.1rem;
+    margin: 0 0 15px 0;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.teacher-info-profesor {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.teacher-initials-profesor {
+    width: 32px;
+    height: 32px;
+    background: #fff;
+    color: #333;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* --- 2. CONTENIDO PRINCIPAL --- */
+
+.course-detail-content-profesor {
+    max-width: 1400px;
+    margin: -30px auto 0; /* Superpone sobre la imagen */
+    padding: 0 30px;
+    position: relative;
+    z-index: 10;
+}
+
+/* 2a. Resumen de Estadísticas (similar a la imagen del estudiante) */
+.course-summary-stats-profesor {
+    display: flex;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 20px 30px;
+    margin-bottom: 25px;
+    justify-content: space-around;
+}
+
+.stat-item-profesor {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 20px;
+    text-align: center;
+}
+
+.stat-icon-profesor {
+    font-size: 1.5rem;
+    color: #007bff;
+}
+
+.stat-item-profesor span {
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.stat-item-profesor strong {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f1724;
+}
+
+/* 2b. Navegación por Pestañas (simula la fila de botones) */
+.course-tabs-profesor {
+    display: flex;
+    gap: 10px;
+    border-bottom: 2px solid #eee;
+    margin-bottom: 25px;
+}
+
+.tab-button-profesor {
+    padding: 12px 18px;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 3px solid transparent;
+}
+
+.tab-button-profesor:hover {
+    color: #0f1724;
+    background-color: #f8fafc;
+}
+
+.tab-button-profesor.active {
+    color: #0f1724;
+    border-bottom: 3px solid #0f1724;
+    font-weight: 600;
+}
+
+.tab-button-profesor.create-button {
+    background-color: #28a745;
+    color: #fff;
+    border-radius: 8px;
+    margin-left: auto;
+    border: none;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.tab-button-profesor.create-button:hover {
+    background-color: #1e7e34;
+    transform: translateY(-1px);
+    color: #fff;
+}
+
+/* 2c. Lista de Módulos/Lecciones */
+.course-modules-list-profesor {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.lesson-item-profesor {
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: 10px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s;
+}
+
+.lesson-item-profesor:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.lesson-status-icon-profesor {
+    /* Icono de check verde a la izquierda como en la imagen */
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #10b981, #059669); /* Verde fuerte */
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.2rem;
+}
+
+.lesson-content-profesor {
+    flex: 1;
+    min-width: 0;
+}
+
+.lesson-title-profesor {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #0f1724;
+    margin: 0;
+}
+
+.lesson-description-profesor {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin: 5px 0 0 0;
+}
+
+.lesson-actions-profesor {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.action-btn-profesor {
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    background: #f8fafc;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.action-btn-profesor:hover {
+    background: #fff;
+    border-color: #bbb;
+}
+
+/* Estilo para el ícono de "Ver" gris y pequeño del mockup */
+.lesson-item-profesor .action-btn-profesor:nth-child(1) { 
+    border: none;
+    background: transparent;
+    color: #999;
+}
+
+.lesson-item-profesor .action-btn-profesor:nth-child(1) svg {
+    font-size: 1.2rem; 
+    color: #999;
+}
+
+/* El botón de la derecha (que en el mockup es solo 'Ver' en texto) */
+.lesson-item-profesor .action-btn-profesor:nth-child(2) {
+    background: #0f1724;
+    color: #fff;
+}
+.lesson-item-profesor .action-btn-profesor:nth-child(2):hover {
+    background: #1e293b;
+}
+
+/* Media Queries (adaptadas de EstudianteCourseDetail.css) */
+@media (max-width: 1024px) {
+    .header-overlay-profesor {
+        padding: 1.5rem;
+    }
+    .course-detail-title-profesor {
+        font-size: 2rem;
+    }
+    .course-detail-content-profesor {
+        padding: 0 15px;
+        margin-top: -20px;
+    }
+    .course-summary-stats-profesor {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .lesson-item-profesor {
+        flex-wrap: wrap;
+    }
+    .lesson-actions-profesor {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .action-btn-profesor {
+        flex: 1;
+        justify-content: center;
+    }
+}
