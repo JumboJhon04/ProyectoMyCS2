@@ -6,7 +6,7 @@ import { useUser } from '../../context/UserContext';
 import './UserPanel.css'; // Usamos un nuevo CSS para el UserPanel, replicando la apariencia.
 
 const UserPanel = ({ userName, role, message }) => {
-  const { user, setSubRole } = useUser();
+  const { user } = useUser();
   const navigate = useNavigate();
   
   // role: 'Estudiante' o 'Docente'
@@ -15,10 +15,8 @@ const UserPanel = ({ userName, role, message }) => {
 
   const handleRoleChange = (newRole) => {
     if (newRole === 'estudiante') {
-      setSubRole('estudiante');
       navigate('/user/panel');
     } else if (newRole === 'profesor') {
-      setSubRole('profesor');
       navigate('/profesor/panel');
     }
   };

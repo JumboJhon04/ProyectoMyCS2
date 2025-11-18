@@ -1,48 +1,11 @@
 import React, { useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, useLocation } from "react-router-dom";
 import SidebarWrapper from "./components/Sidebar/SidebarWrapper";
-import AdminPanel from "./pages/Admin/AdminPanel/AdminPanel";
-import EventoAdmin from "./pages/Admin/EventoAdmin/EventoAdmin";
-import UserPanelAdmin from "./pages/Admin/UserPanelAdmin/UserPanelAdmin";
-import ResponsableProfile from "./pages/Responsable/ProfileResponsable/Profile";
-import EventoResponsable from "./pages/Responsable/EventoResponsable/EventoResponsable";
-import UsersResponsable from "./pages/Responsable/UsersResponsable/UsersResponsable";
 import { UserProvider, useUser } from "./context/UserContext";
 import { CoursesProvider } from "./context/CoursesContext";
 import HeaderWrapper from "./components/Header/HeaderWrapper";
-import Landing from "./pages/Landing";
-import Courses from "./pages/Courses";
-import Contact from "./pages/Contact";
-import AuthLogin from "./pages/Auth/Login";
-import AuthRegister from "./pages/Auth/Register";
-// Componente de ruta protegida
-function ProtectedRoute({ children, requireAdmin = false, requireResponsable = false }) {
-  const { user: contextUser } = useUser();
-  const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-  
-  // Usar el usuario del contexto si está disponible, sino usar el del localStorage
-  const user = contextUser || storedUser;
-
-  if (!isAuthenticated || !user) {
-    console.log('No autenticado o sin usuario. isAuthenticated:', isAuthenticated, 'user:', user);
-    return <Navigate to="/login" replace />;
-  }
-
-  // Verificar si requiere permisos de admin
-  if (requireAdmin && user.codigoRol !== 'ADM') {
-    console.log('No es admin. codigoRol:', user.codigoRol);
-    return <Navigate to="/" replace />;
-  }
-
-  // Verificar si requiere permisos de responsable
-  if (requireResponsable && user.codigoRol !== 'RES' && user.codigoRol !== 'ADM') {
-    console.log('No es responsable ni admin. codigoRol:', user.codigoRol);
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
-}
+import AppRoutes from './routes/AppRoutes';
+// ProtectedRoute moved to `src/components/ProtectedRoute.js`
 
 function App() {
   return (
@@ -73,20 +36,39 @@ function AppLayout() {
 
   // Mapear codigoRol de la BD al formato que usa tu app
   const getRoleKey = () => {
-    if (user?.role) return user.role;
-    
+    // Prefer a normalized `user.role` if present (handle variants like 'ESTUDIANTE', 'Docente', etc.)
+    if (user?.role) {
+      const r = String(user.role).toLowerCase();
+      const normalize = {
+        'admin': 'admin',
+        'administrador': 'admin',
+        'adm': 'admin',
+        'responsable': 'responsable',
+        'res': 'responsable',
+        'docente': 'docente',
+        'profesor': 'docente',
+        'doc': 'docente',
+        'estudiante': 'estudiante',
+        'est': 'estudiante',
+        'user': 'user',
+        'inv': 'user',
+        'otro': 'user'
+      };
+      return normalize[r] || r;
+    }
+
     if (user?.codigoRol) {
       const roleMap = {
         'ADM': 'admin',
-        'RES': 'responsable',  // CAMBIADO: DOC -> RES
-        'DOC': 'docente',  // Mantener DOC por compatibilidad
-        'EST': 'user',
+        'RES': 'responsable',
+        'DOC': 'docente',
+        'EST': 'estudiante',
         'INV': 'user',
         'OTRO': 'user'
       };
       return roleMap[user.codigoRol] || 'user';
     }
-    
+
     return 'admin';
   };
   const roleKey = getRoleKey();
@@ -96,21 +78,23 @@ function AppLayout() {
   const isAuthRoute = authPaths.includes(location.pathname) || location.pathname.startsWith('/courses');
 
   // Mostrar sidebar sólo cuando hay usuario y no es usuario tipo 'user' (estudiante)
-  const showSidebar = Boolean(user) && roleKey !== 'user' && !isAuthRoute;
+  // Mostrar sidebar solo para 'admin' y 'responsable'
+  const showSidebar = Boolean(user) && (roleKey === 'admin' || roleKey === 'responsable') && !isAuthRoute;
 
   // Ruta por defecto según rol
   const defaultForRole = () => {
     if (!user) return '/'; // landing
     if (roleKey === 'responsable') return '/responsable/profile';
     if (roleKey === 'admin') return '/admin/panel';
-    if (user?.subRole === 'profesor') return '/profesor/panel';
-    return '/user/panel';
+    if (roleKey === 'docente') return '/profesor/panel';
+    if (roleKey === 'estudiante' || roleKey === 'user') return '/user/panel';
+    return '/';
   };
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       {/* Hide sidebar on auth pages */}
-      {!isAuthRoute && (
+      {showSidebar && (
         <SidebarWrapper 
           role={roleKey} 
           isOpen={isSidebarOpen} 
@@ -130,78 +114,18 @@ function AppLayout() {
       >
         {/* Hide header on auth pages */}
         {!isAuthRoute && (
-          <HeaderWrapper onToggleSidebar={() => setIsSidebarOpen((v) => !v)} />
+          <HeaderWrapper onToggleSidebar={showSidebar ? () => setIsSidebarOpen((v) => !v) : undefined} />
         )}
 
         {/* overlay controlled by state */}
-        {!isAuthRoute && (
+        {showSidebar && (
           <div 
             className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} 
             onClick={() => setIsSidebarOpen(false)} 
           />
         )}
 
-        <Routes>
-          {/* Rutas públicas */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<AuthLogin />} />
-          <Route path="/register" element={<AuthRegister />} />
-
-          {/* Rutas protegidas de Admin */}
-          <Route 
-            path="/admin/panel" 
-            element={
-              <ProtectedRoute requireAdmin={true}>
-                <AdminPanel />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/events" 
-            element={
-              <ProtectedRoute requireAdmin={true}>
-                <EventoAdmin />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/users" 
-            element={
-              <ProtectedRoute requireAdmin={true}>
-                <UserPanelAdmin />
-              </ProtectedRoute>
-            } 
-          />
-
-          {/* Rutas protegidas de Responsable */}
-          <Route 
-            path="/responsable/profile" 
-            element={
-              <ProtectedRoute requireResponsable={true}>
-                <ResponsableProfile />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/responsable/events" 
-            element={
-              <ProtectedRoute requireResponsable={true}>
-                <EventoResponsable />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/responsable/users" 
-            element={
-              <ProtectedRoute requireResponsable={true}>
-                <UsersResponsable />
-              </ProtectedRoute>
-            } 
-          />
-
-          {/* Ruta por defecto: redirigir a login si no está autenticado */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <AppRoutes />
       </main>
     </div>
   );
