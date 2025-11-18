@@ -65,4 +65,9 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Manejador 404 que devuelve JSON (evita que el frontend intente parsear HTML)
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not Found', path: req.path });
+});
+
 module.exports = app;

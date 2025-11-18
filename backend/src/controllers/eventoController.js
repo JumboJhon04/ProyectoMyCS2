@@ -16,7 +16,10 @@ const crearEvento = async (req, res) => {
       docente, objective, topics, startDate, endDate, carreras
     } = req.body;
     
+    // Log request body and file for debugging
     console.log('📝 Creando evento:', title);
+    console.log('DEBUG req.body:', req.body);
+    console.log('DEBUG req.file:', req.file);
     
     if (!title || !type) {
       return res.status(400).json({ 
@@ -90,16 +93,16 @@ const crearEvento = async (req, res) => {
         objective || description || '',
         contenidoJSON,
         codigoTipo,
-        codigoModalidad,
         startDate || new Date().toISOString().split('T')[0],
         endDate || new Date().toISOString().split('T')[0],
+        codigoModalidad,
         hours || 0,
         capacity || null,
         passingGrade || null,
         cost && parseFloat(cost) > 0 ? 1 : 0,
         cost || 0,
         attendanceRequired || null,
-        docente || null
+        docente || ''
       ]
     );
 
@@ -140,6 +143,9 @@ const crearEvento = async (req, res) => {
 
     await connection.commit();
 
+    // Construir URL absoluta para la imagen antes de responder
+    const absoluteImageUrl = `${req.protocol}://${req.get('host')}/${imageUrl}`;
+
     res.status(201).json({
       success: true,
       message: 'Evento creado exitosamente',
@@ -148,7 +154,7 @@ const crearEvento = async (req, res) => {
         imagenId: imagenResult.insertId,
         title,
         type,
-        imageUrl
+        imageUrl: absoluteImageUrl
       }
     });
 
@@ -238,13 +244,28 @@ const actualizarEvento = async (req, res) => {
     await connection.beginTransaction();
     
     const eventoId = req.params.id;
-    const { 
-      title, type, attendanceRequired, passingGrade,
-      capacity, hours, modality, cost, description,
-      docente, 
-      objective, topics, isPaid,
-      startDate, endDate, carreras
-    } = req.body;
+
+    // Aceptar formato plano o con `meta` (frontend usa `meta`) y aceptar aliases en español/inglés
+    const source = req.body && req.body.meta ? { ...req.body, ...req.body.meta } : req.body || {};
+
+    // Aceptar tanto `title` como `nombre`, y `type` como `tipo`
+    const title = source.title || source.nombre;
+    const type = source.type || source.tipo;
+    const attendanceRequired = source.attendanceRequired;
+    const passingGrade = source.passingGrade;
+    const capacity = source.capacity;
+    const hours = source.hours;
+    const modality = source.modality;
+    // El frontend usa `price`; el backend espera `cost`
+    const cost = source.cost ?? source.price ?? 0;
+    const description = source.description || source.objective || '';
+    const docente = source.docente;
+    const objective = source.objective;
+    const topics = source.topics;
+    const isPaid = source.isPaid;
+    const startDate = source.startDate;
+    const endDate = source.endDate;
+    const carreras = source.carreras;
     
     console.log('📝 Actualizando evento ID:', eventoId);
     console.log('👨‍🏫 Docente:', docente);
@@ -324,7 +345,7 @@ const actualizarEvento = async (req, res) => {
         cost || 0,
         isPaid ? 1 : 0,
         attendanceRequired || null,
-        docente || null, // ✅ AGREGAR DOCENTE
+        docente || '', // ✅ AGREGAR DOCENTE (guardar cadena vacía si no viene)
         eventoId
       ]
     );
@@ -388,14 +409,17 @@ const actualizarEvento = async (req, res) => {
 
     await connection.commit();
 
+    // Construir URL absoluta si se actualizó/insertó imagen
+    let responseData = { eventoId, title, type };
+    if (req.file) {
+      const abs = `${req.protocol}://${req.get('host')}/uploads/eventos/${req.file.filename}`;
+      responseData.imageUrl = abs;
+    }
+
     res.json({
       success: true,
       message: 'Evento actualizado exitosamente',
-      data: { 
-        eventoId, 
-        title, 
-        type
-      }
+      data: responseData
     });
 
   } catch (error) {
@@ -453,9 +477,16 @@ const obtenerEventos = async (req, res) => {
       evento.CARRERAS = carreras;
     }
     
+    // Convertir URL_IMAGEN relativo a URL absoluta
+    const hostPrefix = `${req.protocol}://${req.get('host')}`;
+    const mapped = eventos.map(ev => ({
+      ...ev,
+      URL_IMAGEN: ev.URL_IMAGEN ? `${hostPrefix}/${ev.URL_IMAGEN}` : null
+    }));
+
     res.json({
       success: true,
-      data: eventos
+      data: mapped
     });
   } catch (error) {
     console.error('❌ Error al obtener eventos:', error);
@@ -500,6 +531,9 @@ const obtenerEvento = async (req, res) => {
     const evento = rows[0];
     evento.CARRERAS = carreras;
 
+    // Convertir URL_IMAGEN a URL absoluta
+    evento.URL_IMAGEN = evento.URL_IMAGEN ? `${req.protocol}://${req.get('host')}/${evento.URL_IMAGEN}` : null;
+
     res.json({
       success: true,
       data: evento
@@ -525,7 +559,10 @@ const obtenerImagenes = async (req, res) => {
     
     res.json({
       success: true,
-      data: rows
+      data: rows.map(img => ({
+        ...img,
+        URL_IMAGEN: img.URL_IMAGEN ? `${req.protocol}://${req.get('host')}/${img.URL_IMAGEN}` : null
+      }))
     });
   } catch (error) {
     console.error('❌ Error al obtener imágenes:', error);

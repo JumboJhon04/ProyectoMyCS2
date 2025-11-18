@@ -224,6 +224,7 @@ const guardarColores = async (req, res) => {
 
 // Obtener colores de la página
 const obtenerColores = async (req, res) => {
+  console.log('🔔 GET /api/config/colores called');
   try {
     const [config] = await pool.execute(
       "SELECT valor FROM configuracion WHERE clave = 'colores_pagina'"
