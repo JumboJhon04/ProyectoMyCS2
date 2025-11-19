@@ -132,7 +132,7 @@ const obtenerEventosDeUsuario = async (req, res) => {
        FROM inscripcion i
        INNER JOIN evento e ON i.SECUENCIALEVENTO = e.SECUENCIAL
        LEFT JOIN imagen_evento ie ON e.SECUENCIAL = ie.SECUENCIALEVENTO AND ie.TIPO_IMAGEN = 'PORTADA'
-       WHERE i.SECUENCIALUSUARIO = ?
+       WHERE i.SECUENCIALUSUARIO = ? AND i.CODIGOESTADOINSCRIPCION = 'ACE'
        ORDER BY i.FECHAINSCRIPCION DESC`,
       [id]
     );
@@ -150,6 +150,55 @@ const obtenerEventosDeUsuario = async (req, res) => {
   }
 };
 
+// Obtener inscripción de un usuario para un evento específico (incluye pendientes)
+const obtenerInscripcionPorEvento = async (req, res) => {
+  const usuarioId = req.params.id;
+  const { eventoId } = req.query;
+  
+  if (!eventoId) {
+    return res.status(400).json({ error: 'Se requiere eventoId como query parameter' });
+  }
+  
+  try {
+    const [rows] = await pool.execute(
+      `SELECT 
+        i.SECUENCIAL as inscripcionId,
+        i.FECHAINSCRIPCION,
+        i.CODIGOESTADOINSCRIPCION,
+        e.SECUENCIAL as eventoId,
+        e.TITULO,
+        e.DESCRIPCION,
+        e.FECHAINICIO,
+        e.FECHAFIN,
+        e.COSTO,
+        e.ESTADO,
+        e.ES_PAGADO,
+        ie.URL_IMAGEN
+       FROM inscripcion i
+       INNER JOIN evento e ON i.SECUENCIALEVENTO = e.SECUENCIAL
+       LEFT JOIN imagen_evento ie ON e.SECUENCIAL = ie.SECUENCIALEVENTO AND ie.TIPO_IMAGEN = 'PORTADA'
+       WHERE i.SECUENCIALUSUARIO = ? AND i.SECUENCIALEVENTO = ?
+       LIMIT 1`,
+      [usuarioId, eventoId]
+    );
+
+    if (rows.length === 0) {
+      return res.json({ success: true, data: null });
+    }
+
+    const hostPrefix = `${req.protocol}://${req.get('host')}`;
+    const data = {
+      ...rows[0],
+      URL_IMAGEN: rows[0].URL_IMAGEN ? `${hostPrefix}/${rows[0].URL_IMAGEN}` : null
+    };
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('❌ Error al obtener inscripción por evento:', error);
+    res.status(500).json({ error: 'Error al obtener inscripción', details: error.message });
+  }
+};
+
 // Crear inscripción para un usuario a un evento
 const crearInscripcion = async (req, res) => {
   const usuarioId = req.params.id;
@@ -161,6 +210,7 @@ const crearInscripcion = async (req, res) => {
     }
 
     connection = await pool.getConnection();
+    await connection.beginTransaction();
 
     // verificar si ya está inscrito
     const [exists] = await connection.execute(
@@ -168,17 +218,50 @@ const crearInscripcion = async (req, res) => {
       [eventoId, usuarioId]
     );
     if (exists.length > 0) {
+      await connection.rollback();
       return res.status(400).json({ error: 'Usuario ya inscrito en este evento' });
     }
 
-    const [result] = await connection.execute(
-      `INSERT INTO inscripcion (SECUENCIALEVENTO, SECUENCIALUSUARIO, FECHAINSCRIPCION, CODIGOESTADOINSCRIPCION, MOTIVACION)
-       VALUES (?, ?, NOW(), 'ACE', ?)`,
-      [eventoId, usuarioId, motivacion || null]
+    // Obtener información del evento para verificar si es pagado
+    const [evento] = await connection.execute(
+      'SELECT ES_PAGADO, COSTO FROM evento WHERE SECUENCIAL = ?',
+      [eventoId]
     );
 
-    res.status(201).json({ success: true, message: 'Inscripción creada', inscripcionId: result.insertId });
+    if (evento.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+
+    const esPagado = evento[0].ES_PAGADO === 1;
+    const costo = parseFloat(evento[0].COSTO) || 0;
+
+    // Crear inscripción con estado PENDIENTE si es pagado, ACEPTADO si es gratis
+    const estadoInscripcion = esPagado ? 'PEN' : 'ACE';
+    
+    const [result] = await connection.execute(
+      `INSERT INTO inscripcion (SECUENCIALEVENTO, SECUENCIALUSUARIO, FECHAINSCRIPCION, CODIGOESTADOINSCRIPCION, MOTIVACION)
+       VALUES (?, ?, NOW(), ?, ?)`,
+      [eventoId, usuarioId, estadoInscripcion, motivacion || null]
+    );
+
+    const inscripcionId = result.insertId;
+
+    // Si el evento es pagado, no creamos el pago automáticamente
+    // El usuario debe subir el comprobante después
+    // Pero podemos retornar información sobre si necesita pagar
+
+    await connection.commit();
+
+    res.status(201).json({ 
+      success: true, 
+      message: esPagado ? 'Inscripción creada. Debes realizar el pago para completar tu inscripción.' : 'Inscripción creada',
+      inscripcionId,
+      requierePago: esPagado,
+      monto: costo
+    });
   } catch (error) {
+    if (connection) await connection.rollback();
     console.error('❌ Error al crear inscripción:', error);
     res.status(500).json({ error: 'Error al crear inscripción', details: error.message });
   } finally {
@@ -191,5 +274,6 @@ module.exports = {
   obtenerEstudiante,
   actualizarEstudiante,
   obtenerEventosDeUsuario,
+  obtenerInscripcionPorEvento,
   crearInscripcion
 };
