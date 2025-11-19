@@ -60,7 +60,7 @@ export default function Courses() {
                   <div className="course-price">${(c.price || 0).toFixed(2)}</div>
                   <div className="course-actions">
                     <Link to={`/courses/${c.id}`} className="btn small">Leer más</Link>
-                    <button className="btn small primary">Entrar ahora</button>
+                    <Link to={`/payment/${c.id}`} className="btn small primary">Entrar ahora</Link>
                   </div>
                 </div>
               </div>

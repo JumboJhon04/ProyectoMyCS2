@@ -6,6 +6,7 @@ import Courses from '../pages/Courses';
 import Contact from '../pages/Contact';
 import AuthLogin from '../pages/Auth/Login';
 import AuthRegister from '../pages/Auth/Register';
+import PaymentPage from '../pages/PaymentPage/PaymentPage';
 
 import AdminPanel from '../pages/Admin/AdminPanel/AdminPanel';
 import EventoAdmin from '../pages/Admin/EventoAdmin/EventoAdmin';
@@ -38,6 +39,7 @@ export default function AppRoutes() {
       <Route path="/register" element={<AuthRegister />} />
       <Route path="/courses" element={<Courses />} />
       <Route path="/courses/:courseId" element={<EstudianteCourseDetail />} />
+      <Route path="/payment/:courseId" element={<PaymentPage />} />
       <Route path="/contact" element={<Contact />} />
 
       {/* Admin protected */}

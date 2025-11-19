@@ -77,8 +77,15 @@ function AppLayout() {
   const roleKey = getRoleKey();
 
   // Ocultar header/sidebar en rutas de autenticación (considerar /courses y /contact como públicas)
+  // /payment solo es authRoute si NO hay usuario (para mostrar PublicHeader)
+  // Si hay usuario, /payment debe mostrar el header del rol
   const authPaths = ['/', '/login', '/register', '/courses', '/contact'];
-  const isAuthRoute = authPaths.includes(location.pathname) || location.pathname.startsWith('/courses');
+  const isPaymentRoute = location.pathname.startsWith('/payment');
+  // Si es ruta de payment y hay usuario, NO es authRoute (para mostrar header del rol)
+  // Si es ruta de payment y NO hay usuario, SÍ es authRoute (para mostrar PublicHeader)
+  const isAuthRoute = authPaths.includes(location.pathname) || 
+                      location.pathname.startsWith('/courses') || 
+                      (isPaymentRoute && !user);
 
   // Mostrar sidebar sólo cuando hay usuario y no es usuario tipo 'user' (estudiante)
   // Mostrar sidebar solo para 'admin' y 'responsable'
