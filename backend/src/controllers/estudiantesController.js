@@ -132,7 +132,7 @@ const obtenerEventosDeUsuario = async (req, res) => {
        FROM inscripcion i
        INNER JOIN evento e ON i.SECUENCIALEVENTO = e.SECUENCIAL
        LEFT JOIN imagen_evento ie ON e.SECUENCIAL = ie.SECUENCIALEVENTO AND ie.TIPO_IMAGEN = 'PORTADA'
-       WHERE i.SECUENCIALUSUARIO = ?
+       WHERE i.SECUENCIALUSUARIO = ? AND i.CODIGOESTADOINSCRIPCION = 'ACE'
        ORDER BY i.FECHAINSCRIPCION DESC`,
       [id]
     );
@@ -147,6 +147,55 @@ const obtenerEventosDeUsuario = async (req, res) => {
   } catch (error) {
     console.error('❌ Error al obtener eventos del usuario:', error);
     res.status(500).json({ error: 'Error al obtener eventos del usuario', details: error.message });
+  }
+};
+
+// Obtener inscripción de un usuario para un evento específico (incluye pendientes)
+const obtenerInscripcionPorEvento = async (req, res) => {
+  const usuarioId = req.params.id;
+  const { eventoId } = req.query;
+  
+  if (!eventoId) {
+    return res.status(400).json({ error: 'Se requiere eventoId como query parameter' });
+  }
+  
+  try {
+    const [rows] = await pool.execute(
+      `SELECT 
+        i.SECUENCIAL as inscripcionId,
+        i.FECHAINSCRIPCION,
+        i.CODIGOESTADOINSCRIPCION,
+        e.SECUENCIAL as eventoId,
+        e.TITULO,
+        e.DESCRIPCION,
+        e.FECHAINICIO,
+        e.FECHAFIN,
+        e.COSTO,
+        e.ESTADO,
+        e.ES_PAGADO,
+        ie.URL_IMAGEN
+       FROM inscripcion i
+       INNER JOIN evento e ON i.SECUENCIALEVENTO = e.SECUENCIAL
+       LEFT JOIN imagen_evento ie ON e.SECUENCIAL = ie.SECUENCIALEVENTO AND ie.TIPO_IMAGEN = 'PORTADA'
+       WHERE i.SECUENCIALUSUARIO = ? AND i.SECUENCIALEVENTO = ?
+       LIMIT 1`,
+      [usuarioId, eventoId]
+    );
+
+    if (rows.length === 0) {
+      return res.json({ success: true, data: null });
+    }
+
+    const hostPrefix = `${req.protocol}://${req.get('host')}`;
+    const data = {
+      ...rows[0],
+      URL_IMAGEN: rows[0].URL_IMAGEN ? `${hostPrefix}/${rows[0].URL_IMAGEN}` : null
+    };
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('❌ Error al obtener inscripción por evento:', error);
+    res.status(500).json({ error: 'Error al obtener inscripción', details: error.message });
   }
 };
 
@@ -225,5 +274,6 @@ module.exports = {
   obtenerEstudiante,
   actualizarEstudiante,
   obtenerEventosDeUsuario,
+  obtenerInscripcionPorEvento,
   crearInscripcion
 };

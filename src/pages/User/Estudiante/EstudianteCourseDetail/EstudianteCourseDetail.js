@@ -15,6 +15,8 @@ const EstudianteCourseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isInscrito, setIsInscrito] = useState(false);
+  const [pagoAprobado, setPagoAprobado] = useState(false);
+  const [inscripcionId, setInscripcionId] = useState(null);
   
   // Determinar si es una ruta pública (acceso desde /courses/:courseId sin autenticación)
   const isPublicRoute = location.pathname.startsWith('/courses/') && !location.pathname.startsWith('/user/course/') && !location.pathname.startsWith('/profesor/course/');
@@ -72,19 +74,47 @@ const EstudianteCourseDetail = () => {
         setCourseData(data.data);
         setError(null);
 
-        // Verificar si el usuario está inscrito
+        // Verificar si el usuario está inscrito y estado del pago
         if (user && user.id) {
           try {
-            const inscripcionRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/eventos`);
+            // Usar el endpoint que incluye inscripciones pendientes
+            const inscripcionRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/inscripcion?eventoId=${courseId}`);
             if (inscripcionRes.ok) {
               const inscripcionData = await inscripcionRes.json();
-              const inscrito = inscripcionData.data?.some(
-                item => (item.eventoId || item.SECUENCIALEVENTO) === parseInt(courseId)
-              );
-              setIsInscrito(inscrito);
+              if (inscripcionData.data) {
+                setIsInscrito(true);
+                const idInscripcion = inscripcionData.data.inscripcionId || inscripcionData.data.SECUENCIAL;
+                setInscripcionId(idInscripcion);
+                
+                // Verificar estado del pago si el curso es pagado (usar data.data que es la respuesta del fetch)
+                const cursoEsPagado = data.data?.ES_PAGADO === 1;
+                if (idInscripcion && cursoEsPagado) {
+                  try {
+                    const pagoRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${idInscripcion}`);
+                    if (pagoRes.ok) {
+                      const pagoData = await pagoRes.json();
+                      const aprobado = pagoData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
+                      setPagoAprobado(aprobado || false);
+                    } else {
+                      setPagoAprobado(false);
+                    }
+                  } catch (e) {
+                    console.warn('Error verificando pago:', e);
+                    setPagoAprobado(false);
+                  }
+                } else {
+                  // Si no es pagado, considerar como aprobado
+                  setPagoAprobado(true);
+                }
+              } else {
+                setIsInscrito(false);
+                setPagoAprobado(false);
+              }
             }
           } catch (e) {
             console.warn('Error verificando inscripción:', e);
+            setIsInscrito(false);
+            setPagoAprobado(false);
           }
         }
       } catch (err) {
@@ -297,7 +327,7 @@ const EstudianteCourseDetail = () => {
               )}
             </div>
 
-            {/* Botón de comprar/inscribirse */}
+            {/* Botón de comprar/inscribirse - Solo mostrar si NO está inscrito O si está inscrito pero el pago no está aprobado */}
             <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
               {isPublicRoute ? (
                 <Link 
@@ -314,7 +344,8 @@ const EstudianteCourseDetail = () => {
                   {esPagado ? 'Comprar Curso' : 'Inscribirse Gratis'}
                 </Link>
               ) : (
-                !isInscrito && (
+                // Solo mostrar botón si NO está inscrito O si está inscrito pero el pago no está aprobado
+                (!isInscrito || (isInscrito && esPagado && !pagoAprobado)) && (
                   <Link 
                     to={`/payment/${courseId}`}
                     className="btn btn-primary"
@@ -326,9 +357,27 @@ const EstudianteCourseDetail = () => {
                       display: 'inline-block'
                     }}
                   >
-                    {esPagado ? 'Comprar Curso' : 'Inscribirse Gratis'}
+                    {isInscrito && esPagado && !pagoAprobado 
+                      ? 'Completar Pago' 
+                      : esPagado 
+                        ? 'Comprar Curso' 
+                        : 'Inscribirse Gratis'}
                   </Link>
                 )
+              )}
+              {/* Mensaje si ya está inscrito y pagado */}
+              {!isPublicRoute && isInscrito && (!esPagado || pagoAprobado) && (
+                <div style={{
+                  padding: '1rem 1.5rem',
+                  background: '#d1fae5',
+                  border: '1px solid #6ee7b7',
+                  borderRadius: '8px',
+                  color: '#065f46',
+                  fontSize: '1rem',
+                  fontWeight: 500
+                }}>
+                  ✅ Ya estás inscrito en este curso
+                </div>
               )}
             </div>
           </div>

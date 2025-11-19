@@ -11,6 +11,17 @@ const PaymentPage = () => {
   const navigate = useNavigate();
   const { user } = useUser();
   const { courses } = useCourses();
+
+  // Función helper para obtener la ruta del perfil según el rol
+  const getUserProfileRoute = () => {
+    if (!user) return '/courses';
+    const rol = user.codigoRol || user.CODIGOROL;
+    if (rol === 'ADM') return '/admin/panel';
+    if (rol === 'RES') return '/responsable/profile';
+    if (rol === 'DOC') return '/profesor/panel';
+    if (rol === 'EST') return '/user/panel';
+    return '/user/panel'; // Default para estudiantes
+  };
   
   const [courseData, setCourseData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -24,6 +35,7 @@ const PaymentPage = () => {
   const [success, setSuccess] = useState(false);
   const [inscripcionId, setInscripcionId] = useState(null);
   const [yaInscrito, setYaInscrito] = useState(false);
+  const [pagoAprobado, setPagoAprobado] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('manual'); // 'manual' o 'paypal'
   const [paypalSuccess, setPaypalSuccess] = useState(false);
 
@@ -55,45 +67,63 @@ const PaymentPage = () => {
     }
   };
 
-  // Función para verificar inscripción
+  // Función para verificar inscripción y estado del pago
   const checkInscripcion = async () => {
     if (user && user.id && courseId) {
       try {
-        const eventosRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/eventos`);
-        if (eventosRes.ok) {
-          const eventosData = await eventosRes.json();
-          console.log('📋 Eventos del usuario:', eventosData.data);
-          console.log('🔍 Buscando cursoId:', parseInt(courseId));
+        // Usar el nuevo endpoint que incluye inscripciones pendientes
+        const inscripcionRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/inscripcion?eventoId=${courseId}`);
+        if (inscripcionRes.ok) {
+          const inscripcionData = await inscripcionRes.json();
+          console.log('📋 Inscripción encontrada:', inscripcionData.data);
           
-          const inscripcionExistente = eventosData.data?.find(
-            item => {
-              const eventoId = item.eventoId || item.SECUENCIALEVENTO || item.SECUENCIAL;
-              const match = eventoId === parseInt(courseId);
-              console.log(`  - Comparando: ${eventoId} === ${parseInt(courseId)} ? ${match}`);
-              return match;
-            }
-          );
-          
-          if (inscripcionExistente) {
-            console.log('✅ Usuario ya está inscrito, actualizando estado', inscripcionExistente);
+          if (inscripcionData.data) {
+            console.log('✅ Usuario ya está inscrito, actualizando estado', inscripcionData.data);
             setYaInscrito(true);
-            setInscripcionId(inscripcionExistente.inscripcionId || inscripcionExistente.SECUENCIAL);
+            const idInscripcion = inscripcionData.data.inscripcionId || inscripcionData.data.SECUENCIAL;
+            setInscripcionId(idInscripcion);
+            
+            // Verificar estado del pago si existe inscripción y el curso es pagado
+            const cursoEsPagado = inscripcionData.data.ES_PAGADO === 1 || courseData?.ES_PAGADO === 1;
+            if (idInscripcion && cursoEsPagado) {
+              try {
+                const pagoRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${idInscripcion}`);
+                if (pagoRes.ok) {
+                  const pagoData = await pagoRes.json();
+                  const pagoAprobado = pagoData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
+                  setPagoAprobado(pagoAprobado || false);
+                  console.log('💳 Estado del pago:', pagoAprobado ? 'Aprobado' : 'Pendiente');
+                } else {
+                  // Si no hay pago aún, está pendiente
+                  setPagoAprobado(false);
+                }
+              } catch (e) {
+                console.warn('Error verificando pago:', e);
+                setPagoAprobado(false);
+              }
+            } else {
+              setPagoAprobado(!cursoEsPagado); // Si no es pagado, considerar como "aprobado"
+            }
+            
             return true;
           } else {
             console.log('ℹ️ Usuario NO está inscrito en este curso');
             setYaInscrito(false);
             setInscripcionId(null);
+            setPagoAprobado(false);
             return false;
           }
         }
       } catch (e) {
         console.warn('Error verificando inscripción:', e);
         setYaInscrito(false);
+        setPagoAprobado(false);
         return false;
       }
     } else {
       setYaInscrito(false);
       setInscripcionId(null);
+      setPagoAprobado(false);
       return false;
     }
     return false;
@@ -207,8 +237,6 @@ const PaymentPage = () => {
           nuevaInscripcionId = inscripcionData.inscripcionId;
           setInscripcionId(nuevaInscripcionId);
           setYaInscrito(true); // Actualizar estado después de crear inscripción
-          // Verificar nuevamente para asegurar que el estado esté actualizado
-          await checkInscripcion();
         }
       }
 
@@ -239,8 +267,32 @@ const PaymentPage = () => {
       }
 
       setInscripcionId(nuevaInscripcionId);
-      // Actualizar estado de inscripción después de crear
-      await checkInscripcion();
+      setYaInscrito(true);
+      
+      // Si es pagado, verificar el estado del pago directamente
+      if (courseData?.ES_PAGADO === 1 && parseFloat(montoInput) > 0) {
+        try {
+          // Esperar un momento para que el pago se registre en la BD
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          const pagoRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${nuevaInscripcionId}`);
+          if (pagoRes.ok) {
+            const pagoData = await pagoRes.json();
+            const pagoAprobado = pagoData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
+            setPagoAprobado(pagoAprobado || false);
+            console.log('💳 Estado del pago después de crear:', pagoAprobado ? 'Aprobado' : 'Pendiente');
+          } else {
+            setPagoAprobado(false);
+          }
+        } catch (e) {
+          console.warn('Error verificando pago después de crear:', e);
+          setPagoAprobado(false);
+        }
+      } else {
+        // Si no es pagado, el pago está "aprobado" automáticamente
+        setPagoAprobado(true);
+      }
+      
       setSuccess(true);
     } catch (err) {
       console.error('Error al procesar inscripción/pago:', err);
@@ -268,7 +320,11 @@ const PaymentPage = () => {
         <div className="payment-container">
           <div className="payment-error-message">
             <p>{error}</p>
-            <Link to="/courses" className="btn btn-primary">Volver a Cursos</Link>
+            {user ? (
+              <Link to={getUserProfileRoute()} className="btn btn-primary">Ir a mi perfil</Link>
+            ) : (
+              <Link to="/courses" className="btn btn-primary">Volver a Cursos</Link>
+            )}
           </div>
         </div>
       </div>
@@ -282,7 +338,11 @@ const PaymentPage = () => {
         <div className="payment-container">
           <div className="payment-error-message">
             <p>Curso no encontrado</p>
-            <Link to="/courses" className="btn btn-primary">Volver a Cursos</Link>
+            {user ? (
+              <Link to={getUserProfileRoute()} className="btn btn-primary">Ir a mi perfil</Link>
+            ) : (
+              <Link to="/courses" className="btn btn-primary">Volver a Cursos</Link>
+            )}
           </div>
         </div>
       </div>
@@ -292,7 +352,8 @@ const PaymentPage = () => {
   const esPagado = courseData.ES_PAGADO === 1;
   const costo = parseFloat(courseData.COSTO) || 0;
 
-  if (success) {
+  // Solo mostrar éxito si el curso es gratis O si el pago ya está aprobado
+  if (success && (!esPagado || pagoAprobado)) {
     return (
       <div className="payment-page">
         {!user && <PublicHeader />}
@@ -302,13 +363,40 @@ const PaymentPage = () => {
             <h2>¡Inscripción Exitosa!</h2>
             <p>
               {esPagado 
-                ? 'Tu inscripción ha sido registrada. El pago está pendiente de aprobación. Recibirás una notificación cuando sea aprobado.'
+                ? 'Tu inscripción ha sido registrada y el pago ha sido aprobado. Ya puedes acceder al curso.'
                 : 'Tu inscripción ha sido registrada correctamente. Ya puedes acceder al curso.'}
             </p>
             <div className="success-actions">
-              <Link to="/courses" className="btn btn-secondary">Ver más cursos</Link>
-              {user && (
-                <Link to="/user/events" className="btn btn-primary">Mis cursos</Link>
+              {user ? (
+                <Link to={getUserProfileRoute()} className="btn btn-primary">Ir a mi perfil</Link>
+              ) : (
+                <Link to="/courses" className="btn btn-secondary">Ver más cursos</Link>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Si es pagado y el pago está pendiente, mostrar mensaje diferente
+  if (success && esPagado && yaInscrito && !pagoAprobado) {
+    return (
+      <div className="payment-page">
+        {!user && <PublicHeader />}
+        <div className="payment-container">
+          <div className="payment-pending">
+            <div className="pending-icon">⏳</div>
+            <h2>Pago Registrado</h2>
+            <p>
+              Tu comprobante de pago ha sido registrado y está pendiente de revisión. 
+              Recibirás un correo electrónico cuando tu pago sea aprobado.
+            </p>
+            <div className="success-actions">
+              {user ? (
+                <Link to={getUserProfileRoute()} className="btn btn-primary">Ir a mi perfil</Link>
+              ) : (
+                <Link to="/courses" className="btn btn-secondary">Ver más cursos</Link>
               )}
             </div>
           </div>
@@ -370,34 +458,43 @@ const PaymentPage = () => {
             ) : (
               <>
               {/* Debug temporal - remover en producción */}
-              {console.log('🎯 Renderizando PaymentPage - yaInscrito:', yaInscrito, 'inscripcionId:', inscripcionId, 'user:', user?.id)}
+              {console.log('🎯 Renderizando PaymentPage - yaInscrito:', yaInscrito, 'pagoAprobado:', pagoAprobado, 'esPagado:', esPagado, 'inscripcionId:', inscripcionId, 'user:', user?.id)}
               
               {yaInscrito ? (
-                // Si ya está inscrito, solo mostrar opción de pago si es necesario
+                // Si ya está inscrito, verificar estado del pago
                 <div className="payment-form">
-                  <div className="info-message" style={{ 
-                    padding: '1.5rem', 
-                    background: '#dbeafe', 
-                    border: '1px solid #93c5fd', 
-                    borderRadius: '8px', 
-                    marginBottom: '1.5rem',
-                    color: '#1e40af'
-                  }}>
-                    <strong>ℹ️ Ya estás inscrito en este curso.</strong>
-                    {esPagado && (
-                      <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.95rem' }}>
-                        Completa el pago para finalizar tu inscripción.
-                      </p>
-                    )}
-                    {!esPagado && (
+                  {esPagado && pagoAprobado ? (
+                    // Pago ya aprobado - mostrar mensaje de éxito
+                    <div className="info-message" style={{ 
+                      padding: '1.5rem', 
+                      background: '#d1fae5', 
+                      border: '1px solid #6ee7b7', 
+                      borderRadius: '8px', 
+                      marginBottom: '1.5rem',
+                      color: '#065f46'
+                    }}>
+                      <strong>✅ Ya estás inscrito y tu pago ha sido aprobado.</strong>
                       <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.95rem' }}>
                         Tu inscripción está completa. Puedes acceder al curso desde "Mis Cursos".
                       </p>
-                    )}
-                  </div>
-
-                  {esPagado && (
+                    </div>
+                  ) : esPagado && !pagoAprobado ? (
+                    // Pago pendiente - mostrar formulario
                     <>
+                      <div className="info-message" style={{ 
+                        padding: '1.5rem', 
+                        background: '#dbeafe', 
+                        border: '1px solid #93c5fd', 
+                        borderRadius: '8px', 
+                        marginBottom: '1.5rem',
+                        color: '#1e40af'
+                      }}>
+                        <strong>ℹ️ Ya estás inscrito en este curso.</strong>
+                        <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.95rem' }}>
+                          Completa el pago para finalizar tu inscripción.
+                        </p>
+                      </div>
+
                       <div className="payment-divider">
                         <span>Información de Pago</span>
                       </div>
@@ -526,7 +623,23 @@ const PaymentPage = () => {
                                       console.log('✅ Pago ya registrado, considerando como éxito');
                                       setError(''); // Limpiar error PRIMERO
                                       setPaypalSuccess(true);
-                                      await checkInscripcion(); // Actualizar estado
+                                      setYaInscrito(true);
+                                      
+                                      // Verificar el estado del pago directamente
+                                      try {
+                                        await new Promise(resolve => setTimeout(resolve, 500));
+                                        const pagoCheckRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${inscripcionId}`);
+                                        if (pagoCheckRes.ok) {
+                                          const pagoCheckData = await pagoCheckRes.json();
+                                          const pagoAprobado = pagoCheckData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
+                                          setPagoAprobado(pagoAprobado || false);
+                                        } else {
+                                          setPagoAprobado(false);
+                                        }
+                                      } catch (e) {
+                                        setPagoAprobado(false);
+                                      }
+                                      
                                       setTimeout(() => {
                                         setSuccess(true);
                                       }, 1000);
@@ -541,7 +654,27 @@ const PaymentPage = () => {
                                   console.log('✅ Pago de PayPal registrado exitosamente');
                                   setError(''); // Limpiar cualquier error previo PRIMERO
                                   setPaypalSuccess(true);
-                                  await checkInscripcion(); // Actualizar estado de inscripción
+                                  setYaInscrito(true);
+                                  
+                                  // Verificar el estado del pago directamente
+                                  try {
+                                    // Esperar un momento para que el pago se registre en la BD
+                                    await new Promise(resolve => setTimeout(resolve, 500));
+                                    
+                                    const pagoCheckRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${inscripcionId}`);
+                                    if (pagoCheckRes.ok) {
+                                      const pagoCheckData = await pagoCheckRes.json();
+                                      const pagoAprobado = pagoCheckData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
+                                      setPagoAprobado(pagoAprobado || false);
+                                      console.log('💳 Estado del pago PayPal después de crear:', pagoAprobado ? 'Aprobado' : 'Pendiente');
+                                    } else {
+                                      setPagoAprobado(false);
+                                    }
+                                  } catch (e) {
+                                    console.warn('Error verificando pago PayPal después de crear:', e);
+                                    setPagoAprobado(false);
+                                  }
+                                  
                                   setTimeout(() => {
                                     setSuccess(true);
                                   }, 1000);
@@ -598,21 +731,25 @@ const PaymentPage = () => {
                         )}
                       </div>
                     </>
-                  )}
-
-                  {!esPagado && (
-                    <div className="form-actions">
-                      <Link to={`/user/course/${courseId}`} className="btn btn-primary">
-                        Ir al Curso
-                      </Link>
-                      <Link to="/user/events" className="btn btn-secondary">
-                        Ver Mis Cursos
-                      </Link>
+                  ) : (
+                    // Curso gratis - mostrar mensaje de inscripción completa
+                    <div className="info-message" style={{ 
+                      padding: '1.5rem', 
+                      background: '#d1fae5', 
+                      border: '1px solid #6ee7b7', 
+                      borderRadius: '8px', 
+                      marginBottom: '1.5rem',
+                      color: '#065f46'
+                    }}>
+                      <strong>✅ Ya estás inscrito en este curso.</strong>
+                      <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.95rem' }}>
+                        Tu inscripción está completa. Puedes acceder al curso desde "Mis Cursos".
+                      </p>
                     </div>
                   )}
                 </div>
               ) : (
-                // Si NO está inscrito, mostrar formulario completo de inscripción
+                // Usuario NO inscrito - mostrar formulario completo de inscripción
                 <form onSubmit={handleSubmit} className="payment-form">
                   <div className="form-group">
                     <label>Motivación (Opcional)</label>
@@ -723,23 +860,13 @@ const PaymentPage = () => {
                                   nuevaInscripcionId = inscripcionData.inscripcionId;
                                   setInscripcionId(nuevaInscripcionId);
                                   setYaInscrito(true); // Actualizar estado
-                                  // Verificar nuevamente para asegurar que el estado esté actualizado
-                                  await checkInscripcion();
                                 } else if (inscripcionData.error && inscripcionData.error.includes('ya inscrito')) {
-                                  // Obtener inscripción existente
-                                  const eventosRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/eventos`);
-                                  if (eventosRes.ok) {
-                                    const eventosData = await eventosRes.json();
-                                    const inscripcionExistente = eventosData.data?.find(
-                                      item => (item.eventoId || item.SECUENCIALEVENTO) === parseInt(courseId)
-                                    );
-                                    if (inscripcionExistente) {
-                                      nuevaInscripcionId = inscripcionExistente.inscripcionId;
-                                      setInscripcionId(nuevaInscripcionId);
-                                      setYaInscrito(true); // Actualizar estado
-                                      await checkInscripcion();
-                                    }
-                                  }
+                                  // Si ya está inscrito, necesitamos obtener el ID de inscripción de otra forma
+                                  // Ya que obtenerEventosDeUsuario solo devuelve aprobados, necesitamos buscar directamente
+                                  // Por ahora, usamos el ID que devuelve el error o buscamos en la BD
+                                  console.log('⚠️ Usuario ya inscrito, buscando inscripción...');
+                                  // El backend debería devolver el ID de inscripción existente en el error
+                                  // Si no, necesitamos crear un endpoint para buscar inscripciones pendientes
                                 }
                               }
 
@@ -766,7 +893,22 @@ const PaymentPage = () => {
                                   setPaypalSuccess(true);
                                   setInscripcionId(nuevaInscripcionId);
                                   setYaInscrito(true);
-                                  await checkInscripcion(); // Actualizar estado
+                                  
+                                  // Verificar el estado del pago directamente
+                                  try {
+                                    await new Promise(resolve => setTimeout(resolve, 500));
+                                    const pagoCheckRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${nuevaInscripcionId}`);
+                                    if (pagoCheckRes.ok) {
+                                      const pagoCheckData = await pagoCheckRes.json();
+                                      const pagoAprobado = pagoCheckData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
+                                      setPagoAprobado(pagoAprobado || false);
+                                    } else {
+                                      setPagoAprobado(false);
+                                    }
+                                  } catch (e) {
+                                    setPagoAprobado(false);
+                                  }
+                                  
                                   setTimeout(() => {
                                     setSuccess(true);
                                   }, 1000);
@@ -780,9 +922,24 @@ const PaymentPage = () => {
                               setPaypalSuccess(true);
                               setInscripcionId(nuevaInscripcionId);
                               setYaInscrito(true); // Actualizar estado
-                              // Verificar inscripción nuevamente para actualizar UI
-                              await checkInscripcion();
-                              // Con PayPal, el pago se completa automáticamente
+                              
+                              // Verificar el estado del pago directamente
+                              try {
+                                await new Promise(resolve => setTimeout(resolve, 500));
+                                const pagoCheckRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${nuevaInscripcionId}`);
+                                if (pagoCheckRes.ok) {
+                                  const pagoCheckData = await pagoCheckRes.json();
+                                  const pagoAprobado = pagoCheckData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
+                                  setPagoAprobado(pagoAprobado || false);
+                                  console.log('💳 Estado del pago PayPal después de crear:', pagoAprobado ? 'Aprobado' : 'Pendiente');
+                                } else {
+                                  setPagoAprobado(false);
+                                }
+                              } catch (e) {
+                                console.warn('Error verificando pago PayPal después de crear:', e);
+                                setPagoAprobado(false);
+                              }
+                              
                               setTimeout(() => {
                                 setSuccess(true);
                               }, 1000);

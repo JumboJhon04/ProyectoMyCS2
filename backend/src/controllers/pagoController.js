@@ -1,4 +1,7 @@
 const { pool } = require('../config/database');
+console.log('📧 Cargando emailService desde pagoController...');
+const { enviarEmailPagoAprobado } = require('../services/emailService');
+console.log('📧 emailService cargado, función disponible:', typeof enviarEmailPagoAprobado);
 
 // Obtener todos los métodos de pago disponibles
 const obtenerFormasPago = async (req, res) => {
@@ -138,6 +141,10 @@ const obtenerPagosPorInscripcion = async (req, res) => {
 
 // Aprobar o rechazar un pago (solo para responsables/admin)
 const actualizarEstadoPago = async (req, res) => {
+  console.log('🔄 actualizarEstadoPago llamado');
+  console.log('📋 Parámetros:', req.params);
+  console.log('📋 Body:', req.body);
+  
   let connection;
   try {
     connection = await pool.getConnection();
@@ -147,21 +154,39 @@ const actualizarEstadoPago = async (req, res) => {
     const { estado, observaciones } = req.body; // estado: 'VAL' o 'RECH'
     const aprobadorId = req.user?.id || req.body.aprobadorId; // Asumiendo que viene del middleware de auth
 
+    console.log(`📋 Procesando pago ${pagoId} con estado: ${estado}`);
+
     if (!estado || !['VAL', 'RECH', 'INV'].includes(estado)) {
+      console.log('❌ Estado inválido:', estado);
       return res.status(400).json({ 
         error: 'Estado inválido. Debe ser VAL, RECH o INV' 
       });
     }
 
-    // Verificar que el pago existe
+    // Verificar que el pago existe y obtener información relacionada
     const [pago] = await connection.execute(
-      'SELECT SECUENCIAL, SECUENCIALINSCRIPCION FROM pago WHERE SECUENCIAL = ?',
+      `SELECT 
+        p.SECUENCIAL,
+        p.SECUENCIALINSCRIPCION,
+        p.MONTO,
+        i.SECUENCIALUSUARIO,
+        u.NOMBRES,
+        u.APELLIDOS,
+        u.CORREO,
+        e.TITULO as EVENTO_TITULO
+       FROM pago p
+       INNER JOIN inscripcion i ON p.SECUENCIALINSCRIPCION = i.SECUENCIAL
+       INNER JOIN usuario u ON i.SECUENCIALUSUARIO = u.SECUENCIAL
+       INNER JOIN evento e ON i.SECUENCIALEVENTO = e.SECUENCIAL
+       WHERE p.SECUENCIAL = ?`,
       [pagoId]
     );
 
     if (pago.length === 0) {
       return res.status(404).json({ error: 'Pago no encontrado' });
     }
+
+    const pagoData = pago[0];
 
     // Actualizar estado del pago
     const fechaAprobacion = estado === 'VAL' ? new Date() : null;
@@ -174,6 +199,54 @@ const actualizarEstadoPago = async (req, res) => {
        WHERE SECUENCIAL = ?`,
       [estado, aprobadorId, fechaAprobacion, pagoId]
     );
+
+    // Si el pago fue aprobado, actualizar el estado de la inscripción a ACEPTADO
+    console.log(`🔍 Verificando condición: estado === 'VAL' && pago.length > 0`);
+    console.log(`🔍 estado = ${estado}, pago.length = ${pago.length}`);
+    
+    if (estado === 'VAL' && pago.length > 0) {
+      console.log('✅ Condición cumplida, procesando aprobación...');
+      const inscripcionId = pagoData.SECUENCIALINSCRIPCION;
+      await connection.execute(
+        'UPDATE inscripcion SET CODIGOESTADOINSCRIPCION = ? WHERE SECUENCIAL = ?',
+        ['ACE', inscripcionId]
+      );
+      console.log(`✅ Inscripción ${inscripcionId} actualizada a ACEPTADO`);
+
+      // Enviar email de notificación al usuario
+      console.log('📧 Intentando enviar email de notificación...');
+      console.log('📧 Datos del pago:', {
+        correo: pagoData.CORREO,
+        nombre: `${pagoData.NOMBRES} ${pagoData.APELLIDOS}`,
+        evento: pagoData.EVENTO_TITULO,
+        monto: pagoData.MONTO
+      });
+      
+      try {
+        const nombreUsuario = `${pagoData.NOMBRES} ${pagoData.APELLIDOS}`;
+        console.log('📧 Llamando a enviarEmailPagoAprobado...');
+        const emailResult = await enviarEmailPagoAprobado(
+          pagoData.CORREO,
+          nombreUsuario,
+          pagoData.EVENTO_TITULO,
+          pagoData.MONTO
+        );
+
+        console.log('📧 Resultado del envío de email:', emailResult);
+        if (emailResult.success) {
+          console.log(`✅ Email enviado exitosamente a ${pagoData.CORREO}`);
+        } else {
+          console.error(`⚠️ Error al enviar email a ${pagoData.CORREO}:`, emailResult.error);
+          if (emailResult.details) {
+            console.error('📧 Detalles del error:', emailResult.details);
+          }
+        }
+      } catch (emailError) {
+        // No fallar la transacción si el email falla
+        console.error('⚠️ Error al enviar email (no crítico):', emailError);
+        console.error('⚠️ Stack trace:', emailError.stack);
+      }
+    }
 
     await connection.commit();
     
@@ -303,24 +376,9 @@ const crearPagoPayPal = async (req, res) => {
       }
     }
 
-    // Verificar qué códigos de estado de pago existen
-    const [estadosPago] = await connection.execute(
-      "SELECT CODIGO FROM estado_pago"
-    );
-    
-    // Buscar un código de estado apropiado (VAL, APR, ACE, etc.)
-    const estadosDisponibles = estadosPago.map(e => e.CODIGO);
-    
-    // Prioridad: VAL > APR > ACE > PEN
-    if (estadosDisponibles.includes('VAL')) {
-      codigoEstadoPago = 'VAL';
-    } else if (estadosDisponibles.includes('APR')) {
-      codigoEstadoPago = 'APR';
-    } else if (estadosDisponibles.includes('ACE')) {
-      codigoEstadoPago = 'ACE';
-    } else if (estadosDisponibles.length > 0) {
-      codigoEstadoPago = estadosDisponibles[0];
-    }
+    // Todos los pagos (incluidos PayPal) deben ir a revisión
+    // El estado por defecto ya es 'PEN' (pendiente)
+    codigoEstadoPago = 'PEN';
 
     // Crear el pago con PayPal
     // Guardar solo información esencial de PayPal (no todo el objeto para evitar exceder límite de campo)
@@ -339,9 +397,8 @@ const crearPagoPayPal = async (req, res) => {
         COMPROBANTE_URL,
         CODIGOESTADOPAGO,
         MONTO,
-        FECHA_PAGO,
-        FECHA_APROBACION
-      ) VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+        FECHA_PAGO
+      ) VALUES (?, ?, ?, ?, ?, NOW())`,
       [
         inscripcionId, 
         codigoFormaPago, 
@@ -351,14 +408,8 @@ const crearPagoPayPal = async (req, res) => {
       ]
     );
 
-    // Actualizar el estado de la inscripción a ACEPTADO si el pago fue aprobado
-    // Solo si el estado del pago no es PEN (pendiente)
-    if (codigoEstadoPago !== 'PEN') {
-      await connection.execute(
-        'UPDATE inscripcion SET CODIGOESTADOINSCRIPCION = ? WHERE SECUENCIAL = ?',
-        ['ACE', inscripcionId]
-      );
-    }
+    // Los pagos de PayPal también van a revisión, no se aprueban automáticamente
+    // El estado de la inscripción se actualizará cuando el responsable apruebe el pago
 
     await connection.commit();
     
@@ -392,18 +443,12 @@ const crearPagoPayPal = async (req, res) => {
             COMPROBANTE_URL,
             CODIGOESTADOPAGO,
             MONTO,
-            FECHA_PAGO,
-            FECHA_APROBACION
-          ) VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+            FECHA_PAGO
+          ) VALUES (?, ?, ?, ?, ?, NOW())`,
           [inscripcionId, codigoFormaPago, shortComprobante, codigoEstadoPago, parseFloat(monto)]
         );
         
-        if (codigoEstadoPago !== 'PEN') {
-          await connection.execute(
-            'UPDATE inscripcion SET CODIGOESTADOINSCRIPCION = ? WHERE SECUENCIAL = ?',
-            ['ACE', inscripcionId]
-          );
-        }
+        // Los pagos de PayPal también van a revisión
         
         await connection.commit();
         console.log('✅ Pago de PayPal creado con ID (reintento):', retryResult.insertId);
@@ -428,12 +473,33 @@ const crearPagoPayPal = async (req, res) => {
   }
 };
 
+// Obtener conteo de pagos pendientes (para notificaciones)
+const obtenerConteoPagosPendientes = async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT COUNT(*) as total
+       FROM pago
+       WHERE CODIGOESTADOPAGO = 'PEN'`
+    );
+
+    const total = rows[0]?.total || 0;
+    res.json({ success: true, data: { total } });
+  } catch (error) {
+    console.error('❌ Error al obtener conteo de pagos pendientes:', error);
+    res.status(500).json({ 
+      error: 'Error al obtener conteo de pagos pendientes', 
+      details: error.message 
+    });
+  }
+};
+
 module.exports = {
   obtenerFormasPago,
   crearPago,
   crearPagoPayPal,
   obtenerPagosPorInscripcion,
   actualizarEstadoPago,
-  obtenerPagosPendientes
+  obtenerPagosPendientes,
+  obtenerConteoPagosPendientes
 };
 

@@ -18,6 +18,9 @@ router.get('/inscripcion/:inscripcionId', pagoController.obtenerPagosPorInscripc
 // Obtener todos los pagos pendientes (para admin/responsable)
 router.get('/pendientes', pagoController.obtenerPagosPendientes);
 
+// Obtener conteo de pagos pendientes (para notificaciones)
+router.get('/pendientes/conteo', pagoController.obtenerConteoPagosPendientes);
+
 // Actualizar estado de pago (aprobar/rechazar)
 router.put('/:pagoId/estado', pagoController.actualizarEstadoPago);
 

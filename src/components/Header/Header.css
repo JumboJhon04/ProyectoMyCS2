@@ -205,6 +205,15 @@
   background: linear-gradient(90deg, rgba(45,124,255,0.03), transparent); 
 }
 
+.notification-item.clickable {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.notification-item.clickable:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
 .notification-text { 
   font-size: 13px; 
   color: #222; 
