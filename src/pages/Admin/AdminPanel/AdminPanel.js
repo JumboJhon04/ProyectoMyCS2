@@ -50,7 +50,7 @@ const AdminPanel = () => {
     if (!file) return;
 
     const formData = new FormData();
-    formData.append('imagen', file);
+    formData.append('image', file);
 
     setUploadingImageId(eventoId);
     try {
@@ -145,10 +145,13 @@ const AdminPanel = () => {
                   eventos.map((evento) => (
                     <div key={evento.SECUENCIAL} className="evento-item">
                       <div className="evento-image">
-                        <img 
-                          src={evento.URL_IMAGEN || '/placeholder-course.png'} 
+                         <img
+                          src={evento.URL_IMAGEN || '/placeholder-course.png'}
                           alt={evento.TITULO}
-                          onError={(e) => { e.target.src = '/placeholder-course.png'; }}
+                          onError={(e) => {
+                            if (e.target.src.includes('placeholder-course.png')) return; // evita loop
+                            e.target.src = '/placeholder-course.png';
+                          }}
                         />
                         <div className="evento-overlay">
                           <label className="btn-change-image">
