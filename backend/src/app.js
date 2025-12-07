@@ -10,6 +10,10 @@ const carrerasRoutes = require('./routes/carrerasRoutes');
 const configRoutes = require('./routes/configRoutes'); // NUEVA LÍNEA
 const estudiantesRoutes = require('./routes/estudiantesRoutes');
 const docentesRoutes = require('./routes/docentesRoutes');
+const pagoRoutes = require('./routes/pagoRoutes');
+const solicitudRoutes = require('./routes/solicitudRoutes');
+const peticionCambioRoutes = require('./routes/peticionCambioRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 
 const app = express();
@@ -35,6 +39,10 @@ app.use('/api/carreras', carrerasRoutes);
 app.use('/api/config', configRoutes); // NUEVA LÍNEA
 app.use('/api/estudiantes', estudiantesRoutes);
 app.use('/api/docentes', docentesRoutes);
+app.use('/api/pagos', pagoRoutes);
+app.use('/api/solicitudes', solicitudRoutes);
+app.use('/api/peticiones-cambio', peticionCambioRoutes);
+app.use('/api/admins', adminRoutes);
 
 
 // Ruta de prueba

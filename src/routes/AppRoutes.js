@@ -10,6 +10,8 @@ import AuthRegister from '../pages/Auth/Register';
 import AdminPanel from '../pages/Admin/AdminPanel/AdminPanel';
 import EventoAdmin from '../pages/Admin/EventoAdmin/EventoAdmin';
 import UserPanelAdmin from '../pages/Admin/UserPanelAdmin/UserPanelAdmin';
+import SolicitudesAdmin from '../pages/Admin/SolicitudesAdmin/SolicitudesAdmin';
+import PeticionesCambioAdmin from '../pages/Admin/PeticionesCambioAdmin/PeticionesCambioAdmin';
 
 import ResponsableProfile from '../pages/Responsable/ProfileResponsable/Profile';
 import EventoResponsable from '../pages/Responsable/EventoResponsable/EventoResponsable';
@@ -26,6 +28,7 @@ import ProfesorTest from '../pages/User/Profesor/ProfesorTest/ProfesorTest';
 import ProfesorCourseDetail from '../pages/User/Profesor/ProfesorCourseDetail/ProfesorCourseDetail';
 
 import UserPanel from '../pages/User/UserPanel';
+import SolicitudSoporte from '../pages/User/SolicitudSoporte/SolicitudSoporte';
 
 import ProtectedRoute from '../components/ProtectedRoute';
 
@@ -54,6 +57,16 @@ export default function AppRoutes() {
       <Route path="/admin/users" element={
         <ProtectedRoute requireAdmin={true}>
           <UserPanelAdmin />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/solicitudes" element={
+        <ProtectedRoute requireAdmin={true}>
+          <SolicitudesAdmin />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/peticiones-cambio" element={
+        <ProtectedRoute requireAdmin={true}>
+          <PeticionesCambioAdmin />
         </ProtectedRoute>
       } />
 
@@ -93,6 +106,11 @@ export default function AppRoutes() {
       <Route path="/user/course/:courseId" element={
         <ProtectedRoute>
           <EstudianteCourseDetail />
+        </ProtectedRoute>
+      } />
+      <Route path="/user/solicitud-soporte" element={
+        <ProtectedRoute>
+          <SolicitudSoporte />
         </ProtectedRoute>
       } />
 

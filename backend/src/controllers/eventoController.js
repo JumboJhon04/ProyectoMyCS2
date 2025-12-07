@@ -1,6 +1,7 @@
 const { pool } = require('../config/database');
 const fs = require('fs');
 const path = require('path');
+const { buildImageUrl } = require('../utils/imageUrlHelper');
 
 // Crear evento
 const crearEvento = async (req, res) => {
@@ -144,7 +145,7 @@ const crearEvento = async (req, res) => {
     await connection.commit();
 
     // Construir URL absoluta para la imagen antes de responder
-    const absoluteImageUrl = `${req.protocol}://${req.get('host')}/${imageUrl}`;
+    const absoluteImageUrl = buildImageUrl(imageUrl, req);
 
     res.status(201).json({
       success: true,
@@ -223,7 +224,7 @@ const actualizarImagenEvento = async (req, res) => {
       message: 'Imagen del evento actualizada',
       data: {
         imagenId: insertResult.insertId,
-        imageUrl
+        imageUrl: buildImageUrl(imageUrl, req)
       }
     });
   } catch (error) {
@@ -412,8 +413,8 @@ const actualizarEvento = async (req, res) => {
     // Construir URL absoluta si se actualizó/insertó imagen
     let responseData = { eventoId, title, type };
     if (req.file) {
-      const abs = `${req.protocol}://${req.get('host')}/uploads/eventos/${req.file.filename}`;
-      responseData.imageUrl = abs;
+      const imageUrl = `uploads/eventos/${req.file.filename}`;
+      responseData.imageUrl = buildImageUrl(imageUrl, req);
     }
 
     res.json({
@@ -478,10 +479,9 @@ const obtenerEventos = async (req, res) => {
     }
     
     // Convertir URL_IMAGEN relativo a URL absoluta
-    const hostPrefix = `${req.protocol}://${req.get('host')}`;
     const mapped = eventos.map(ev => ({
       ...ev,
-      URL_IMAGEN: ev.URL_IMAGEN ? `${hostPrefix}/${ev.URL_IMAGEN}` : null
+      URL_IMAGEN: buildImageUrl(ev.URL_IMAGEN, req)
     }));
 
     res.json({
@@ -532,7 +532,7 @@ const obtenerEvento = async (req, res) => {
     evento.CARRERAS = carreras;
 
     // Convertir URL_IMAGEN a URL absoluta
-    evento.URL_IMAGEN = evento.URL_IMAGEN ? `${req.protocol}://${req.get('host')}/${evento.URL_IMAGEN}` : null;
+    evento.URL_IMAGEN = buildImageUrl(evento.URL_IMAGEN, req);
 
     res.json({
       success: true,
@@ -561,7 +561,7 @@ const obtenerImagenes = async (req, res) => {
       success: true,
       data: rows.map(img => ({
         ...img,
-        URL_IMAGEN: img.URL_IMAGEN ? `${req.protocol}://${req.get('host')}/${img.URL_IMAGEN}` : null
+        URL_IMAGEN: buildImageUrl(img.URL_IMAGEN, req)
       }))
     });
   } catch (error) {
