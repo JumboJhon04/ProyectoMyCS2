@@ -1,4 +1,5 @@
 const { pool } = require('../config/database');
+const { buildImageUrl } = require('../utils/imageUrlHelper');
 
 // Obtener todos los docentes
 const obtenerDocentes = async (req, res) => {
@@ -20,10 +21,9 @@ const obtenerDocentes = async (req, res) => {
        ORDER BY u.SECUENCIAL DESC`
     );
 
-    const hostPrefix = `${req.protocol}://${req.get('host')}`;
     const data = rows.map(u => ({
       ...u,
-      FOTO_PERFIL: u.FOTO_PERFIL ? `${hostPrefix}/${u.FOTO_PERFIL}` : null
+      FOTO_PERFIL: buildImageUrl(u.FOTO_PERFIL, req)
     }));
 
     res.json({ success: true, data });
@@ -59,8 +59,7 @@ const obtenerDocente = async (req, res) => {
     }
 
     const docente = rows[0];
-    const hostPrefix = `${req.protocol}://${req.get('host')}`;
-    docente.FOTO_PERFIL = docente.FOTO_PERFIL ? `${hostPrefix}/${docente.FOTO_PERFIL}` : null;
+    docente.FOTO_PERFIL = buildImageUrl(docente.FOTO_PERFIL, req);
 
     res.json({ success: true, data: docente });
   } catch (error) {
@@ -118,10 +117,9 @@ const obtenerEventosDictados = async (req, res) => {
       [id]
     );
 
-    const hostPrefix = `${req.protocol}://${req.get('host')}`;
     const data = rows.map(r => ({
       ...r,
-      URL_IMAGEN: r.URL_IMAGEN ? `${hostPrefix}/${r.URL_IMAGEN}` : null
+      URL_IMAGEN: buildImageUrl(r.URL_IMAGEN, req)
     }));
 
     res.json({ success: true, data });

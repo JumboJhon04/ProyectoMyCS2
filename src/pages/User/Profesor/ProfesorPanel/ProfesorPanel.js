@@ -74,6 +74,7 @@ const ProfesorPanel = () => {
             <button className="quick-option-btn">Subir contenido</button>
             <button className="quick-option-btn">Estadísticas</button>
           </div>
+
         </aside>
 
       </div>

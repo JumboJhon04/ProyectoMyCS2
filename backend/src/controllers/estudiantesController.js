@@ -1,4 +1,5 @@
 const { pool } = require('../config/database');
+const { buildImageUrl } = require('../utils/imageUrlHelper');
 
 // Obtener todos los estudiantes
 const obtenerEstudiantes = async (req, res) => {
@@ -24,10 +25,9 @@ const obtenerEstudiantes = async (req, res) => {
        ORDER BY u.SECUENCIAL DESC`
     );
 
-    const hostPrefix = `${req.protocol}://${req.get('host')}`;
     const data = rows.map(u => ({
       ...u,
-      FOTO_PERFIL: u.FOTO_PERFIL ? `${hostPrefix}/${u.FOTO_PERFIL}` : null
+      FOTO_PERFIL: buildImageUrl(u.FOTO_PERFIL, req)
     }));
 
     res.json({ success: true, data });
@@ -73,8 +73,7 @@ const obtenerEstudiante = async (req, res) => {
       [id]
     );
 
-    const hostPrefix = `${req.protocol}://${req.get('host')}`;
-    estudiante.FOTO_PERFIL = estudiante.FOTO_PERFIL ? `${hostPrefix}/${estudiante.FOTO_PERFIL}` : null;
+    estudiante.FOTO_PERFIL = buildImageUrl(estudiante.FOTO_PERFIL, req);
     estudiante.CARRERAS = carreras;
 
     res.json({ success: true, data: estudiante });
@@ -137,10 +136,9 @@ const obtenerEventosDeUsuario = async (req, res) => {
       [id]
     );
 
-    const hostPrefix = `${req.protocol}://${req.get('host')}`;
     const data = rows.map(r => ({
       ...r,
-      URL_IMAGEN: r.URL_IMAGEN ? `${hostPrefix}/${r.URL_IMAGEN}` : null
+      URL_IMAGEN: buildImageUrl(r.URL_IMAGEN, req)
     }));
 
     res.json({ success: true, data });
@@ -149,7 +147,7 @@ const obtenerEventosDeUsuario = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener eventos del usuario', details: error.message });
   }
 };
-
+ 
 // Obtener inscripción de un usuario para un evento específico (incluye pendientes)
 const obtenerInscripcionPorEvento = async (req, res) => {
   const usuarioId = req.params.id;
@@ -186,10 +184,9 @@ const obtenerInscripcionPorEvento = async (req, res) => {
       return res.json({ success: true, data: null });
     }
 
-    const hostPrefix = `${req.protocol}://${req.get('host')}`;
     const data = {
       ...rows[0],
-      URL_IMAGEN: rows[0].URL_IMAGEN ? `${hostPrefix}/${rows[0].URL_IMAGEN}` : null
+      URL_IMAGEN: buildImageUrl(rows[0].URL_IMAGEN, req)
     };
 
     res.json({ success: true, data });
@@ -198,7 +195,6 @@ const obtenerInscripcionPorEvento = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener inscripción', details: error.message });
   }
 };
-
 // Crear inscripción para un usuario a un evento
 const crearInscripcion = async (req, res) => {
   const usuarioId = req.params.id;

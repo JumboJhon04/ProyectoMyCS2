@@ -45,7 +45,8 @@
   color: #222; 
 }
 
-.badge {
+/* Scoped notification badge so it doesn't override other .badge elements across the app */
+.icon-btn.notification .badge {
   position: absolute;
   top: -6px;
   right: -6px;
@@ -58,7 +59,7 @@
 }
 
 /* subtle pulse for new notifications */
-.badge.new { 
+.icon-btn.notification .badge.new { 
   animation: pulse 1.8s infinite; 
 }
 

@@ -6,6 +6,7 @@ import { CoursesProvider } from "./context/CoursesContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import HeaderWrapper from "./components/Header/HeaderWrapper";
 import AppRoutes from './routes/AppRoutes';
+import FloatingSupportButton from './components/FloatingSupportButton/FloatingSupportButton';
 // ProtectedRoute moved to `src/components/ProtectedRoute.js`
 
 function App() {
@@ -138,6 +139,7 @@ function AppLayout() {
         )}
 
         <AppRoutes />
+        <FloatingSupportButton />
       </main>
     </div>
   );
