@@ -2,16 +2,13 @@ const nodemailer = require('nodemailer');
 
 console.log('📧 Cargando módulo emailService...');
 
-// Configuración SMTP para Gmail
-// IMPORTANTE: Gmail requiere usar una "Contraseña de aplicación" (App Password)
-// No uses tu contraseña normal de Gmail
 const smtpConfig = {
   host: 'smtp.gmail.com',
   port: 587,
   secure: false, // true para 465, false para otros puertos
   auth: {
     user: 'shinjilouch@gmail.com',
-    pass: 'qduebmckggosncnt' // Debe ser una Contraseña de aplicación, no la contraseña normal
+    pass: 'skaphkfcqpgstoxr'
   },
   tls: {
     // No rechazar conexiones no autorizadas
@@ -244,10 +241,150 @@ const enviarEmailPagoAprobado = async (destinatario, nombreUsuario, tituloEvento
     };
   }
 };
+/**
+ * Enviar email de notificación de cambio de estado de solicitud
+ * @param {string} destinatario - Correo del destinatario
+ * @param {string} nombreUsuario - Nombre del usuario
+ * @param {string} estado - Nuevo estado (Aprobado, Rechazado)
+ * @param {string} mensaje - Mensaje personalizado del admin
+ * @param {number} solicitudId - ID de la solicitud
+ */
+const enviarEmailSolicitud = async (destinatario, nombreUsuario, estado, mensaje, solicitudId) => {
+  try {
+    console.log('📧 Intentando enviar email de solicitud a:', destinatario);
+    
+    const estadoTexto = estado === 'Aprobado' ? 'Aprobada' : estado === 'Rechazado' ? 'Rechazada' : estado;
+    const colorEstado = estado === 'Aprobado' ? '#10b981' : estado === 'Rechazado' ? '#ef4444' : '#667eea';
+    const iconoEstado = estado === 'Aprobado' ? '✅' : estado === 'Rechazado' ? '❌' : '📋';
+    
+    const mailOptions = {
+      from: '"Sistema de Eventos UTA" <wson1478963@gmail.com>',
+      to: destinatario,
+      subject: `${iconoEstado} Solicitud de Soporte ${estadoTexto} - #${solicitudId}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            .header {
+              background: linear-gradient(135deg, ${colorEstado} 0%, ${colorEstado}dd 100%);
+              color: white;
+              padding: 30px;
+              text-align: center;
+              border-radius: 8px 8px 0 0;
+            }
+            .content {
+              background: #f9fafb;
+              padding: 30px;
+              border-radius: 0 0 8px 8px;
+              border: 1px solid #e5e7eb;
+              border-top: none;
+            }
+            .status-icon {
+              font-size: 48px;
+              margin-bottom: 10px;
+            }
+            .info-box {
+              background: white;
+              padding: 20px;
+              border-radius: 8px;
+              margin: 20px 0;
+              border-left: 4px solid ${colorEstado};
+            }
+            .message-box {
+              background: #f3f4f6;
+              padding: 15px;
+              border-radius: 6px;
+              margin: 15px 0;
+              border-left: 3px solid ${colorEstado};
+            }
+            .footer {
+              text-align: center;
+              margin-top: 30px;
+              padding-top: 20px;
+              border-top: 1px solid #e5e7eb;
+              color: #6b7280;
+              font-size: 12px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="status-icon">${iconoEstado}</div>
+            <h1 style="margin: 0;">Solicitud ${estadoTexto}</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">ID: #${solicitudId}</p>
+          </div>
+          
+          <div class="content">
+            <p>Estimado/a <strong>${nombreUsuario}</strong>,</p>
+            
+            <p>Te informamos que tu solicitud de soporte ha sido <strong style="color: ${colorEstado};">${estadoTexto.toLowerCase()}</strong>.</p>
+            
+            <div class="info-box">
+              <p><strong>Estado:</strong> <span style="color: ${colorEstado}; font-weight: bold;">${estadoTexto}</span></p>
+              <p><strong>ID de Solicitud:</strong> #${solicitudId}</p>
+            </div>
+            
+            ${mensaje ? `
+            <div class="message-box">
+              <p><strong>Mensaje del administrador:</strong></p>
+              <p>${mensaje}</p>
+            </div>
+            ` : ''}
+            
+            <p>Si tienes alguna pregunta o necesitas más información, no dudes en contactarnos.</p>
+          </div>
+          
+          <div class="footer">
+            <p>Este es un mensaje automático, por favor no respondas a este correo.</p>
+            <p>© ${new Date().getFullYear()} Sistema de Eventos UTA - FISEI</p>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+        Solicitud de Soporte ${estadoTexto} - #${solicitudId}
+        
+        Estimado/a ${nombreUsuario},
+        
+        Te informamos que tu solicitud de soporte ha sido ${estadoTexto.toLowerCase()}.
+        
+        Estado: ${estadoTexto}
+        ID de Solicitud: #${solicitudId}
+        
+        ${mensaje ? `Mensaje del administrador:\n${mensaje}\n` : ''}
+        
+        Si tienes alguna pregunta o necesitas más información, no dudes en contactarnos.
+        
+        Este es un mensaje automático, por favor no respondas a este correo.
+        © ${new Date().getFullYear()} Sistema de Eventos UTA - FISEI
+      `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ Email de solicitud enviado exitosamente:', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('❌ Error al enviar email de solicitud:', error.message);
+    return { 
+      success: false, 
+      error: error.message
+    };
+  }
+};
 
 console.log('📧 Módulo emailService exportado correctamente');
 
 module.exports = {
-  enviarEmailPagoAprobado
+  enviarEmailPagoAprobado,
+  enviarEmailSolicitud
 };
-

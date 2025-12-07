@@ -2,6 +2,7 @@ const { pool } = require('../config/database');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { buildImageUrl } = require('../utils/imageUrlHelper');
 
 // Configuración de multer para imágenes del carrusel
 const storage = multer.diskStorage({
@@ -81,7 +82,7 @@ const subirImagenCarrusel = async (req, res) => {
         message: 'Imagen agregada al carrusel',
         data: {
           id: result.insertId,
-          imageUrl: `http://localhost:5000/${imageUrl}`
+          imageUrl: buildImageUrl(imageUrl, req)
         }
       });
     } catch (error) {
@@ -116,7 +117,7 @@ const obtenerImagenesCarrusel = async (req, res) => {
 
     const imagenesConUrl = imagenes.map(img => ({
       ...img,
-      URL_IMAGEN: `http://localhost:5000/${img.URL_IMAGEN}`
+      URL_IMAGEN: buildImageUrl(img.URL_IMAGEN, req)
     }));
 
     res.json({
