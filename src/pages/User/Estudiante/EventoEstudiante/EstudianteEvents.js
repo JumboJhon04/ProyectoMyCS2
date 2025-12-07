@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../../context/UserContext';
 import { useCourses } from '../../../../context/CoursesContext';
+import PaymentModal from '../../../../components/PaymentModal/PaymentModal';
 import './EstudianteEvents.css';
 
 const EstudianteEvents = () => {
@@ -67,6 +68,8 @@ const EstudianteEvents = () => {
   // Cursos con estado calculado
   const coursesWithStatus = courses;
 
+  const [paymentModal, setPaymentModal] = useState({ isOpen: false, inscripcionId: null, monto: 0 });
+
   // Manejar inscripción desde la lista de todos los cursos
   const handleInscribirse = async (eventoId) => {
     if (!user || !user.id) {
@@ -83,7 +86,29 @@ const EstudianteEvents = () => {
       if (!res.ok) {
         throw new Error(json.error || 'Error al inscribirse');
       }
+      
+      // Si requiere pago, abrir modal de pago
+      if (json.requierePago && json.inscripcionId) {
+        setPaymentModal({
+          isOpen: true,
+          inscripcionId: json.inscripcionId,
+          monto: json.monto
+        });
+      } else {
+        alert('Inscripción realizada correctamente');
+      }
+      
       // Recargar mis cursos
+      await reloadStudentEvents();
+    } catch (e) {
+      console.error('Error inscribiéndose:', e.message);
+      alert(e.message);
+    }
+  };
+
+  const reloadStudentEvents = async () => {
+    if (!user || !user.id) return;
+    try {
       const evRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/eventos`);
       const evJson = await evRes.json();
       setCourses((evJson.data || []).map(item => ({
@@ -97,10 +122,8 @@ const EstudianteEvents = () => {
         status: item.CODIGOESTADOINSCRIPCION === 'ACE' ? 'in-progress' : 'in-progress',
         raw: item
       })));
-      alert('Inscripción realizada correctamente');
     } catch (e) {
-      console.error('Error inscribiéndose:', e.message);
-      alert(e.message);
+      console.error('Error recargando eventos:', e);
     }
   };
 
@@ -227,9 +250,9 @@ const EstudianteEvents = () => {
                 ) : (
                   <button 
                     className="continue-btn"
-                    onClick={() => handleInscribirse(course.raw?.id || course.id)}
+                    onClick={() => navigate(`/payment/${course.raw?.id || course.id}`)}
                   >
-                    Inscribirse
+                    Comprar
                   </button>
                 )}
               </div>
@@ -237,6 +260,15 @@ const EstudianteEvents = () => {
           ))
         )}
       </div>
+
+      {/* Modal de Pago */}
+      <PaymentModal
+        isOpen={paymentModal.isOpen}
+        onClose={() => setPaymentModal({ isOpen: false, inscripcionId: null, monto: 0 })}
+        inscripcionId={paymentModal.inscripcionId}
+        monto={paymentModal.monto}
+        onPaymentSuccess={reloadStudentEvents}
+      />
     </div>
   );
 };

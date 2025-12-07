@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaBell, FaBars, FaSignOutAlt } from 'react-icons/fa';
 import { useUser } from '../../context/UserContext';
 import './Header.css';
@@ -9,6 +10,14 @@ export default function ResponsableHeader({ onToggleSidebar, onLogout }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const panelRef = useRef(null);
   const userMenuRef = useRef(null);
+  const navigate = useNavigate();
+
+  const handleNotificationClick = (notification) => {
+    if (notification.type === 'pagos-pendientes') {
+      navigate('/responsable/users');
+      setShowNotif(false);
+    }
+  };
 
   useEffect(() => {
     const onDocClick = (e) => {
@@ -95,7 +104,12 @@ export default function ResponsableHeader({ onToggleSidebar, onLogout }) {
               <ul className="notifications-list">
                 {notifications.length === 0 && <li className="notification-empty">No hay notificaciones</li>}
                 {notifications.map((n) => (
-                  <li key={n.id} className={`notification-item ${n.unread ? 'unread' : ''}`}>
+                  <li 
+                    key={n.id} 
+                    className={`notification-item ${n.unread ? 'unread' : ''} ${n.type === 'pagos-pendientes' ? 'clickable' : ''}`}
+                    onClick={() => n.type === 'pagos-pendientes' && handleNotificationClick(n)}
+                    style={{ cursor: n.type === 'pagos-pendientes' ? 'pointer' : 'default' }}
+                  >
                     <div className="notification-text">{n.text}</div>
                     <div className="notification-time">{new Date(n.createdAt).toLocaleString()}</div>
                   </li>

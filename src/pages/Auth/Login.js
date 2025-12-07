@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
 import PublicHeader from '../../components/PublicHeader/PublicHeader';
 import { useUser } from '../../context/UserContext'; // IMPORTAR
@@ -8,6 +8,7 @@ import './login.css';
 
 export default function AuthLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setUser } = useUser(); // USAR EL CONTEXTO
   const [formData, setFormData] = useState({
     correo: '',
@@ -15,6 +16,9 @@ export default function AuthLogin() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // Obtener la ruta de retorno si viene de PaymentPage
+  const returnTo = location.state?.returnTo;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -60,19 +64,22 @@ export default function AuthLogin() {
       // Actualizar el contexto
       setUser(data.data);
 
-      // En la función handleSubmit, cambiar la redirección:
-
-      // Redirigir según el rol
-      if (data.data.codigoRol === 'ADM') {
-        navigate('/admin/panel');
-      } else if (data.data.codigoRol === 'RES') {
-        navigate('/responsable/profile');
-      } else if (data.data.codigoRol === 'DOC') {
-        navigate('/profesor/panel');
-      } else if (data.data.codigoRol === 'EST') {
-        navigate('/user/panel');
+      // Si viene de una página de pago, redirigir ahí
+      if (returnTo) {
+        navigate(returnTo);
       } else {
-        navigate('/');
+        // Redirigir según el rol
+        if (data.data.codigoRol === 'ADM') {
+          navigate('/admin/panel');
+        } else if (data.data.codigoRol === 'RES') {
+          navigate('/responsable/profile');
+        } else if (data.data.codigoRol === 'DOC') {
+          navigate('/profesor/panel');
+        } else if (data.data.codigoRol === 'EST') {
+          navigate('/user/panel');
+        } else {
+          navigate('/');
+        }
       }
 
     } catch (err) {

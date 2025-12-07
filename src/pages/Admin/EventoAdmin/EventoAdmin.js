@@ -93,13 +93,6 @@ const EventoAdmin = () => {
                       className="course-logo"
                       onError={(e) => { e.target.src = '/placeholder-course.png'; }}
                     />
-                    <button 
-                      className="edit-btn" 
-                      onClick={() => handleEdit(course.id)}
-                      aria-label="Editar curso"
-                    >
-                      Editar
-                    </button>
                   </div>
 
                   <div className="course-card-body">

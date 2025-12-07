@@ -122,8 +122,8 @@ export default function Landing() {
                   <div className="course-meta">
                     <div className="course-price">${c.price.toFixed(2)}</div>
                     <div className="course-actions">
-                      <button className="btn small">Leer más</button>
-                      <button className="btn small primary">Entrar ahora</button>
+                      <Link to={`/courses/${c.id}`} className="btn small">Leer más</Link>
+                      <Link to={`/payment/${c.id}`} className="btn small primary">Entrar ahora</Link>
                     </div>
                   </div>
                 </div>

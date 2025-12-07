@@ -2,16 +2,13 @@ const nodemailer = require('nodemailer');
 
 console.log('📧 Cargando módulo emailService...');
 
-// Configuración SMTP para Gmail
-// IMPORTANTE: Gmail requiere usar una "Contraseña de aplicación" (App Password)
-// No uses tu contraseña normal de Gmail
 const smtpConfig = {
   host: 'smtp.gmail.com',
   port: 587,
   secure: false, // true para 465, false para otros puertos
   auth: {
     user: 'shinjilouch@gmail.com',
-    pass: 'skaphkfcqpgstoxr' // Debe ser una Contraseña de aplicación, no la contraseña normal
+    pass: 'skaphkfcqpgstoxr'
   },
   tls: {
     // No rechazar conexiones no autorizadas
@@ -244,7 +241,6 @@ const enviarEmailPagoAprobado = async (destinatario, nombreUsuario, tituloEvento
     };
   }
 };
-
 /**
  * Enviar email de notificación de cambio de estado de solicitud
  * @param {string} destinatario - Correo del destinatario
