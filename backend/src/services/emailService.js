@@ -3,7 +3,7 @@ const nodemailer = require('nodemailer');
 console.log('📧 Cargando módulo emailService...');
 
 const smtpConfig = {
-  host: 'smtp.gmail.com',
+  host: 'smtp.googlemail.com',
   port: 465, // Usamos SSL directo
   secure: true, // true para 465
   auth: {
