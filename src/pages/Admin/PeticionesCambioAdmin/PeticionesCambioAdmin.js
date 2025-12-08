@@ -622,24 +622,24 @@ ${selectedPeticion.OBSERVACIONES || 'N/A'}
                 </div>
               )}
               <div className="detalle-item">
-                <strong>Evaluación:</strong>
+                <strong>Motivo de cambio:</strong>
                 <p>{selectedPeticion.EVALUACION}</p>
               </div>
               {selectedPeticion.BENEFICIOS && (
                 <div className="detalle-item">
-                  <strong>Beneficios:</strong>
+                  <strong>Plan de implementación:</strong>
                   <p>{selectedPeticion.BENEFICIOS}</p>
                 </div>
               )}
               {selectedPeticion.IMPACTO_NEGATIVO && (
                 <div className="detalle-item">
-                  <strong>Impacto Negativo:</strong>
+                  <strong>:</strong>
                   <p>{selectedPeticion.IMPACTO_NEGATIVO}</p>
                 </div>
               )}
               {selectedPeticion.ACCIONES && (
                 <div className="detalle-item">
-                  <strong>Acciones:</strong>
+                  <strong>Plan de prueba:</strong>
                   <p>{selectedPeticion.ACCIONES}</p>
                 </div>
               )}
