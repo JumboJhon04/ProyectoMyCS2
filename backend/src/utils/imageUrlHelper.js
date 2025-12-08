@@ -19,13 +19,18 @@ const buildImageUrl = (relativePath, req = null) => {
 
   // Si tenemos el objeto req, usar su información para construir la URL
   if (req) {
-    const protocol = req.protocol || 'http';
+    // En producción, siempre usar HTTPS
+    // Detectar si está en Render (production)
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+    const protocol = isProduction ? 'https' : (req.protocol || 'http');
     const host = req.get('host') || 'localhost:5000';
     return `${protocol}://${host}/${relativePath}`;
   }
 
   // Si no hay req, usar variable de entorno o default
-  const baseUrl = process.env.API_BASE_URL || process.env.SERVER_URL || 'http://localhost:5000';
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+  const protocol = isProduction ? 'https' : 'http';
+  const baseUrl = process.env.API_BASE_URL || process.env.SERVER_URL || `${protocol}://localhost:5000`;
   return `${baseUrl}/${relativePath}`;
 };
 
@@ -49,4 +54,3 @@ module.exports = {
   buildImageUrl,
   buildImageUrls
 };
-
