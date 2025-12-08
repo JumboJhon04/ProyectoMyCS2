@@ -59,10 +59,10 @@ const crearPago = async (req, res) => {
       });
     }
 
-    // Guardar comprobante si existe
+    // Guardar comprobante si existe (Cloudinary ya subió el archivo)
     let comprobanteUrl = null;
     if (comprobanteFile) {
-      comprobanteUrl = `uploads/pagos/${comprobanteFile.filename}`;
+      comprobanteUrl = comprobanteFile.path; // URL de Cloudinary
     }
 
     // Crear el pago

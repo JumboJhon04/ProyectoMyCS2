@@ -286,6 +286,7 @@ const SolicitudesAdmin = () => {
                 <th>Urgencia</th>
                 <th>Estado</th>
                 <th>Fecha</th>
+                <th>Evidencia</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -318,6 +319,21 @@ const SolicitudesAdmin = () => {
                       month: 'short',
                       day: 'numeric'
                     })}
+                  </td>
+                  <td>
+                    {solicitud.ARCHIVO_EVIDENCIA ? (
+                      <a
+                        href={solicitud.ARCHIVO_EVIDENCIA}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-ver-archivo"
+                        title="Ver archivo de evidencia"
+                      >
+                        📎 Ver
+                      </a>
+                    ) : (
+                      <span style={{ color: '#999' }}>Sin archivo</span>
+                    )}
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
@@ -383,6 +399,22 @@ const SolicitudesAdmin = () => {
                 <strong>Justificación:</strong>
                 <p>{selectedSolicitud.JUSTIFICACION}</p>
               </div>
+              {selectedSolicitud.ARCHIVO_EVIDENCIA && (
+                <div className="detalle-item">
+                  <strong>Archivo de Evidencia:</strong>
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <a
+                      href={selectedSolicitud.ARCHIVO_EVIDENCIA}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-ver-archivo"
+                      style={{ display: 'inline-block', padding: '0.5rem 1rem' }}
+                    >
+                      📎 Ver Archivo de Evidencia
+                    </a>
+                  </div>
+                </div>
+              )}
 
               <div className="form-group">
                 <label>Cambiar Estado</label>

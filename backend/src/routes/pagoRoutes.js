@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pagoController = require('../controllers/pagoController');
-const uploadPagos = require('../config/multerPagos');
+const { uploadPagos } = require('../config/cloudinary');
 
 // Obtener formas de pago disponibles
 router.get('/formas-pago', pagoController.obtenerFormasPago);

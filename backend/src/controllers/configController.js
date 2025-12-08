@@ -1,103 +1,31 @@
 const { pool } = require('../config/database');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { cloudinary, uploadHome } = require('../config/cloudinary');
 const { buildImageUrl } = require('../utils/imageUrlHelper');
-
-// Configuración de multer para imágenes del carrusel
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../../uploads/carrusel');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, `carrusel-${uniqueSuffix}${ext}`);
-  }
-});
-
-const uploadCarrusel = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) {
-      cb(null, true);
-    } else {
-      cb(new Error('Solo se permiten imágenes'));
-    }
-  }
-}).single('imagen');
-
-// Configuración de multer para imágenes del home
-const storageHome = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../../uploads/home');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, `home-${uniqueSuffix}${ext}`);
-  }
-});
-
-const uploadHome = multer({
-  storage: storageHome,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) {
-      cb(null, true);
-    } else {
-      cb(new Error('Solo se permiten imágenes'));
-    }
-  }
-}).any(); // Permitir cualquier cantidad de archivos con cualquier nombre
 
 // Subir imagen al carrusel
 const subirImagenCarrusel = async (req, res) => {
-  uploadCarrusel(req, res, async (err) => {
-    if (err) {
-      return res.status(400).json({
-        error: 'Error al subir imagen',
-        details: err.message
-      });
-    }
+  if (!req.file) {
+    return res.status(400).json({
+      error: 'No se recibió ninguna imagen'
+    });
+  }
 
-    if (!req.file) {
-      return res.status(400).json({
-        error: 'No se recibió ninguna imagen'
-      });
-    }
+  let connection;
+  try {
+    connection = await pool.getConnection();
 
-    let connection;
-    try {
-      connection = await pool.getConnection();
+    const { titulo, subtitulo, enlace, orden, activo } = req.body;
+    const imageUrl = req.file.path; // URL de Cloudinary
 
-      const { titulo, subtitulo, enlace, orden, activo } = req.body;
-      const imageUrl = `uploads/carrusel/${req.file.filename}`;
-
-      const [result] = await connection.execute(
-        `INSERT INTO carrusel (
-          TITULO,
-          SUBTITULO,
-          URL_IMAGEN,
-          ENLACE,
-          ORDEN,
-          ACTIVO
-        ) VALUES (?, ?, ?, ?, ?, ?)`,
+    const [result] = await connection.execute(
+      `INSERT INTO carrusel (
+        TITULO,
+        SUBTITULO,
+        URL_IMAGEN,
+        ENLACE,
+        ORDEN,
+        ACTIVO
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
         [
           titulo || null,
           subtitulo || null,
@@ -108,24 +36,23 @@ const subirImagenCarrusel = async (req, res) => {
         ]
       );
 
-      res.status(201).json({
-        success: true,
-        message: 'Imagen agregada al carrusel',
-        data: {
-          id: result.insertId,
-          imageUrl: buildImageUrl(imageUrl, req)
-        }
-      });
-    } catch (error) {
-      console.error('Error al guardar imagen:', error);
-      res.status(500).json({
-        error: 'Error al guardar la imagen',
-        details: error.message
-      });
-    } finally {
-      if (connection) connection.release();
-    }
-  });
+    res.status(201).json({
+      success: true,
+      message: 'Imagen agregada al carrusel',
+      data: {
+        id: result.insertId,
+        imageUrl: imageUrl // Ya es URL de Cloudinary
+      }
+    });
+  } catch (error) {
+    console.error('Error al guardar imagen:', error);
+    res.status(500).json({
+      error: 'Error al guardar la imagen',
+      details: error.message
+    });
+  } finally {
+    if (connection) connection.release();
+  }
 };
 
 // Obtener todas las imágenes del carrusel
@@ -397,28 +324,20 @@ const obtenerHome = async (req, res) => {
 
 // Actualizar contenido del home
 const actualizarHome = async (req, res) => {
-  uploadHome(req, res, async (err) => {
-    if (err) {
-      return res.status(400).json({
-        error: 'Error al subir imágenes',
-        details: err.message
+  let connection;
+  try {
+    connection = await pool.getConnection();
+
+    // Parsear el contenido enviado
+    const content = JSON.parse(req.body.content || '{}');
+
+    // Crear un mapa de archivos subidos por fieldname (URLs de Cloudinary)
+    const uploadedFiles = {};
+    if (req.files && Array.isArray(req.files)) {
+      req.files.forEach(file => {
+        uploadedFiles[file.fieldname] = file.path; // URL de Cloudinary
       });
     }
-
-    let connection;
-    try {
-      connection = await pool.getConnection();
-
-      // Parsear el contenido enviado
-      const content = JSON.parse(req.body.content || '{}');
-
-      // Crear un mapa de archivos subidos por fieldname
-      const uploadedFiles = {};
-      if (req.files && Array.isArray(req.files)) {
-        req.files.forEach(file => {
-          uploadedFiles[file.fieldname] = `uploads/home/${file.filename}`;
-        });
-      }
 
       // Procesar imágenes en el contenido
       if (content.hero && uploadedFiles['heroFallbackImage']) {
@@ -483,21 +402,20 @@ const actualizarHome = async (req, res) => {
         );
       }
 
-      res.json({
-        success: true,
-        message: 'Contenido actualizado correctamente',
-        data: content
-      });
-    } catch (error) {
-      console.error('Error al actualizar contenido home:', error);
-      res.status(500).json({
-        error: 'Error al actualizar el contenido',
-        details: error.message
-      });
-    } finally {
-      if (connection) connection.release();
-    }
-  });
+    res.json({
+      success: true,
+      message: 'Contenido actualizado correctamente',
+      data: content
+    });
+  } catch (error) {
+    console.error('Error al actualizar contenido home:', error);
+    res.status(500).json({
+      error: 'Error al actualizar el contenido',
+      details: error.message
+    });
+  } finally {
+    if (connection) connection.release();
+  }
 };
 
 module.exports = {

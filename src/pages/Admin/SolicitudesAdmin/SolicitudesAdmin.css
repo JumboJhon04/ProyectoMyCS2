@@ -202,6 +202,25 @@
   cursor: not-allowed;
 }
 
+.btn-ver-archivo {
+  background-color: #555;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: background-color 0.3s;
+  display: inline-block;
+}
+
+.btn-ver-archivo:hover {
+  background-color: #333;
+  color: white;
+  text-decoration: none;
+}
+
 /* Modal Styles */
 .modal-overlay {
   position: fixed;
