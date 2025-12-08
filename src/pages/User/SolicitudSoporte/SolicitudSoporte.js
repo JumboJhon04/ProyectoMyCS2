@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useUser } from '../../../context/UserContext';
 import './SolicitudSoporte.css';
 
+import API_URL from '../../../config/api';
+
 const SolicitudSoporte = () => {
   const { user } = useUser();
   const [formData, setFormData] = useState({
@@ -67,7 +69,7 @@ const SolicitudSoporte = () => {
         formDataToSend.append('archivoEvidencia', archivoEvidencia);
       }
 
-      const response = await fetch('http://localhost:5000/api/solicitudes', {
+      const response = await fetch(`${API_URL}/api/solicitudes`, {
         method: 'POST',
         body: formDataToSend
       });

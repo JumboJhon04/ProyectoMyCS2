@@ -60,7 +60,7 @@ export default function NewResponsableModal({ isOpen, onClose, onCreate }) {
     try {
       setLoading(true);
 
-      const response = await fetch('http://localhost:5000/api/auth/responsables', {
+      const response = await fetch(`${API_URL}/api/auth/responsables`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

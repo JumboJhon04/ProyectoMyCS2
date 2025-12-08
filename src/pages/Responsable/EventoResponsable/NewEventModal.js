@@ -2,6 +2,8 @@
   import { useCourses } from '../../../context/CoursesContext';
   import './EventoResponsable.css';
 
+  import API_URL from '../../../config/api';
+
   const NewEventModal = ({ isOpen, onClose, course }) => {
     const { updateCourse } = useCourses();
     
@@ -38,7 +40,7 @@
     useEffect(() => {
       const fetchCarreras = async () => {
         try {
-          const response = await fetch('http://localhost:5000/api/carreras');
+          const response = await fetch(`${API_URL}/api/carreras`);
           const data = await response.json();
           if (data.success) {
             setCarrerasDisponibles(data.data);

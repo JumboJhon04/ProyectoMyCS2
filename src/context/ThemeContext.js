@@ -1,12 +1,13 @@
 import React, { createContext, useState, useEffect } from 'react';
+import API_URL from '../config/api';
 
 export const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState({
-    primario: '#667eea',
-    secundario: '#51cf66',
-    terciario: '#845ef7'
+    primario: '#333',
+    secundario: '#333',
+    terciario: '#333'
   });
   const [loading, setLoading] = useState(true);
 
@@ -24,7 +25,7 @@ export const ThemeProvider = ({ children }) => {
 
   const cargarColores = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/config/colores');
+      const response = await fetch(`${API_URL}/api/config/colores`);
       const data = await response.json();
       if (data.success) {
         setTheme(data.data);

@@ -5,6 +5,7 @@ import { useCourses } from '../../../../context/CoursesContext';
 import { useEffect, useState } from 'react';
 import UserPanel from '../../UserPanel';
 import './EstudiantePanel.css';
+import API_URL from '../../../../config/api';
 
 const EstudiantePanel = () => {
   const { user } = useUser();
@@ -38,7 +39,7 @@ const EstudiantePanel = () => {
     const fetchEvents = async () => {
       if (!user || !user.id) return;
       try {
-        const res = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/eventos`);
+        const res = await fetch(`${API_URL}/api/estudiantes/${user.id}/eventos`);
         if (!res.ok) return;
         const json = await res.json();
         if (json && json.data) setStudentEvents(json.data);

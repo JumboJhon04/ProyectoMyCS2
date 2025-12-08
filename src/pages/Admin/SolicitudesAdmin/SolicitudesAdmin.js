@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../../../context/UserContext';
+import API_URL from '../../../config/api';
 import './SolicitudesAdmin.css';
 
 const SolicitudesAdmin = () => {
@@ -41,7 +42,7 @@ const SolicitudesAdmin = () => {
   const cargarSolicitudes = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/solicitudes');
+      const response = await fetch(`${API_URL}/api/solicitudes`);
       const data = await response.json();
       if (data.success) {
         setSolicitudes(data.data);
@@ -75,7 +76,7 @@ const SolicitudesAdmin = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/solicitudes/${selectedSolicitud.SECUENCIAL}/estado`,
+        `${API_URL}/api/solicitudes/${selectedSolicitud.SECUENCIAL}/estado`,
         {
           method: 'PUT',
           headers: {
@@ -165,7 +166,7 @@ const SolicitudesAdmin = () => {
   const cargarAdmins = async () => {
     setLoadingAdmins(true);
     try {
-      const response = await fetch('http://localhost:5000/api/admins');
+      const response = await fetch(`${API_URL}/api/admins`);
       const data = await response.json();
       if (data.success) setAdmins(data.data);
     } catch (err) {
@@ -192,7 +193,7 @@ const SolicitudesAdmin = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/solicitudes/${selectedSolicitud.SECUENCIAL}/peticion-cambio`,
+        `${API_URL}/api/solicitudes/${selectedSolicitud.SECUENCIAL}/peticion-cambio`,
         {
           method: 'POST',
           headers: {

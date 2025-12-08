@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './UserPanelAdmin.css';
+import API_URL from '../../../config/api';
 import NewResponsableModal from './NewResponsableModal';
 import ViewResponsableModal from './ViewResponsableModal';
 
@@ -17,7 +18,7 @@ export default function UserPanelAdmin(){
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('http://localhost:5000/api/auth/responsables');
+      const response = await fetch(`${API_URL}/api/auth/responsables`);
       const data = await response.json();
       
       if (!response.ok) {
