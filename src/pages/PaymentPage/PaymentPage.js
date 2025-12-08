@@ -5,6 +5,7 @@ import { useCourses } from '../../context/CoursesContext';
 import PublicHeader from '../../components/PublicHeader/PublicHeader';
 import PayPalButton from '../../components/PayPalButton/PayPalButton';
 import './PaymentPage.css';
+import API_URL from '../../config/api';
 
 const PaymentPage = () => {
   const { courseId } = useParams();
@@ -49,7 +50,7 @@ const PaymentPage = () => {
   const fetchCourseDetails = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/eventos/${courseId}`);
+      const response = await fetch(`${API_URL}/api/eventos/${courseId}`);
       const data = await response.json();
       
       if (!response.ok) {
@@ -72,7 +73,7 @@ const PaymentPage = () => {
     if (user && user.id && courseId) {
       try {
         // Usar el nuevo endpoint que incluye inscripciones pendientes
-        const inscripcionRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/inscripcion?eventoId=${courseId}`);
+        const inscripcionRes = await fetch(`${API_URL}/api/estudiantes/${user.id}/inscripcion?eventoId=${courseId}`);
         if (inscripcionRes.ok) {
           const inscripcionData = await inscripcionRes.json();
           console.log('📋 Inscripción encontrada:', inscripcionData.data);
@@ -87,7 +88,7 @@ const PaymentPage = () => {
             const cursoEsPagado = inscripcionData.data.ES_PAGADO === 1 || courseData?.ES_PAGADO === 1;
             if (idInscripcion && cursoEsPagado) {
               try {
-                const pagoRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${idInscripcion}`);
+                    const pagoRes = await fetch(`${API_URL}/api/pagos/inscripcion/${idInscripcion}`);
                 if (pagoRes.ok) {
                   const pagoData = await pagoRes.json();
                   const pagoAprobado = pagoData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
@@ -144,7 +145,7 @@ const PaymentPage = () => {
 
   const fetchFormasPago = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/pagos/formas-pago');
+      const response = await fetch(`${API_URL}/api/pagos/formas-pago`);
       const data = await response.json();
       if (data.success) {
         setFormasPago(data.data);
@@ -187,7 +188,7 @@ const PaymentPage = () => {
 
       // Si no está inscrito, crear la inscripción
       if (!yaInscrito) {
-        const inscripcionRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/inscribir`, {
+        const inscripcionRes = await fetch(`${API_URL}/api/estudiantes/${user.id}/inscribir`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -202,7 +203,7 @@ const PaymentPage = () => {
           // Si ya está inscrito, obtener la inscripción existente
           if (inscripcionData.error && inscripcionData.error.includes('ya inscrito')) {
             try {
-              const eventosRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/eventos`);
+              const eventosRes = await fetch(`${API_URL}/api/estudiantes/${user.id}/eventos`);
               if (eventosRes.ok) {
                 const eventosData = await eventosRes.json();
                 const inscripcionExistente = eventosData.data?.find(
@@ -254,7 +255,7 @@ const PaymentPage = () => {
           formData.append('comprobante', comprobante);
         }
 
-        const pagoRes = await fetch('http://localhost:5000/api/pagos', {
+        const pagoRes = await fetch(`${API_URL}/api/pagos`, {
           method: 'POST',
           body: formData
         });
@@ -275,7 +276,7 @@ const PaymentPage = () => {
           // Esperar un momento para que el pago se registre en la BD
           await new Promise(resolve => setTimeout(resolve, 500));
           
-          const pagoRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${nuevaInscripcionId}`);
+          const pagoRes = await fetch(`${API_URL}/api/pagos/inscripcion/${nuevaInscripcionId}`);
           if (pagoRes.ok) {
             const pagoData = await pagoRes.json();
             const pagoAprobado = pagoData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
@@ -603,7 +604,7 @@ const PaymentPage = () => {
                               onSuccess={async (order) => {
                                 try {
                                   // Registrar el pago de PayPal en el backend
-                                  const pagoRes = await fetch('http://localhost:5000/api/pagos/paypal', {
+                                  const pagoRes = await fetch(`${API_URL}/api/pagos/paypal`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
@@ -628,7 +629,7 @@ const PaymentPage = () => {
                                       // Verificar el estado del pago directamente
                                       try {
                                         await new Promise(resolve => setTimeout(resolve, 500));
-                                        const pagoCheckRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${inscripcionId}`);
+                                        const pagoCheckRes = await fetch(`${API_URL}/api/pagos/inscripcion/${inscripcionId}`);
                                         if (pagoCheckRes.ok) {
                                           const pagoCheckData = await pagoCheckRes.json();
                                           const pagoAprobado = pagoCheckData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
@@ -661,7 +662,7 @@ const PaymentPage = () => {
                                     // Esperar un momento para que el pago se registre en la BD
                                     await new Promise(resolve => setTimeout(resolve, 500));
                                     
-                                    const pagoCheckRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${inscripcionId}`);
+                                    const pagoCheckRes = await fetch(`${API_URL}/api/pagos/inscripcion/${inscripcionId}`);
                                     if (pagoCheckRes.ok) {
                                       const pagoCheckData = await pagoCheckRes.json();
                                       const pagoAprobado = pagoCheckData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
@@ -845,7 +846,7 @@ const PaymentPage = () => {
                               let nuevaInscripcionId = inscripcionId;
                               
                               if (!yaInscrito && user && user.id) {
-                                const inscripcionRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/inscribir`, {
+                                const inscripcionRes = await fetch(`${API_URL}/api/estudiantes/${user.id}/inscribir`, {
                                   method: 'POST',
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify({ 
@@ -871,7 +872,7 @@ const PaymentPage = () => {
                               }
 
                               // Registrar el pago de PayPal en el backend
-                              const pagoRes = await fetch('http://localhost:5000/api/pagos/paypal', {
+                              const pagoRes = await fetch(`${API_URL}/api/pagos/paypal`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
@@ -897,7 +898,7 @@ const PaymentPage = () => {
                                   // Verificar el estado del pago directamente
                                   try {
                                     await new Promise(resolve => setTimeout(resolve, 500));
-                                    const pagoCheckRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${nuevaInscripcionId}`);
+                                    const pagoCheckRes = await fetch(`${API_URL}/api/pagos/inscripcion/${nuevaInscripcionId}`);
                                     if (pagoCheckRes.ok) {
                                       const pagoCheckData = await pagoCheckRes.json();
                                       const pagoAprobado = pagoCheckData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
@@ -926,7 +927,7 @@ const PaymentPage = () => {
                               // Verificar el estado del pago directamente
                               try {
                                 await new Promise(resolve => setTimeout(resolve, 500));
-                                const pagoCheckRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${nuevaInscripcionId}`);
+                                const pagoCheckRes = await fetch(`${API_URL}/api/pagos/inscripcion/${nuevaInscripcionId}`);
                                 if (pagoCheckRes.ok) {
                                   const pagoCheckData = await pagoCheckRes.json();
                                   const pagoAprobado = pagoCheckData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');

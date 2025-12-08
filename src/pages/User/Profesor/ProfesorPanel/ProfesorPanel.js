@@ -8,6 +8,8 @@ import { useEffect, useState } from 'react';
 import { FaDatabase, FaChartLine } from 'react-icons/fa'; // Iconos de ejemplo para los cursos
 import './ProfesorPanel.css';
 
+import API_URL from '../../../../config/api';
+
 // Eventos que dictará el profesor (se cargarán desde backend)
 const ProfesorPanel = () => {
   const { user } = useUser();
@@ -17,7 +19,7 @@ const ProfesorPanel = () => {
     const fetchEvents = async () => {
       if (!user || !user.id) return;
       try {
-        const res = await fetch(`http://localhost:5000/api/docentes/${user.id}/eventos`);
+        const res = await fetch(`${API_URL}/api/docentes/${user.id}/eventos`);
         if (!res.ok) return;
         const json = await res.json();
         if (json && json.data) setProfessorEvents(json.data);

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+
+import API_URL from '../../config/api';
 import './PaymentModal.css';
 
 const PaymentModal = ({ isOpen, onClose, inscripcionId, monto, onPaymentSuccess }) => {
@@ -18,7 +20,7 @@ const PaymentModal = ({ isOpen, onClose, inscripcionId, monto, onPaymentSuccess 
 
   const fetchFormasPago = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/pagos/formas-pago');
+      const response = await fetch(`${API_URL}/api/pagos/formas-pago`);
       const data = await response.json();
       if (data.success) {
         setFormasPago(data.data);
@@ -70,7 +72,7 @@ const PaymentModal = ({ isOpen, onClose, inscripcionId, monto, onPaymentSuccess 
         formData.append('comprobante', comprobante);
       }
 
-      const response = await fetch('http://localhost:5000/api/pagos', {
+      const response = await fetch(`${API_URL}/api/pagos`, {
         method: 'POST',
         body: formData
       });

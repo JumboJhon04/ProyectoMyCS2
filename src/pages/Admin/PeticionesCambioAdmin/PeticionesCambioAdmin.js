@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../../../context/UserContext';
+import API_URL from '../../../config/api';
 import './PeticionesCambioAdmin.css';
 
 const PeticionesCambioAdmin = () => {
@@ -39,7 +40,7 @@ const PeticionesCambioAdmin = () => {
   const cargarAdmins = async () => {
     setLoadingAdmins(true);
     try {
-      const response = await fetch('http://localhost:5000/api/admins');
+      const response = await fetch(`${API_URL}/api/admins`);
       const data = await response.json();
       if (data.success) {
         setAdmins(data.data);
@@ -54,7 +55,7 @@ const PeticionesCambioAdmin = () => {
   const cargarPeticiones = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/peticiones-cambio');
+      const response = await fetch(`${API_URL}/api/peticiones-cambio`);
       const data = await response.json();
       if (data.success) {
         setPeticiones(data.data);
@@ -76,7 +77,7 @@ const PeticionesCambioAdmin = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/peticiones-cambio/${peticion.SECUENCIAL}`);
+      const response = await fetch(`${API_URL}/api/peticiones-cambio/${peticion.SECUENCIAL}`);
       const data = await response.json();
       if (data.success) {
         setSelectedPeticion(data.data);
@@ -191,7 +192,7 @@ const PeticionesCambioAdmin = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/peticiones-cambio', {
+      const response = await fetch(`${API_URL}/api/peticiones-cambio`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -226,7 +227,7 @@ const PeticionesCambioAdmin = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/peticiones-cambio/${selectedPeticion.SECUENCIAL}/aprobar`,
+        `${API_URL}/api/peticiones-cambio/${selectedPeticion.SECUENCIAL}/aprobar`,
         {
           method: 'POST',
           headers: {
@@ -265,7 +266,7 @@ const PeticionesCambioAdmin = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/peticiones-cambio/${selectedPeticion.SECUENCIAL}/rechazar`,
+        `${API_URL}/api/peticiones-cambio/${selectedPeticion.SECUENCIAL}/rechazar`,
         {
           method: 'POST',
           headers: {

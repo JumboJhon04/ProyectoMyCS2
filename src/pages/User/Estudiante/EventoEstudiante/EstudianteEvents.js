@@ -5,6 +5,8 @@ import { useCourses } from '../../../../context/CoursesContext';
 import PaymentModal from '../../../../components/PaymentModal/PaymentModal';
 import './EstudianteEvents.css';
 
+import API_URL from '../../../../config/api';
+
 const EstudianteEvents = () => {
   const { user } = useUser();
   const { courses: availableCourses } = useCourses();
@@ -18,7 +20,7 @@ const EstudianteEvents = () => {
     const fetchStudentEvents = async () => {
       if (!user || !user.id) return setCourses([]);
       try {
-        const res = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/eventos`);
+        const res = await fetch(`${API_URL}/api/estudiantes/${user.id}/eventos`);
         if (!res.ok) {
           console.warn('No se pudieron obtener las inscripciones del estudiante');
           setCourses([]);
@@ -77,7 +79,7 @@ const EstudianteEvents = () => {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/inscribir`, {
+      const res = await fetch(`${API_URL}/api/estudiantes/${user.id}/inscribir`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ eventoId })
@@ -109,7 +111,7 @@ const EstudianteEvents = () => {
   const reloadStudentEvents = async () => {
     if (!user || !user.id) return;
     try {
-      const evRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/eventos`);
+      const evRes = await fetch(`${API_URL}/api/estudiantes/${user.id}/eventos`);
       const evJson = await evRes.json();
       setCourses((evJson.data || []).map(item => ({
         id: item.eventoId || item.SECUENCIALEVENTO || item.SECUENCIAL,

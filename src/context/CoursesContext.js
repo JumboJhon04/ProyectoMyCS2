@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const CoursesContext = createContext();
 
+import API_URL from '../config/api';
+
 export const useCourses = () => {
   const context = useContext(CoursesContext);
   if (!context) {
@@ -41,7 +43,7 @@ export const CoursesProvider = ({ children }) => {
  const fetchCourses = async () => {
   try {
     setLoading(true);
-    const response = await fetch('http://localhost:5000/api/eventos');
+    const response = await fetch(`${API_URL}/api/eventos`);
     const data = await response.json();
     
     if (!response.ok) {
@@ -167,7 +169,7 @@ export const CoursesProvider = ({ children }) => {
         formData.append('image', newCourse.imageFile);
       }
 
-      const response = await fetch('http://localhost:5000/api/eventos', {
+      const response = await fetch(`${API_URL}/api/eventos`, {
         method: 'POST',
         body: formData
       });
@@ -219,7 +221,7 @@ const updateCourse = async (id, updatedData) => {
       formData.append('image', updatedData.imageFile);
     }
 
-    const response = await fetch(`http://localhost:5000/api/eventos/${id}`, {
+    const response = await fetch(`${API_URL}/api/eventos/${id}`, {
       method: 'PUT',
       body: formData
     });
@@ -239,7 +241,7 @@ const updateCourse = async (id, updatedData) => {
 };
   const deleteCourse = async (id) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/eventos/${id}`, {
+      const response = await fetch(`${API_URL}/api/eventos/${id}`, {
         method: 'DELETE'
       });
 
