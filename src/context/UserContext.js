@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import API_URL from '../config/api';
 
 const UserContext = createContext(null);
 
@@ -28,7 +29,7 @@ export const UserProvider = ({ children }) => {
       
       if (isResponsable) {
         try {
-          const response = await fetch('http://localhost:5000/api/pagos/pendientes/conteo');
+          const response = await fetch(`${API_URL}/api/pagos/pendientes/conteo`);
           const data = await response.json();
           
           if (data.success && data.data?.total > 0) {

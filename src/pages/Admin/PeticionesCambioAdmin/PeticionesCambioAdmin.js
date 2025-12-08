@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../../../context/UserContext';
+import API_URL from '../../../config/api';
 import './PeticionesCambioAdmin.css';
 
 const PeticionesCambioAdmin = () => {
@@ -39,7 +40,7 @@ const PeticionesCambioAdmin = () => {
   const cargarAdmins = async () => {
     setLoadingAdmins(true);
     try {
-      const response = await fetch('http://localhost:5000/api/admins');
+      const response = await fetch(`${API_URL}/api/admins`);
       const data = await response.json();
       if (data.success) {
         setAdmins(data.data);
@@ -54,7 +55,7 @@ const PeticionesCambioAdmin = () => {
   const cargarPeticiones = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/peticiones-cambio');
+      const response = await fetch(`${API_URL}/api/peticiones-cambio`);
       const data = await response.json();
       if (data.success) {
         setPeticiones(data.data);
@@ -76,7 +77,7 @@ const PeticionesCambioAdmin = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/peticiones-cambio/${peticion.SECUENCIAL}`);
+      const response = await fetch(`${API_URL}/api/peticiones-cambio/${peticion.SECUENCIAL}`);
       const data = await response.json();
       if (data.success) {
         setSelectedPeticion(data.data);
@@ -191,7 +192,7 @@ const PeticionesCambioAdmin = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/peticiones-cambio', {
+      const response = await fetch(`${API_URL}/api/peticiones-cambio`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -226,7 +227,7 @@ const PeticionesCambioAdmin = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/peticiones-cambio/${selectedPeticion.SECUENCIAL}/aprobar`,
+        `${API_URL}/api/peticiones-cambio/${selectedPeticion.SECUENCIAL}/aprobar`,
         {
           method: 'POST',
           headers: {
@@ -265,7 +266,7 @@ const PeticionesCambioAdmin = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/peticiones-cambio/${selectedPeticion.SECUENCIAL}/rechazar`,
+        `${API_URL}/api/peticiones-cambio/${selectedPeticion.SECUENCIAL}/rechazar`,
         {
           method: 'POST',
           headers: {
@@ -344,16 +345,24 @@ const PeticionesCambioAdmin = () => {
   const generarIssueGitHub = () => {
     if (!selectedPeticion || selectedPeticion.ESTADO !== 'Completado') return '';
 
+    // Obtener el nombre del responsable técnico
+    const responsableTecnico = selectedPeticion.RESPONSABLE_TECNICO
+      ? (() => {
+          const admin = admins.find(a => a.id === parseInt(selectedPeticion.RESPONSABLE_TECNICO));
+          return admin ? (admin.NOMBRE_COMPLETO || `${admin.NOMBRES} ${admin.APELLIDOS}`) : selectedPeticion.RESPONSABLE_TECNICO;
+        })()
+      : 'N/A';
+
     const issue = `# ${selectedPeticion.TITULO_CAMBIO || 'Petición de Cambio'}
 
 ## Información General
-- **ID de Petición:** #${selectedPeticion.SECUENCIAL}
+- **ID de Petición:** ${selectedPeticion.SECUENCIAL}
 ${selectedPeticion.SECUENCIAL_CAMBIO ? `- **Solicitud Origen:** #${selectedPeticion.SECUENCIAL_CAMBIO}` : ''}
 - **Solicitante:** ${selectedPeticion.NOMBRE_SOLICITANTE || (selectedPeticion.NOMBRES && selectedPeticion.APELLIDOS ? `${selectedPeticion.NOMBRES} ${selectedPeticion.APELLIDOS}` : 'N/A')}
 - **Módulo Afectado:** ${selectedPeticion.MODULO_AFECTADO || 'N/A'}
 - **Tipo ITIL:** ${selectedPeticion.TIPO_ITIL || 'N/A'}
 - **Prioridad:** ${selectedPeticion.PRIORIDAD || 'N/A'}
-- **Responsable Técnico:** ${selectedPeticion.RESPONSABLE_TECNICO || 'N/A'}
+- **Responsable Técnico:** ${responsableTecnico}
 
 ## Descripción del Cambio
 ${selectedPeticion.EVALUACION || selectedPeticion.DESCRIPCION_SOLICITUD || 'N/A'}
@@ -361,11 +370,8 @@ ${selectedPeticion.EVALUACION || selectedPeticion.DESCRIPCION_SOLICITUD || 'N/A'
 ## Motivo del Cambio
 ${selectedPeticion.IMPACTO_NEGATIVO || 'N/A'}
 
-## Beneficios Esperados
-${selectedPeticion.BENEFICIOS || 'N/A'}
-
 ## Plan de Implementación
-${selectedPeticion.ACCIONES || selectedPeticion.BENEFICIOS || 'N/A'}
+${selectedPeticion.BENEFICIOS || selectedPeticion.ACCIONES || 'N/A'}
 
 ## Plan de Prueba
 ${selectedPeticion.ACCIONES || 'N/A'}
@@ -621,24 +627,24 @@ ${selectedPeticion.OBSERVACIONES || 'N/A'}
                 </div>
               )}
               <div className="detalle-item">
-                <strong>Evaluación:</strong>
+                <strong>Descripción del Cambio solicitado:</strong>
                 <p>{selectedPeticion.EVALUACION}</p>
               </div>
               {selectedPeticion.BENEFICIOS && (
                 <div className="detalle-item">
-                  <strong>Beneficios:</strong>
+                  <strong>Plan de implementación:</strong>
                   <p>{selectedPeticion.BENEFICIOS}</p>
                 </div>
               )}
               {selectedPeticion.IMPACTO_NEGATIVO && (
                 <div className="detalle-item">
-                  <strong>Impacto Negativo:</strong>
+                  <strong>Motivo de cambio:</strong>
                   <p>{selectedPeticion.IMPACTO_NEGATIVO}</p>
                 </div>
               )}
               {selectedPeticion.ACCIONES && (
                 <div className="detalle-item">
-                  <strong>Acciones:</strong>
+                  <strong>Plan de prueba:</strong>
                   <p>{selectedPeticion.ACCIONES}</p>
                 </div>
               )}

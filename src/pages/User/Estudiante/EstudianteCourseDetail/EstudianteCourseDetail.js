@@ -5,6 +5,8 @@ import { useUser } from '../../../../context/UserContext';
 import PublicHeader from '../../../../components/PublicHeader/PublicHeader';
 import './EstudianteCourseDetail.css';
 
+import API_URL from '../../../../config/api';
+
 const EstudianteCourseDetail = () => {
   const { courseId } = useParams();
   const { courses } = useCourses();
@@ -64,7 +66,7 @@ const EstudianteCourseDetail = () => {
     const fetchCourseDetails = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/api/eventos/${courseId}`);
+        const response = await fetch(`${API_URL}/api/eventos/${courseId}`);
         const data = await response.json();
         
         if (!response.ok) {
@@ -78,7 +80,7 @@ const EstudianteCourseDetail = () => {
         if (user && user.id) {
           try {
             // Usar el endpoint que incluye inscripciones pendientes
-            const inscripcionRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/inscripcion?eventoId=${courseId}`);
+            const inscripcionRes = await fetch(`${API_URL}/api/estudiantes/${user.id}/inscripcion?eventoId=${courseId}`);
             if (inscripcionRes.ok) {
               const inscripcionData = await inscripcionRes.json();
               if (inscripcionData.data) {
@@ -90,7 +92,7 @@ const EstudianteCourseDetail = () => {
                 const cursoEsPagado = data.data?.ES_PAGADO === 1;
                 if (idInscripcion && cursoEsPagado) {
                   try {
-                    const pagoRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${idInscripcion}`);
+                    const pagoRes = await fetch(`${API_URL}/api/pagos/inscripcion/${idInscripcion}`);
                     if (pagoRes.ok) {
                       const pagoData = await pagoRes.json();
                       const aprobado = pagoData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');

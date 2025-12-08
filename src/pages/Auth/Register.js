@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import API_URL from '../../config/api';
 import { useNavigate } from 'react-router-dom';
 import './register.css';
 import imgRegistro from '../../assets/icons/imgRegistro.jpg';
@@ -56,7 +57,7 @@ export default function AuthRegister() {
     try {
       setLoading(true);
 
-      const response = await fetch('http://localhost:5000/api/auth/register', {
+      const response = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
