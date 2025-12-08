@@ -51,7 +51,7 @@ const AdminPanel = () => {
     if (!file) return;
 
     const formData = new FormData();
-    formData.append('imagen', file);
+    formData.append('image', file);
 
     setUploadingImageId(eventoId);
     try {
