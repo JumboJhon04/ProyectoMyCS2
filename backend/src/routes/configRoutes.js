@@ -5,7 +5,9 @@ const {
   obtenerImagenesCarrusel,
   eliminarImagenCarrusel,
   guardarColores,
-  obtenerColores
+  obtenerColores,
+  obtenerHome,
+  actualizarHome
 } = require('../controllers/configController');
 
 // Rutas para carrusel
@@ -16,5 +18,9 @@ router.delete('/carrusel/:id', eliminarImagenCarrusel);
 // Rutas para colores
 router.post('/colores', guardarColores);
 router.get('/colores', obtenerColores);
+
+// Rutas para contenido del home
+router.get('/home', obtenerHome);
+router.put('/home', actualizarHome);
 
 module.exports = router;
