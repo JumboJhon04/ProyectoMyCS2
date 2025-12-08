@@ -345,16 +345,24 @@ const PeticionesCambioAdmin = () => {
   const generarIssueGitHub = () => {
     if (!selectedPeticion || selectedPeticion.ESTADO !== 'Completado') return '';
 
+    // Obtener el nombre del responsable técnico
+    const responsableTecnico = selectedPeticion.RESPONSABLE_TECNICO
+      ? (() => {
+          const admin = admins.find(a => a.id === parseInt(selectedPeticion.RESPONSABLE_TECNICO));
+          return admin ? (admin.NOMBRE_COMPLETO || `${admin.NOMBRES} ${admin.APELLIDOS}`) : selectedPeticion.RESPONSABLE_TECNICO;
+        })()
+      : 'N/A';
+
     const issue = `# ${selectedPeticion.TITULO_CAMBIO || 'Petición de Cambio'}
 
 ## Información General
-- **ID de Petición:** #${selectedPeticion.SECUENCIAL}
+- **ID de Petición:** ${selectedPeticion.SECUENCIAL}
 ${selectedPeticion.SECUENCIAL_CAMBIO ? `- **Solicitud Origen:** #${selectedPeticion.SECUENCIAL_CAMBIO}` : ''}
 - **Solicitante:** ${selectedPeticion.NOMBRE_SOLICITANTE || (selectedPeticion.NOMBRES && selectedPeticion.APELLIDOS ? `${selectedPeticion.NOMBRES} ${selectedPeticion.APELLIDOS}` : 'N/A')}
 - **Módulo Afectado:** ${selectedPeticion.MODULO_AFECTADO || 'N/A'}
 - **Tipo ITIL:** ${selectedPeticion.TIPO_ITIL || 'N/A'}
 - **Prioridad:** ${selectedPeticion.PRIORIDAD || 'N/A'}
-- **Responsable Técnico:** ${selectedPeticion.RESPONSABLE_TECNICO || 'N/A'}
+- **Responsable Técnico:** ${responsableTecnico}
 
 ## Descripción del Cambio
 ${selectedPeticion.EVALUACION || selectedPeticion.DESCRIPCION_SOLICITUD || 'N/A'}
@@ -362,11 +370,8 @@ ${selectedPeticion.EVALUACION || selectedPeticion.DESCRIPCION_SOLICITUD || 'N/A'
 ## Motivo del Cambio
 ${selectedPeticion.IMPACTO_NEGATIVO || 'N/A'}
 
-## Beneficios Esperados
-${selectedPeticion.BENEFICIOS || 'N/A'}
-
 ## Plan de Implementación
-${selectedPeticion.ACCIONES || selectedPeticion.BENEFICIOS || 'N/A'}
+${selectedPeticion.BENEFICIOS || selectedPeticion.ACCIONES || 'N/A'}
 
 ## Plan de Prueba
 ${selectedPeticion.ACCIONES || 'N/A'}
