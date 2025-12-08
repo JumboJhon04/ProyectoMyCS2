@@ -622,7 +622,7 @@ ${selectedPeticion.OBSERVACIONES || 'N/A'}
                 </div>
               )}
               <div className="detalle-item">
-                <strong>Motivo de cambio:</strong>
+                <strong>Descripción del Cambio solicitado:</strong>
                 <p>{selectedPeticion.EVALUACION}</p>
               </div>
               {selectedPeticion.BENEFICIOS && (
@@ -633,7 +633,7 @@ ${selectedPeticion.OBSERVACIONES || 'N/A'}
               )}
               {selectedPeticion.IMPACTO_NEGATIVO && (
                 <div className="detalle-item">
-                  <strong>:</strong>
+                  <strong>Motivo de cambio:</strong>
                   <p>{selectedPeticion.IMPACTO_NEGATIVO}</p>
                 </div>
               )}
