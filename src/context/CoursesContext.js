@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import API_URL from '../config/api';
 
 const CoursesContext = createContext();
-
-import API_URL from '../config/api';
 
 export const useCourses = () => {
   const context = useContext(CoursesContext);
