@@ -26,6 +26,24 @@ const crearSolicitud = async (req, res) => {
       });
     }
 
+    // Validar tipo de solicitud: solo se permiten estos tres valores exactos
+    const tiposPermitidos = ['Problema', 'Mejora', 'Idea'];
+    if (!tiposPermitidos.includes(tipoSolicitud)) {
+      return res.status(400).json({ 
+        error: `Tipo de solicitud inválido. Valores permitidos: ${tiposPermitidos.join(', ')}`,
+        valorRecibido: tipoSolicitud
+      });
+    }
+
+    // Validar urgencia
+    const urgenciasPermitidas = ['Alta', 'Media', 'Baja'];
+    if (!urgenciasPermitidas.includes(urgencia)) {
+      return res.status(400).json({ 
+        error: `Urgencia inválida. Valores permitidos: ${urgenciasPermitidas.join(', ')}`,
+        valorRecibido: urgencia
+      });
+    }
+
     // Validar que el usuario existe y no es admin ni responsable
     if (usuarioId) {
       const [usuario] = await connection.execute(
@@ -45,10 +63,10 @@ const crearSolicitud = async (req, res) => {
       }
     }
 
-    // Guardar archivo de evidencia si existe
+    // Guardar archivo de evidencia si existe (Cloudinary ya subió el archivo)
     let archivoEvidenciaUrl = null;
     if (archivoEvidencia) {
-      archivoEvidenciaUrl = `uploads/solicitudes/${archivoEvidencia.filename}`;
+      archivoEvidenciaUrl = archivoEvidencia.path; // URL de Cloudinary
     }
 
     // Insertar la solicitud

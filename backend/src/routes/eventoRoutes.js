@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../config/multer');
+const { uploadEventos } = require('../config/cloudinary');
 const {
   crearEvento,
   obtenerEventos,
@@ -12,14 +12,14 @@ const {
 } = require('../controllers/eventoController');
 
 // Rutas
-router.post('/', upload.single('image'), crearEvento);
+router.post('/', uploadEventos.single('image'), crearEvento);
 router.get('/', obtenerEventos);
 router.get('/imagenes', obtenerImagenes);
 router.get('/:id', obtenerEvento);
-router.put('/:id', upload.single('image'), actualizarEvento);
+router.put('/:id', uploadEventos.single('image'), actualizarEvento);
 router.delete('/:id', eliminarEvento);
 
 // Ruta para actualizar solo la imagen de un evento
-router.put('/:id/imagen', upload.single('image'), actualizarImagenEvento);
+router.put('/:id/imagen', uploadEventos.single('image'), actualizarImagenEvento);
 
 module.exports = router;

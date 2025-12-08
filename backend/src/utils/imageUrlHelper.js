@@ -5,7 +5,7 @@
 
 /**
  * Construye una URL absoluta para una imagen
- * @param {string} relativePath - Ruta relativa de la imagen (ej: "uploads/eventos/imagen.jpg")
+ * @param {string} relativePath - Ruta relativa de la imagen (ej: "uploads/eventos/imagen.jpg") o URL de Cloudinary
  * @param {Object} req - Objeto request de Express (opcional)
  * @returns {string} URL absoluta de la imagen
  */

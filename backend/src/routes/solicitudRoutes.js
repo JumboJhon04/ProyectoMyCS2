@@ -8,10 +8,10 @@ const {
   crearPeticionCambio,
   obtenerSolicitudPorId
 } = require('../controllers/solicitudController');
-const upload = require('../config/multerSolicitudes');
+const { uploadSolicitudes } = require('../config/cloudinary');
 
 // Ruta para crear solicitud de soporte (usuarios finales)
-router.post('/', upload.single('archivoEvidencia'), crearSolicitud);
+router.post('/', uploadSolicitudes.single('archivoEvidencia'), crearSolicitud);
 
 // Ruta para obtener todas las solicitudes (admin)
 router.get('/', obtenerTodasSolicitudes);

@@ -8,7 +8,7 @@ const smtpConfig = {
   secure: false, // true para 465, false para otros puertos
   auth: {
     user: 'shinjilouch@gmail.com',
-    pass: 'skaphkfcqpgstoxr'
+    pass: 'divsskpyzylvqfbq'
   },
   tls: {
     // No rechazar conexiones no autorizadas

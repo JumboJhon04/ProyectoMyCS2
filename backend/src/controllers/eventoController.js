@@ -1,6 +1,5 @@
 const { pool } = require('../config/database');
-const fs = require('fs');
-const path = require('path');
+const { cloudinary } = require('../config/cloudinary');
 const { buildImageUrl } = require('../utils/imageUrlHelper');
 
 // Crear evento
@@ -134,8 +133,8 @@ const crearEvento = async (req, res) => {
       }
     }
 
-    // Guardar imagen
-    const imageUrl = `uploads/eventos/${req.file.filename}`;
+    // Guardar imagen (Cloudinary ya subió el archivo)
+    const imageUrl = req.file.path; // URL de Cloudinary
     const [imagenResult] = await connection.execute(
       `INSERT INTO imagen_evento (SECUENCIALEVENTO, URL_IMAGEN, TIPO_IMAGEN) 
        VALUES (?, ?, 'PORTADA')`,
@@ -144,8 +143,8 @@ const crearEvento = async (req, res) => {
 
     await connection.commit();
 
-    // Construir URL absoluta para la imagen antes de responder
-    const absoluteImageUrl = buildImageUrl(imageUrl, req);
+    // La URL ya es absoluta desde Cloudinary
+    const absoluteImageUrl = imageUrl;
 
     res.status(201).json({
       success: true,
@@ -198,20 +197,20 @@ const actualizarImagenEvento = async (req, res) => {
       [eventoId]
     );
 
-    // Intentar eliminar archivos físicos anteriores (no bloquear si falla)
+    // Eliminar imágenes anteriores de Cloudinary
     for (const img of previousImages) {
       try {
-        const filePath = path.join(process.cwd(), img.URL_IMAGEN);
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
+        if (img.URL_IMAGEN && img.URL_IMAGEN.includes('cloudinary')) {
+          const publicId = img.URL_IMAGEN.split('/').slice(-2).join('/').split('.')[0];
+          await cloudinary.uploader.destroy(publicId);
         }
       } catch (e) {
-        console.warn('No se pudo borrar archivo anterior:', e.message);
+        console.warn('No se pudo borrar imagen anterior de Cloudinary:', e.message);
       }
     }
 
-    // Insertar nueva imagen
-    const imageUrl = `uploads/eventos/${req.file.filename}`;
+    // Insertar nueva imagen (Cloudinary ya subió el archivo)
+    const imageUrl = req.file.path; // URL de Cloudinary
     const [insertResult] = await connection.execute(
       `INSERT INTO imagen_evento (SECUENCIALEVENTO, URL_IMAGEN, TIPO_IMAGEN) VALUES (?, ?, 'PORTADA')`,
       [eventoId, imageUrl]
@@ -224,7 +223,7 @@ const actualizarImagenEvento = async (req, res) => {
       message: 'Imagen del evento actualizada',
       data: {
         imagenId: insertResult.insertId,
-        imageUrl: buildImageUrl(imageUrl, req)
+        imageUrl: imageUrl
       }
     });
   } catch (error) {
@@ -393,7 +392,7 @@ const actualizarEvento = async (req, res) => {
 
     // Actualizar imagen si existe
     if (req.file) {
-      const imageUrl = `uploads/eventos/${req.file.filename}`;
+      const imageUrl = req.file.path; // URL de Cloudinary
       
       await connection.execute(
         `DELETE FROM imagen_evento 
@@ -410,11 +409,10 @@ const actualizarEvento = async (req, res) => {
 
     await connection.commit();
 
-    // Construir URL absoluta si se actualizó/insertó imagen
+    // Usar URL de Cloudinary directamente si se actualizó/insertó imagen
     let responseData = { eventoId, title, type };
     if (req.file) {
-      const imageUrl = `uploads/eventos/${req.file.filename}`;
-      responseData.imageUrl = buildImageUrl(imageUrl, req);
+      responseData.imageUrl = req.file.path; // URL de Cloudinary
     }
 
     res.json({

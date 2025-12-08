@@ -11,7 +11,7 @@ const SolicitudSoporte = () => {
     correoContacto: user?.correo || '',
     area: '',
     fechaSolicitud: new Date().toISOString().split('T')[0],
-    tipoCambio: 'Corrección',
+    tipoCambio: 'Problema',
     prioridad: 'Alta',
     descripcionCambio: ''
   });
@@ -84,7 +84,7 @@ const SolicitudSoporte = () => {
           correoContacto: user?.correo || '',
           area: '',
           fechaSolicitud: new Date().toISOString().split('T')[0],
-          tipoCambio: 'Corrección',
+          tipoCambio: 'Problema',
           prioridad: 'Alta',
           descripcionCambio: ''
         });
@@ -171,7 +171,7 @@ const SolicitudSoporte = () => {
               onChange={handleChange}
               required
             >
-              <option value="Corrección">Corrección</option>
+              <option value="Problema">Problema</option>
               <option value="Mejora">Mejora</option>
               <option value="Idea">Idea</option>
             </select>

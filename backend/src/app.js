@@ -42,7 +42,8 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Servir archivos estáticos (imágenes)
+// Servir archivos estáticos (imágenes locales antiguas - solo para migración)
+// Nuevos archivos se almacenan en Cloudinary
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Log de peticiones en desarrollo
