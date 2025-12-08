@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { FaImage, FaEdit } from "react-icons/fa";
+import { FaImage, FaEdit, FaHome } from "react-icons/fa";
+import { useNavigate } from 'react-router-dom';
 import API_URL from '../../../config/api';
 import "./AdminPanel.css";
 
 const AdminPanel = () => {
+  const navigate = useNavigate();
   const [eventos, setEventos] = useState([]);
   const [colores, setColores] = useState({
     primario: '#667eea',
@@ -127,6 +129,22 @@ const AdminPanel = () => {
       <main className="main-content1">
         <div className="content-area">
           <div className="content-grid">
+            {/* Botón para editar Home */}
+            <div className="card action-card">
+              <div className="card-header">
+                <h3>Editar Página Principal</h3>
+              </div>
+              <div className="card-body">
+                <p>Personaliza el contenido de la página de inicio: títulos, descripciones, imágenes y testimonios.</p>
+                <button 
+                  className="btn-edit-home"
+                  onClick={() => navigate('/admin/landing')}
+                >
+                  <FaHome /> Editar Home
+                </button>
+              </div>
+            </div>
+
             {/* Editar Imágenes de Eventos */}
             <div className="card large-card">
               <div className="card-header">
