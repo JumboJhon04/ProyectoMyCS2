@@ -4,16 +4,20 @@ console.log('📧 Cargando módulo emailService...');
 
 const smtpConfig = {
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true, // true para 465, false para otros puertos
+  port: 465, // Usamos SSL directo
+  secure: true, // true para 465
   auth: {
-    user: 'shinjilouch@gmail.com',
-    pass: 'wdbeqyovaqilzytg'
+    user: process.env.EMAIL_USER || 'shinjilouch@gmail.com', // Mejor usa variables de entorno en Render
+    pass: process.env.EMAIL_PASS || 'wdbeqyovaqilzytg'
   },
   tls: {
-    // No rechazar conexiones no autorizadas
     rejectUnauthorized: false
-  }
+  },
+  // --- AÑADE ESTAS LÍNEAS MÁGICAS ---
+  family: 4, // ⚠️ OBLIGATORIO: Fuerza a Node a usar IPv4
+  connectionTimeout: 10000, // 10s timeout para conectar
+  greetingTimeout: 5000,    // 5s timeout para el saludo
+  socketTimeout: 15000      // 15s timeout de socket
 };
 
 console.log('📧 Configuración SMTP creada');
