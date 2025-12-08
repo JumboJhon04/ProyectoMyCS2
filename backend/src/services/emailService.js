@@ -4,8 +4,8 @@ console.log('📧 Cargando módulo emailService...');
 
 const smtpConfig = {
   host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // true para 465, false para otros puertos
+  port: 465,
+  secure: true, // true para 465, false para otros puertos
   auth: {
     user: 'shinjilouch@gmail.com',
     pass: 'wdbeqyovaqilzytg'
