@@ -26,7 +26,7 @@ const EstudiantePanel = () => {
     lessons: course.HORAS || course.lessons || course.meta?.lessons || 20
   }));
 
-  // Próximas pruebas: derivadas de los eventos del estudiante
+  // Próximas pruebas (Drawer)
   const upcomingExams = (studentEvents || []).slice(0, 3).map((ev, i) => ({
     id: i + 1,
     name: `Actividad: ${ev.TITULO || ev.title} `,
@@ -34,6 +34,17 @@ const EstudiantePanel = () => {
     date: ev.FECHAINICIO || ev.startDate || 'Sin fecha',
     icon: <FaClipboardList />
   }));
+
+  // Tareas Pendientes (sección principal)
+  // Filtrar tareas que sean a futuro para considerarlas "pendientes"
+  const futureEvents = (studentEvents || []).filter(ev => {
+    const d = ev.FECHAINICIO || ev.startDate;
+    if (!d) return true; // Si no hay fecha, asumir pendiente
+    return new Date(d) > new Date(); // Solo futuras
+  });
+
+  const pendingTasks = futureEvents.slice(0, 4);
+  const hasEnrolledCourses = coursesWithProgress.length > 0;
 
   // Cargar eventos reales del estudiante
   useEffect(() => {
@@ -57,37 +68,53 @@ const EstudiantePanel = () => {
       {/* --- Sección de Bienvenida y Roles --- */}
       <UserPanel userName={firstName} role="Estudiante" message="Continúa aprendiendo" />
 
-      {/* --- Contenido Principal (Cursos) --- */}
+      {/* --- Contenido Principal Restructurado --- */}
       <div className="dashboard-content-grid">
-        <main className="course-list-main full-width">
-          {coursesWithProgress.length > 0 ? coursesWithProgress.map((course) => (
-            <div
-              key={course.id}
-              className="course-card"
-              onClick={() => navigate(`/user/course/${course.id}`)}
-              style={{ cursor: 'pointer' }}
-            >
-              <img
-                src={course.imageUrl || 'https://via.placeholder.com/50'}
-                alt={course.title}
-                className="course-icon"
-                onError={(e) => { e.target.src = 'https://via.placeholder.com/50'; }}
-              />
-              <div className="course-details">
-                <h3>{course.title}</h3>
-                <p className="course-info">Programación • {course.lessons} lecciones</p>
-                <div className="progress-bar-container">
-                  <div className="progress-bar" style={{ width: `${course.progress}%` }}></div>
+
+        {/* --- Sección 1: Tareas Pendientes --- */}
+        <section className="dashboard-section pending-tasks-section">
+          <div className="section-header">
+            <h2>Tareas Pendientes</h2>
+            <small>Tus actividades prioritarias</small>
+          </div>
+
+          <div className="tasks-grid">
+            {pendingTasks.length > 0 ? pendingTasks.map((task, i) => (
+              <div key={i} className="task-card-summary">
+                <div className="task-icon"><FaClipboardList /></div>
+                <div className="task-info">
+                  <h4>{task.TITULO || task.title}</h4>
+                  <span className="task-date">{task.FECHAINICIO || task.startDate}</span>
                 </div>
               </div>
-            </div>
-          )) : (
-            <div style={{ padding: 20 }}>
-              <p>No estás inscrito en ningún curso por el momento.</p>
-              <button className="view-all-btn" onClick={() => navigate('/user/events')}>Ver cursos disponibles</button>
-            </div>
-          )}
-        </main>
+            )) : (
+              <div className="empty-section-state">
+                <FaCheckCircle className="empty-state-icon" style={{ color: hasEnrolledCourses ? '#94e19a' : '#cbd5e1' }} />
+
+                {hasEnrolledCourses ? (
+                  /* Caso 1: Inscrito pero sin tareas pendientes (Al día) */
+                  <>
+                    <p style={{ color: '#2c3e50', fontWeight: 'bold' }}>¡Estás al día!</p>
+                    <span style={{ color: '#64748b' }}>No tienes tareas pendientes urgentes.</span>
+                  </>
+                ) : (
+                  /* Caso 2: No inscrito (Invitar a inscribirse) */
+                  <>
+                    <p style={{ color: '#2c3e50', fontWeight: 'bold' }}>No tienes cursos inscritos</p>
+                    <span style={{ color: '#64748b', marginBottom: '1rem', display: 'block' }}>Inscríbete en un curso para ver tus actividades.</span>
+                    <button className="navigate-courses-btn" style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }} onClick={() => navigate('/user/events')}>
+                      Ir a Cursos
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* --- Enlace para Ver Cursos (Acción Principal) --- */}
+
+
       </div>
 
       {/* --- Cajón Retráctil de Próximas Pruebas (Sidebar) --- */}
@@ -120,8 +147,20 @@ const EstudiantePanel = () => {
           ) : (
             <div className="empty-exams-state">
               <span className="empty-icon"><FaCheckCircle /></span>
-              <p>¡Todo listo!</p>
-              <small>No tienes pruebas pendientes por ahora.</small>
+
+              {hasEnrolledCourses ? (
+                /* Caso 1: Inscrito pero sin pruebas (Todo listo) */
+                <>
+                  <p>¡Todo listo!</p>
+                  <small>No tienes pruebas pendientes por ahora.</small>
+                </>
+              ) : (
+                /* Caso 2: No inscrito (Invitar a inscribirse) */
+                <>
+                  <p>Sin cursos</p>
+                  <small>Inscríbete para ver tus próximas pruebas.</small>
+                </>
+              )}
             </div>
           )}
         </aside>

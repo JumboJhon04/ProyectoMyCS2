@@ -11,7 +11,7 @@ export default function Landing() {
   const [paused, setPaused] = useState(false);
   const [visible, setVisible] = useState(true);
   const timerRef = useRef(null);
-  
+
   const [homeContent, setHomeContent] = useState({
     hero: {
       useCourses: true,
@@ -30,7 +30,7 @@ export default function Landing() {
       try {
         const response = await fetch(`${API_URL}/api/config/colores`);
         const data = await response.json();
-        
+
         if (data.success) {
           // Aplicar colores a las variables CSS
           document.documentElement.style.setProperty('--color-primary', data.data.primario);
@@ -41,7 +41,7 @@ export default function Landing() {
         console.error('Error al cargar colores:', error);
       }
     };
-    
+
     fetchColors();
   }, []);
 
@@ -51,7 +51,7 @@ export default function Landing() {
       try {
         const response = await fetch(`${API_URL}/api/config/home`);
         const data = await response.json();
-        
+
         if (data.success) {
           // Asegurar que sections sea siempre un array
           const content = {
@@ -66,7 +66,7 @@ export default function Landing() {
         setLoadingHome(false);
       }
     };
-    
+
     fetchHomeContent();
   }, []);
 
@@ -192,7 +192,7 @@ export default function Landing() {
             </article>
           ))
         ) : (
-          !loadingCourses && <div className="no-courses">No hay cursos disponibles.</div>
+          !loadingCourses && <div className="no-courses">No te has inscrito en ningún curso.</div>
         )}
       </div>
     </section>
@@ -352,7 +352,7 @@ export default function Landing() {
           if (section.type === 'cta') {
             // Agrupar CTAs consecutivas
             ctaGroup.push(section);
-            
+
             // Si es la última sección o la siguiente no es CTA, renderizar el grupo
             const nextSection = sortedSections[index + 1];
             if (!nextSection || nextSection.type !== 'cta') {

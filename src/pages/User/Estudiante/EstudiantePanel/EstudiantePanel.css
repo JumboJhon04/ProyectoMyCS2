@@ -171,21 +171,188 @@
   border-radius: 5px;
 }
 
-.view-all-btn {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  padding: 0.8rem 1.5rem;
-  border-radius: 5px;
-  margin-top: 1rem;
-  width: 100%;
+/* --- Secciones del Dashboard (Nueva Estructura) --- */
+.dashboard-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.section-header {
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 0.8rem;
+}
+
+.section-header h2 {
+  font-size: 1.25rem;
+  color: #333;
+  margin: 0;
+  font-weight: 700;
+}
+
+.section-header small {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* --- Tareas Pendientes (Grid) --- */
+.tasks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.task-card-summary {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  transition: transform 0.2s, var(--tw-shadow, box-shadow) 0.2s;
+}
+
+.task-card-summary:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.task-icon {
+  background-color: #fef2f2;
+  color: #ef4444;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  font-size: 1.1rem;
+}
+
+.task-info h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
+.task-info .task-date {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* --- Botón Navegación Principal --- */
+.navigation-actions {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+.navigate-courses-btn {
+  background-color: #1a1a1a;
+  color: white;
+  padding: 0.8rem 2rem;
+  border-radius: 99px;
+  border: none;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 1rem;
-  color: #555;
+  transition: transform 0.2s, background-color 0.2s;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.navigate-courses-btn:hover {
+  background-color: #333;
+  transform: scale(1.02);
+}
+
+/* --- Vista Previa Cursos --- */
+.courses-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.course-preview-card {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
   transition: background-color 0.2s;
 }
 
-.view-all-btn:hover {
-  background-color: #f9f9f9;
+.course-preview-card:hover {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.course-preview-card img {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  margin-right: 1rem;
+}
+
+.preview-details {
+  flex: 1;
+}
+
+.preview-details h4 {
+  margin: 0 0 0.4rem 0;
+  font-size: 1rem;
+  color: #334155;
+}
+
+.mini-progress {
+  width: 100%;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.mini-progress .bar {
+  background: #3b82f6;
+  height: 100%;
+}
+
+/* --- Empty States Generales --- */
+/* --- Empty States Generales --- */
+.empty-section-state {
+  grid-column: 1 / -1;
+  /* Make it span full width in grid */
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.empty-state-icon {
+  font-size: 2rem;
+  color: #cbd5e1;
+  margin-bottom: 0.5rem;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 500;
+  padding: 0;
 }
 
 /* --- Cajón Retráctil de Próximas Pruebas --- */
@@ -384,15 +551,31 @@
     /* Una sola columna en pantallas pequeñas */
   }
 
-  .upcoming-exams-sidebar {
-    order: -1;
-    /* Mueve las pruebas hacia arriba en móvil */
+  /* Desactivar empuje de contenido en pantallas medianas/pequeñas */
+  .dashboard-user-container.drawer-active {
+    padding-right: 2rem;
+    /* Mantener padding original, no sumar 340px */
+  }
+
+  /* El cajón se convierte en overlay (encima del contenido) */
+  .upcoming-drawer-container {
+    width: 280px;
+    /* Un poco más angosto en tablets/móviles */
+  }
+
+  /* Ajustar posición del toggle si es necesario */
+  .drawer-toggle-btn {
+    width: 3rem;
+    /* Botón ligeramente más grande para tocar */
+    left: -3rem;
   }
 }
 
 @media (max-width: 500px) {
   .dashboard-user-container {
     padding: 1rem;
+    padding-right: 1rem !important;
+    /* Asegurar que no haya push excesivo */
   }
 
   .role-switcher {
@@ -403,5 +586,16 @@
   .role-btn:not(:last-child) {
     border-right: none;
     border-bottom: 1px solid #ddd;
+  }
+
+  /* Cajón casi pantalla completa en móviles muy pequeños */
+  .upcoming-drawer-container {
+    width: 85vw;
+    max-width: 300px;
+  }
+
+  /* Asegurar grid tareas se adapte */
+  .tasks-grid {
+    grid-template-columns: 1fr;
   }
 }
