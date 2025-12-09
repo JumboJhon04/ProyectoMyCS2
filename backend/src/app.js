@@ -14,6 +14,7 @@ const pagoRoutes = require('./routes/pagoRoutes');
 const solicitudRoutes = require('./routes/solicitudRoutes');
 const peticionCambioRoutes = require('./routes/peticionCambioRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const facultadCarreraRoutes = require('./routes/facultadCarrera'); // NUEVA IMPORTACIÓN
 
 
 const app = express();
@@ -63,7 +64,9 @@ app.use('/api/pagos', pagoRoutes);
 app.use('/api/solicitudes', solicitudRoutes);
 app.use('/api/peticiones-cambio', peticionCambioRoutes);
 app.use('/api/admins', adminRoutes);
-
+app.use('/api', facultadCarreraRoutes); // NUEVA RUTA
+app.use(cors());
+app.use(express.json());
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
