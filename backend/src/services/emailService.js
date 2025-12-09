@@ -1,53 +1,46 @@
-const nodemailer = require('nodemailer');
+const SibApiV3Sdk = require('sib-api-v3-sdk');
 
-console.log('📧 Cargando módulo emailService...');
+console.log('📧 Cargando módulo emailService (Brevo)...');
 
-const smtpConfig = {
-  host: 'smtp.googlemail.com',
-  port: 465, // Usamos SSL directo
-  secure: true, // true para 465
-  auth: {
-    user: process.env.EMAIL_USER || 'shinjilouch@gmail.com', // Mejor usa variables de entorno en Render
-    pass: process.env.EMAIL_PASS || 'wdbeqyovaqilzytg'
-  },
-  tls: {
-    rejectUnauthorized: false
-  },
-  // --- AÑADE ESTAS LÍNEAS MÁGICAS ---
-  family: 4, // ⚠️ OBLIGATORIO: Fuerza a Node a usar IPv4
-  connectionTimeout: 10000, // 10s timeout para conectar
-  greetingTimeout: 5000,    // 5s timeout para el saludo
-  socketTimeout: 15000      // 15s timeout de socket
+const brevoClient = SibApiV3Sdk.ApiClient.instance;
+const apiKey = brevoClient.authentications['api-key'];
+apiKey.apiKey = process.env.BREVO_API_KEY;
+
+if (!process.env.BREVO_API_KEY) {
+  console.warn('⚠️ BREVO_API_KEY no está configurada. Configúrala en las variables de entorno.');
+}
+
+const transactionalEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
+
+const getSender = () => {
+  const email = (process.env.EMAIL_FROM || 'no-reply@eventos-uta.test').trim();
+  if (!email) {
+    throw new Error('EMAIL_FROM no está configurado. Define un remitente en el entorno.');
+  }
+  return { email, name: 'Sistema de Eventos UTA' };
 };
 
-console.log('📧 Configuración SMTP creada');
+const buildPayload = (destinatario, nombreUsuario, subject, htmlContent, textContent) => {
+  const sender = getSender();
+  const payload = {
+    sender,
+    to: [{ email: destinatario, name: nombreUsuario || destinatario }],
+    subject,
+    htmlContent,
+    textContent
+  };
+  console.log('📧 Payload Brevo:', { sender: payload.sender, to: payload.to, subject: payload.subject });
+  return payload;
+};
 
-// Crear transporter
-const transporter = nodemailer.createTransport(smtpConfig);
-
-console.log('📧 Transporter creado, verificando conexión...');
-
-// Verificar conexión al inicializar (con mejor manejo de errores)
-transporter.verify(function (error, success) {
-  console.log('📧 Verificación de transporter ejecutada');
-  if (error) {
-    console.log('❌ Error en configuración de email:', error.message);
-    console.log('❌ Código de error:', error.code);
-    console.log('❌ Comando:', error.command);
-    if (error.response) {
-      console.log('❌ Respuesta del servidor:', error.response);
-    }
-    console.log('\n⚠️ IMPORTANTE: Para Gmail necesitas usar una "Contraseña de aplicación"');
-    console.log('📝 Pasos para generar una contraseña de aplicación:');
-    console.log('   1. Ve a tu cuenta de Google → Seguridad');
-    console.log('   2. Activa la verificación en 2 pasos (si no está activada)');
-    console.log('   3. Busca "Contraseñas de aplicaciones"');
-    console.log('   4. Genera una nueva contraseña para "Correo"');
-    console.log('   5. Usa esa contraseña de 16 caracteres en lugar de tu contraseña normal\n');
-  } else {
-    console.log('✅ Servidor de email listo para enviar mensajes');
+const logBrevoError = (error, context) => {
+  console.error(`❌ Error al enviar email (${context}):`, error.message || error);
+  if (error.response && error.response.text) {
+    console.error('❌ Respuesta de Brevo:', error.response.text);
+  } else if (error.response && error.response.body) {
+    console.error('❌ Respuesta de Brevo:', JSON.stringify(error.response.body));
   }
-});
+};
 
 /**
  * Enviar email de notificación de pago aprobado
@@ -61,11 +54,11 @@ const enviarEmailPagoAprobado = async (destinatario, nombreUsuario, tituloEvento
     console.log('📧 Intentando enviar email a:', destinatario);
     console.log('📧 Datos:', { nombreUsuario, tituloEvento, monto });
     
-    const mailOptions = {
-      from: '"Sistema de Eventos UTA" <wson1478963@gmail.com>',
-      to: destinatario,
-      subject: '✅ Pago Aprobado - Inscripción Confirmada',
-      html: `
+    const payload = buildPayload(
+      destinatario,
+      nombreUsuario,
+      '✅ Pago Aprobado - Inscripción Confirmada',
+      `
         <!DOCTYPE html>
         <html>
         <head>
@@ -184,7 +177,7 @@ const enviarEmailPagoAprobado = async (destinatario, nombreUsuario, tituloEvento
         </body>
         </html>
       `,
-      text: `
+      `
         Pago Aprobado - Inscripción Confirmada
         
         Estimado/a ${nombreUsuario},
@@ -203,45 +196,17 @@ const enviarEmailPagoAprobado = async (destinatario, nombreUsuario, tituloEvento
         Este es un mensaje automático, por favor no respondas a este correo.
         © ${new Date().getFullYear()} Sistema de Eventos UTA - FISEI
       `
-    };
+    );
 
-    const info = await transporter.sendMail(mailOptions);
+    const info = await transactionalEmailApi.sendTransacEmail(payload);
     console.log('✅ Email enviado exitosamente:', info.messageId);
-    console.log('✅ Respuesta del servidor:', info.response);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('❌ Error al enviar email:', error.message);
-    console.error('❌ Código de error:', error.code);
-    console.error('❌ Comando:', error.command);
-    
-    if (error.response) {
-      console.error('❌ Respuesta del servidor:', error.response);
-    }
-    
-    if (error.responseCode) {
-      console.error('❌ Código de respuesta:', error.responseCode);
-    }
-    
-    // Errores comunes de Gmail
-    if (error.code === 'EAUTH' || error.responseCode === 535) {
-      console.error('\n⚠️ ERROR DE AUTENTICACIÓN:');
-      console.error('   La contraseña es incorrecta o no es una "Contraseña de aplicación"');
-      console.error('   Gmail ya no permite usar contraseñas normales');
-      console.error('   Debes generar una "Contraseña de aplicación" desde tu cuenta de Google\n');
-    } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
-      console.error('\n⚠️ ERROR DE CONEXIÓN:');
-      console.error('   No se pudo conectar al servidor SMTP de Gmail');
-      console.error('   Verifica tu conexión a internet\n');
-    } else if (error.responseCode === 550 || error.responseCode === 553) {
-      console.error('\n⚠️ ERROR: Dirección de correo inválida o rechazada');
-    }
-    
-    return { 
-      success: false, 
-      error: error.message, 
-      code: error.code,
-      responseCode: error.responseCode,
-      details: error 
+    logBrevoError(error, 'pago aprobado');
+    return {
+      success: false,
+      error: error.message,
+      details: error.response && error.response.body ? error.response.body : error
     };
   }
 };
@@ -261,11 +226,11 @@ const enviarEmailSolicitud = async (destinatario, nombreUsuario, estado, mensaje
     const colorEstado = estado === 'Aprobado' ? '#10b981' : estado === 'Rechazado' ? '#ef4444' : '#667eea';
     const iconoEstado = estado === 'Aprobado' ? '✅' : estado === 'Rechazado' ? '❌' : '📋';
     
-    const mailOptions = {
-      from: '"Sistema de Eventos UTA" <wson1478963@gmail.com>',
-      to: destinatario,
-      subject: `${iconoEstado} Solicitud de Soporte ${estadoTexto} - #${solicitudId}`,
-      html: `
+    const payload = buildPayload(
+      destinatario,
+      nombreUsuario,
+      `${iconoEstado} Solicitud de Soporte ${estadoTexto} - #${solicitudId}`,
+      `
         <!DOCTYPE html>
         <html>
         <head>
@@ -355,7 +320,7 @@ const enviarEmailSolicitud = async (destinatario, nombreUsuario, estado, mensaje
         </body>
         </html>
       `,
-      text: `
+      `
         Solicitud de Soporte ${estadoTexto} - #${solicitudId}
         
         Estimado/a ${nombreUsuario},
@@ -372,21 +337,22 @@ const enviarEmailSolicitud = async (destinatario, nombreUsuario, estado, mensaje
         Este es un mensaje automático, por favor no respondas a este correo.
         © ${new Date().getFullYear()} Sistema de Eventos UTA - FISEI
       `
-    };
+    );
 
-    const info = await transporter.sendMail(mailOptions);
+    const info = await transactionalEmailApi.sendTransacEmail(payload);
     console.log('✅ Email de solicitud enviado exitosamente:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('❌ Error al enviar email de solicitud:', error.message);
-    return { 
-      success: false, 
-      error: error.message
+    logBrevoError(error, 'solicitud');
+    return {
+      success: false,
+      error: error.message,
+      details: error.response && error.response.body ? error.response.body : error
     };
   }
 };
 
-console.log('📧 Módulo emailService exportado correctamente');
+console.log('📧 Módulo emailService (Brevo) exportado correctamente');
 
 module.exports = {
   enviarEmailPagoAprobado,
