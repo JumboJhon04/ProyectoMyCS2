@@ -342,6 +342,68 @@ const PeticionesCambioAdmin = () => {
     return selectedPeticion.rechazos.some(r => r.SECUENCIAL_ADMIN === user.id);
   };
 
+  const cambiarEstadoIssue = async (nuevoEstado, urlGithub = null) => {
+    if (!selectedPeticion || selectedPeticion.ESTADO !== 'Completado') {
+      setMessage({ type: 'error', text: 'Solo puedes cambiar el estado del issue cuando la petición está completada' });
+      return;
+    }
+
+    // Validar que solo el responsable técnico pueda cambiar el estado
+    if (nuevoEstado === 'Finalizado' && selectedPeticion.RESPONSABLE_TECNICO !== user?.id) {
+      setMessage({ type: 'error', text: `Solo el responsable técnico (${selectedPeticion.RESPONSABLE_TECNICO_NAME}) puede marcar el issue como finalizado` });
+      return;
+    }
+
+    // Si se marca como finalizado y no hay URL, pedir al usuario que la ingrese
+    if (nuevoEstado === 'Finalizado' && !urlGithub && !selectedPeticion.URL_GITHUB_ISSUE) {
+      const url = window.prompt('Ingresa la URL del issue en GitHub (ej: https://github.com/usuario/repo/issues/123):');
+      if (!url) {
+        setMessage({ type: 'warning', text: 'Se requiere la URL del issue para marcar como finalizado' });
+        return;
+      }
+      urlGithub = url;
+    }
+
+    try {
+      const requestBody = { 
+        estadoIssue: nuevoEstado,
+        usuarioId: user?.id,
+        usuarioNombre: user?.nombres
+      };
+
+      if (nuevoEstado === 'Finalizado' && urlGithub) {
+        requestBody.urlGithubIssue = urlGithub;
+      }
+
+      const response = await fetch(`${API_URL}/api/peticiones-cambio/${selectedPeticion.SECUENCIAL}/estado-issue`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setMessage({ type: 'success', text: `Estado del issue actualizado a: ${nuevoEstado}` });
+        // Actualizar el estado local
+        setSelectedPeticion({
+          ...selectedPeticion,
+          ESTADO_ISSUE: nuevoEstado,
+          FECHA_FINALIZACION_ISSUE: nuevoEstado === 'Finalizado' ? new Date() : null,
+          URL_GITHUB_ISSUE: urlGithub || selectedPeticion.URL_GITHUB_ISSUE
+        });
+        // Recargar peticiones para reflejar el cambio en la tabla
+        cargarPeticiones();
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Error al actualizar el estado del issue' });
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setMessage({ type: 'error', text: 'Error al actualizar el estado del issue' });
+    }
+  };
+
   const generarIssueGitHub = () => {
     if (!selectedPeticion || selectedPeticion.ESTADO !== 'Completado') return '';
 
@@ -471,6 +533,7 @@ ${selectedPeticion.OBSERVACIONES || 'N/A'}
                 <th>Tipo</th>
                 <th>Prioridad</th>
                 <th>Estado</th>
+                <th>Issue</th>
                 <th>Aprobaciones</th>
                 <th>Fecha</th>
                 <th>Acciones</th>
@@ -511,6 +574,15 @@ ${selectedPeticion.OBSERVACIONES || 'N/A'}
                     <span className={`status-badge ${getEstadoBadgeClass(peticion.ESTADO)}`}>
                       {peticion.ESTADO}
                     </span>
+                  </td>
+                  <td>
+                    {peticion.ESTADO === 'Completado' ? (
+                      <span className={`status-badge ${peticion.ESTADO_ISSUE === 'Finalizado' ? 'status-success' : 'status-warning'}`}>
+                        {peticion.ESTADO_ISSUE || 'Pendiente'}
+                      </span>
+                    ) : (
+                      <span style={{ color: '#999' }}>-</span>
+                    )}
                   </td>
                   <td>
                     {peticion.ESTADO === 'Pendiente Crear' ? (
@@ -587,6 +659,110 @@ ${selectedPeticion.OBSERVACIONES || 'N/A'}
               <div className="detalle-item">
                 <strong>Estado:</strong> {selectedPeticion.ESTADO}
               </div>
+
+              {selectedPeticion.ESTADO === 'Completado' && (
+                <div className="detalle-item" style={{ backgroundColor: '#eff6ff', padding: '1rem', borderRadius: '6px', border: '1px solid #bfdbfe', marginTop: '1rem' }}>
+                  <strong style={{ display: 'block', marginBottom: '0.75rem' }}>🔗 Estado del Issue</strong>
+                  
+                  {selectedPeticion.ESTADO_ISSUE === 'Finalizado' && (
+                    <div style={{ 
+                      backgroundColor: '#dcfce7', 
+                      border: '1px solid #86efac', 
+                      color: '#166534', 
+                      padding: '0.75rem', 
+                      borderRadius: '4px', 
+                      marginBottom: '0.75rem',
+                      fontSize: '0.9rem'
+                    }}>
+                      ✅ Este issue ha sido finalizado y no se puede cambiar su estado
+                    </div>
+                  )}
+                  
+                  {selectedPeticion.RESPONSABLE_TECNICO && selectedPeticion.RESPONSABLE_TECNICO !== user?.id && (
+                    <div style={{ 
+                      backgroundColor: '#fef3c7', 
+                      border: '1px solid #fcd34d', 
+                      color: '#92400e', 
+                      padding: '0.75rem', 
+                      borderRadius: '4px', 
+                      marginBottom: '0.75rem',
+                      fontSize: '0.9rem'
+                    }}>
+                      🔒 Solo el responsable técnico (<strong>{selectedPeticion.RESPONSABLE_TECNICO_NAME}</strong>) puede finalizar el issue
+                    </div>
+                  )}
+                  
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                    <button
+                      type="button"
+                      className={`btn-estado-issue ${selectedPeticion.ESTADO_ISSUE === 'Pendiente' ? 'active' : ''}`}
+                      onClick={() => cambiarEstadoIssue('Pendiente')}
+                      disabled={selectedPeticion.ESTADO_ISSUE === 'Finalizado' || (selectedPeticion.RESPONSABLE_TECNICO && selectedPeticion.RESPONSABLE_TECNICO !== user?.id)}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        backgroundColor: selectedPeticion.ESTADO_ISSUE === 'Pendiente' ? '#f59e0b' : '#e5e7eb',
+                        color: selectedPeticion.ESTADO_ISSUE === 'Pendiente' ? 'white' : '#374151',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: selectedPeticion.ESTADO_ISSUE === 'Finalizado' || (selectedPeticion.RESPONSABLE_TECNICO && selectedPeticion.RESPONSABLE_TECNICO !== user?.id) ? 'not-allowed' : 'pointer',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        transition: 'all 0.2s',
+                        opacity: selectedPeticion.ESTADO_ISSUE === 'Finalizado' || (selectedPeticion.RESPONSABLE_TECNICO && selectedPeticion.RESPONSABLE_TECNICO !== user?.id) ? '0.6' : '1'
+                      }}
+                    >
+                      ⏳ Pendiente
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn-estado-issue ${selectedPeticion.ESTADO_ISSUE === 'Finalizado' ? 'active' : ''}`}
+                      onClick={() => cambiarEstadoIssue('Finalizado')}
+                      disabled={selectedPeticion.RESPONSABLE_TECNICO && selectedPeticion.RESPONSABLE_TECNICO !== user?.id}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        backgroundColor: selectedPeticion.ESTADO_ISSUE === 'Finalizado' ? '#10b981' : '#e5e7eb',
+                        color: selectedPeticion.ESTADO_ISSUE === 'Finalizado' ? 'white' : '#374151',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: selectedPeticion.RESPONSABLE_TECNICO && selectedPeticion.RESPONSABLE_TECNICO !== user?.id ? 'not-allowed' : 'pointer',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        transition: 'all 0.2s',
+                        opacity: selectedPeticion.RESPONSABLE_TECNICO && selectedPeticion.RESPONSABLE_TECNICO !== user?.id ? '0.6' : '1'
+                      }}
+                    >
+                      ✅ Finalizado
+                    </button>
+                  </div>
+                  <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>
+                    <p style={{ margin: '0.25rem 0' }}>
+                      <strong>Estado:</strong> {selectedPeticion.ESTADO_ISSUE || 'Pendiente'}
+                    </p>
+                    <p style={{ margin: '0.25rem 0' }}>
+                      <strong>Responsable técnico:</strong> {selectedPeticion.RESPONSABLE_TECNICO_NOMBRE || 'No asignado'}
+                    </p>
+                    {selectedPeticion.FECHA_FINALIZACION_ISSUE && (
+                      <p style={{ margin: '0.25rem 0' }}>
+                        <strong>Fecha de finalización:</strong> {new Date(selectedPeticion.FECHA_FINALIZACION_ISSUE).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    )}
+                    {selectedPeticion.FINALIZADOR_NOMBRES && (
+                      <p style={{ margin: '0.25rem 0' }}>
+                        <strong>Marcado como finalizado por:</strong> {selectedPeticion.FINALIZADOR_NOMBRES} {selectedPeticion.FINALIZADOR_APELLIDOS}
+                      </p>
+                    )}
+                    {selectedPeticion.URL_GITHUB_ISSUE && (
+                      <p style={{ margin: '0.25rem 0' }}>
+                        <strong>URL del Issue:</strong> 
+                        <a href={selectedPeticion.URL_GITHUB_ISSUE} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', marginLeft: '0.5rem', textDecoration: 'none' }}>
+                          {selectedPeticion.URL_GITHUB_ISSUE}
+                        </a>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="detalle-item">
                 <strong>Aprobaciones:</strong> {selectedPeticion.APROBACIONES_COUNT || 0}/2
               </div>

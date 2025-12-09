@@ -458,3 +458,38 @@
   }
 }
 
+/* Estilos para botones de estado issue */
+.btn-estado-issue {
+  transition: all 0.3s ease;
+}
+
+.btn-estado-issue:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-estado-issue.active {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Estilos para badges de estado issue en tabla */
+.status-success {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+/* Estilos para botones deshabilitados */
+.btn-estado-issue:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-estado-issue:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
