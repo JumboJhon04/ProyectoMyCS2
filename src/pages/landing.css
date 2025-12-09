@@ -154,6 +154,80 @@
   border-radius: 8px; 
 }
 
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.user-chip:hover {
+  background: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+.user-chip-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #111827;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.user-chip-name {
+  font-weight: 700;
+  color: #0f172a;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-chip-menu {
+  position: absolute;
+  right: 16px;
+  top: 64px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  padding: 10px 0;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 120;
+}
+
+.user-chip-menu a,
+.user-chip-menu button {
+  text-align: left;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  color: #0f172a;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.user-chip-menu a:hover,
+.user-chip-menu button:hover {
+  background: #f8fafc;
+}
+
 /* HERO */
 .hero { 
   padding: 28px 0; 

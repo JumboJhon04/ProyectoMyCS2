@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useCourses } from '../../../../context/CoursesContext';
 import { useUser } from '../../../../context/UserContext';
@@ -19,6 +19,15 @@ const EstudianteCourseDetail = () => {
   const [isInscrito, setIsInscrito] = useState(false);
   const [pagoAprobado, setPagoAprobado] = useState(false);
   const [inscripcionId, setInscripcionId] = useState(null);
+
+  const userCareerIds = useMemo(() => {
+    if (!user) return [];
+    const raw = user.carreras || user.CARRERAS || [];
+    return raw
+      .map(c => c?.SECUENCIAL || c?.id || c?.ID || c?.sec || c?.secId)
+      .filter(Boolean)
+      .map(Number);
+  }, [user]);
   
   // Determinar si es una ruta pública (acceso desde /courses/:courseId sin autenticación)
   const isPublicRoute = location.pathname.startsWith('/courses/') && !location.pathname.startsWith('/user/course/') && !location.pathname.startsWith('/profesor/course/');
@@ -60,6 +69,17 @@ const EstudianteCourseDetail = () => {
     };
     return estados[estado] || estado;
   };
+
+  const eventCareerIds = useMemo(() => {
+    const raw = courseData?.CARRERAS || courseFromContext?.CARRERAS || [];
+    return raw
+      .map(c => c?.SECUENCIAL || c?.id || c?.ID || c?.sec || c?.secId)
+      .filter(Boolean)
+      .map(Number);
+  }, [courseData, courseFromContext]);
+
+  const hasCareerRestriction = eventCareerIds.length > 0;
+  const esAptoCarrera = !hasCareerRestriction || eventCareerIds.some(id => userCareerIds.includes(id));
 
   // Obtener datos completos del curso desde la API
   useEffect(() => {
@@ -260,6 +280,11 @@ const EstudianteCourseDetail = () => {
               <span className="tag">{modalidad}</span>
               {esPagado && <span className="tag">Pago</span>}
               {!esPagado && <span className="tag">Gratis</span>}
+              {hasCareerRestriction && (
+                <span className={`tag ${esAptoCarrera ? 'apt-tag' : 'not-apt-tag'}`}>
+                  {esAptoCarrera ? 'Apto para tu carrera' : 'No apto'}
+                </span>
+              )}
             </div>
 
             <h1 className="course-detail-title">{title}</h1>
@@ -331,55 +356,64 @@ const EstudianteCourseDetail = () => {
 
             {/* Botón de comprar/inscribirse - Solo mostrar si NO está inscrito O si está inscrito pero el pago no está aprobado */}
             <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-              {isPublicRoute ? (
-                <Link 
-                  to={`/payment/${courseId}`}
-                  className="btn btn-primary"
-                  style={{ 
-                    padding: '0.75rem 2rem', 
-                    fontSize: '1.1rem',
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    display: 'inline-block'
-                  }}
-                >
-                  {esPagado ? 'Comprar Curso' : 'Inscribirse Gratis'}
-                </Link>
-              ) : (
-                // Solo mostrar botón si NO está inscrito O si está inscrito pero el pago no está aprobado
-                (!isInscrito || (isInscrito && esPagado && !pagoAprobado)) && (
-                  <Link 
-                    to={`/payment/${courseId}`}
-                    className="btn btn-primary"
-                    style={{ 
-                      padding: '0.75rem 2rem', 
-                      fontSize: '1.1rem',
-                      fontWeight: 600,
-                      textDecoration: 'none',
-                      display: 'inline-block'
-                    }}
-                  >
-                    {isInscrito && esPagado && !pagoAprobado 
-                      ? 'Completar Pago' 
-                      : esPagado 
-                        ? 'Comprar Curso' 
-                        : 'Inscribirse Gratis'}
-                  </Link>
-                )
-              )}
-              {/* Mensaje si ya está inscrito y pagado */}
-              {!isPublicRoute && isInscrito && (!esPagado || pagoAprobado) && (
-                <div style={{
-                  padding: '1rem 1.5rem',
-                  background: '#d1fae5',
-                  border: '1px solid #6ee7b7',
-                  borderRadius: '8px',
-                  color: '#065f46',
-                  fontSize: '1rem',
-                  fontWeight: 500
-                }}>
-                  ✅ Ya estás inscrito en este curso
+              {hasCareerRestriction && !esAptoCarrera ? (
+                <div className="not-apt-box">
+                  <div className="not-apt-title">Solo para carreras habilitadas</div>
+                  <div className="not-apt-text">No apto para tu perfil académico.</div>
                 </div>
+              ) : (
+                <>
+                  {isPublicRoute ? (
+                    <Link 
+                      to={`/payment/${courseId}`}
+                      className="btn btn-primary"
+                      style={{ 
+                        padding: '0.75rem 2rem', 
+                        fontSize: '1.1rem',
+                        fontWeight: 600,
+                        textDecoration: 'none',
+                        display: 'inline-block'
+                      }}
+                    >
+                      {esPagado ? 'Comprar Curso' : 'Inscribirse Gratis'}
+                    </Link>
+                  ) : (
+                    // Solo mostrar botón si NO está inscrito O si está inscrito pero el pago no está aprobado
+                    (!isInscrito || (isInscrito && esPagado && !pagoAprobado)) && (
+                      <Link 
+                        to={`/payment/${courseId}`}
+                        className="btn btn-primary"
+                        style={{ 
+                          padding: '0.75rem 2rem', 
+                          fontSize: '1.1rem',
+                          fontWeight: 600,
+                          textDecoration: 'none',
+                          display: 'inline-block'
+                        }}
+                      >
+                        {isInscrito && esPagado && !pagoAprobado 
+                          ? 'Completar Pago' 
+                          : esPagado 
+                            ? 'Comprar Curso' 
+                            : 'Inscribirse Gratis'}
+                      </Link>
+                    )
+                  )}
+                  {/* Mensaje si ya está inscrito y pagado */}
+                  {!isPublicRoute && isInscrito && (!esPagado || pagoAprobado) && (
+                    <div style={{
+                      padding: '1rem 1.5rem',
+                      background: '#d1fae5',
+                      border: '1px solid #6ee7b7',
+                      borderRadius: '8px',
+                      color: '#065f46',
+                      fontSize: '1rem',
+                      fontWeight: 500
+                    }}>
+                      ✅ Ya estás inscrito en este curso
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

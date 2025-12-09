@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../../context/UserContext';
 import { useCourses } from '../../../../context/CoursesContext';
 import PaymentModal from '../../../../components/PaymentModal/PaymentModal';
 import './EstudianteEvents.css';
+import '../../../CoursesFilters.css';
 
 import API_URL from '../../../../config/api';
 
@@ -11,9 +12,23 @@ const EstudianteEvents = () => {
   const { user } = useUser();
   const { courses: availableCourses } = useCourses();
   const [courses, setCourses] = useState([]);
+  const [allEvents, setAllEvents] = useState([]);
   const [view, setView] = useState('mine'); // 'mine' o 'all'
   const navigate = useNavigate();
   const [filter, setFilter] = useState('all'); // all, in-progress, completed
+  const [tipoFilter, setTipoFilter] = useState('');
+  const [costoFilter, setCostoFilter] = useState('');
+  const [disponibilidadFilter, setDisponibilidadFilter] = useState('todos');
+  const [soloAptos, setSoloAptos] = useState(false);
+
+  const userCareerIds = useMemo(() => {
+    if (!user) return [];
+    const raw = user.carreras || user.CARRERAS || [];
+    return raw
+      .map(c => c?.SECUENCIAL || c?.id || c?.ID || c?.sec || c?.secId)
+      .filter(Boolean)
+      .map(Number);
+  }, [user]);
 
   // Cargar solo los eventos en los que el estudiante está inscrito
   useEffect(() => {
@@ -44,6 +59,10 @@ const EstudianteEvents = () => {
             status = 'in-progress';
           }
 
+          const eventoCarreras = (item.CARRERAS || []).map(cc => cc.SECUENCIAL || cc.id || cc.ID).filter(Boolean).map(Number);
+          const hasCareerRestriction = eventoCarreras.length > 0;
+          const esApto = !hasCareerRestriction || eventoCarreras.some(id => userCareerIds.includes(id));
+
           return {
             id: item.eventoId || item.SECUENCIALEVENTO || item.SECUENCIAL,
             title: item.TITULO || item.title || 'Sin título',
@@ -53,6 +72,8 @@ const EstudianteEvents = () => {
             lessons,
             completedLessons: Math.floor((lessons * (progress || 0)) / 100),
             status,
+            hasCareerRestriction,
+            esApto,
             raw: item
           };
         });
@@ -66,6 +87,27 @@ const EstudianteEvents = () => {
 
     fetchStudentEvents();
   }, [user]);
+
+  // Cargar todos los eventos disponibles con información de carreras
+  useEffect(() => {
+    const fetchAllEvents = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/eventos/`);
+        if (!res.ok) {
+          console.warn('No se pudieron obtener todos los eventos');
+          setAllEvents([]);
+          return;
+        }
+        const json = await res.json();
+        setAllEvents(json.data || []);
+      } catch (e) {
+        console.error('Error cargando todos los eventos:', e.message);
+        setAllEvents([]);
+      }
+    };
+
+    fetchAllEvents();
+  }, []);
 
   // Cursos con estado calculado
   const coursesWithStatus = courses;
@@ -113,37 +155,70 @@ const EstudianteEvents = () => {
     try {
       const evRes = await fetch(`${API_URL}/api/estudiantes/${user.id}/eventos`);
       const evJson = await evRes.json();
-      setCourses((evJson.data || []).map(item => ({
-        id: item.eventoId || item.SECUENCIALEVENTO || item.SECUENCIAL,
-        title: item.TITULO || item.title || 'Sin título',
-        description: item.DESCRIPCION || item.description || 'Sin descripción',
-        imageUrl: item.URL_IMAGEN || null,
-        progress: item.PORCENTAJE_ASISTENCIA ? Math.round(item.PORCENTAJE_ASISTENCIA) : 0,
-        lessons: item.HORAS || 0,
-        completedLessons: Math.floor(((item.HORAS || 0) * (item.PORCENTAJE_ASISTENCIA || 0)) / 100),
-        status: item.CODIGOESTADOINSCRIPCION === 'ACE' ? 'in-progress' : 'in-progress',
-        raw: item
-      })));
+      setCourses((evJson.data || []).map(item => {
+        const eventoCarreras = (item.CARRERAS || []).map(cc => cc.SECUENCIAL || cc.id || cc.ID).filter(Boolean).map(Number);
+        const hasCareerRestriction = eventoCarreras.length > 0;
+        const esApto = !hasCareerRestriction || eventoCarreras.some(id => userCareerIds.includes(id));
+        return {
+          id: item.eventoId || item.SECUENCIALEVENTO || item.SECUENCIAL,
+          title: item.TITULO || item.title || 'Sin título',
+          description: item.DESCRIPCION || item.description || 'Sin descripción',
+          imageUrl: item.URL_IMAGEN || null,
+          progress: item.PORCENTAJE_ASISTENCIA ? Math.round(item.PORCENTAJE_ASISTENCIA) : 0,
+          lessons: item.HORAS || 0,
+          completedLessons: Math.floor(((item.HORAS || 0) * (item.PORCENTAJE_ASISTENCIA || 0)) / 100),
+          status: item.CODIGOESTADOINSCRIPCION === 'ACE' ? 'in-progress' : 'in-progress',
+          hasCareerRestriction,
+          esApto,
+          raw: item
+        };
+      }));
     } catch (e) {
       console.error('Error recargando eventos:', e);
     }
   };
 
   // Filtrar cursos
-  const filteredCourses = (view === 'mine' ? coursesWithStatus : (availableCourses || []).map(ev => ({
-    id: ev.id,
-    title: ev.title,
-    description: ev.description,
-    imageUrl: ev.imageUrl,
-    progress: 0,
-    lessons: ev.meta?.hours || ev.meta?.lessons || ev.HORAS || 0,
-    completedLessons: 0,
-    status: 'available',
-    raw: ev
-  }))).filter(course => {
-    if (filter === 'all') return true;
-    if (filter === 'in-progress') return course.status === 'in-progress';
-    if (filter === 'completed') return course.status === 'completed';
+  const filteredCourses = (view === 'mine' ? coursesWithStatus : (allEvents || []).map(ev => {
+    const eventoCarreras = (ev.CARRERAS || []).map(cc => cc.SECUENCIAL || cc.id || cc.ID).filter(Boolean).map(Number);
+    const hasCareerRestriction = eventoCarreras.length > 0;
+    const esApto = !hasCareerRestriction || eventoCarreras.some(id => userCareerIds.includes(id));
+    return {
+      id: ev.SECUENCIAL || ev.id,
+      title: ev.TITULO || ev.title || 'Sin título',
+      description: ev.DESCRIPCION || ev.description || 'Sin descripción',
+      imageUrl: ev.URL_IMAGEN || ev.imageUrl,
+      progress: 0,
+      lessons: ev.HORAS || ev.meta?.hours || ev.meta?.lessons || 0,
+      completedLessons: 0,
+      status: 'available',
+      hasCareerRestriction,
+      esApto,
+      tipoEvento: ev.CODIGOTIPOEVENTO,
+      esPagado: ev.ES_PAGADO === 1 || ev.ES_PAGADO === true,
+      raw: ev
+    };
+  })).filter(course => {
+    // Filtro de progreso (solo para mis cursos)
+    if (view === 'mine') {
+      if (filter === 'in-progress' && course.status !== 'in-progress') return false;
+      if (filter === 'completed' && course.status !== 'completed') return false;
+    }
+
+    // Filtro por tipo
+    if (tipoFilter && course.tipoEvento !== tipoFilter) return false;
+
+    // Filtro por costo
+    if (costoFilter === 'pagado' && !course.esPagado) return false;
+    if (costoFilter === 'gratis' && course.esPagado) return false;
+
+    // Filtro por aptitud
+    if (soloAptos && !course.esApto) return false;
+
+    // Filtro por disponibilidad
+    if (disponibilidadFilter === 'aptos' && !course.esApto) return false;
+    if (disponibilidadFilter === 'noaptos' && (course.esApto || !course.hasCareerRestriction)) return false;
+
     return true;
   });
 
@@ -160,27 +235,60 @@ const EstudianteEvents = () => {
           </div>
         </div>
 
-        {/* Filtros */}
-        <div className="events-filters">
-          <button
-            className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            Todos ({view === 'mine' ? coursesWithStatus.length : (availableCourses || []).length})
-          </button>
-          <button
-            className={`filter-btn ${filter === 'in-progress' ? 'active' : ''}`}
-            onClick={() => setFilter('in-progress')}
-          >
-            En Progreso ({(view === 'mine' ? coursesWithStatus.filter(c => c.status === 'in-progress').length : 0)})
-          </button>
-          <button
-            className={`filter-btn ${filter === 'completed' ? 'active' : ''}`}
-            onClick={() => setFilter('completed')}
-          >
-            Completados ({(view === 'mine' ? coursesWithStatus.filter(c => c.status === 'completed').length : 0)})
-          </button>
-        </div>
+        {/* Filtros de progreso (solo para Mis Cursos) */}
+        {view === 'mine' && (
+          <div className="events-filters">
+            <button
+              className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+              onClick={() => setFilter('all')}
+            >
+              Todos ({coursesWithStatus.length})
+            </button>
+            <button
+              className={`filter-btn ${filter === 'in-progress' ? 'active' : ''}`}
+              onClick={() => setFilter('in-progress')}
+            >
+              En Progreso ({coursesWithStatus.filter(c => c.status === 'in-progress').length})
+            </button>
+            <button
+              className={`filter-btn ${filter === 'completed' ? 'active' : ''}`}
+              onClick={() => setFilter('completed')}
+            >
+              Completados ({coursesWithStatus.filter(c => c.status === 'completed').length})
+            </button>
+          </div>
+        )}
+
+        {/* Filtros avanzados (solo para Todos los Cursos) */}
+        {view === 'all' && (
+          <div style={{ marginTop: '1rem' }}>
+            <div className="events-filters" style={{ marginBottom: '0.75rem' }}>
+              <span style={{ fontWeight: 600, marginRight: '0.5rem', color: '#0f172a' }}>Tipo:</span>
+              <button className={`filter-btn ${tipoFilter === '' ? 'active' : ''}`} onClick={() => setTipoFilter('')}>Todo</button>
+              <button className={`filter-btn ${tipoFilter === 'CUR' ? 'active' : ''}`} onClick={() => setTipoFilter('CUR')}>Curso</button>
+              <button className={`filter-btn ${tipoFilter === 'TALL' ? 'active' : ''}`} onClick={() => setTipoFilter('TALL')}>Taller</button>
+              <button className={`filter-btn ${tipoFilter === 'SEM' ? 'active' : ''}`} onClick={() => setTipoFilter('SEM')}>Seminario</button>
+              <button className={`filter-btn ${tipoFilter === 'CONF' ? 'active' : ''}`} onClick={() => setTipoFilter('CONF')}>Conferencia</button>
+            </div>
+            <div className="events-filters" style={{ marginBottom: '0.75rem' }}>
+              <span style={{ fontWeight: 600, marginRight: '0.5rem', color: '#0f172a' }}>Costo:</span>
+              <button className={`filter-btn ${costoFilter === 'pagado' ? 'active' : ''}`} onClick={() => setCostoFilter(costoFilter === 'pagado' ? '' : 'pagado')}>Pagado</button>
+              <button className={`filter-btn ${costoFilter === 'gratis' ? 'active' : ''}`} onClick={() => setCostoFilter(costoFilter === 'gratis' ? '' : 'gratis')}>Gratis</button>
+            </div>
+            {userCareerIds.length > 0 && (
+              <div className="events-filters" style={{ marginBottom: '0.75rem' }}>
+                <span style={{ fontWeight: 600, marginRight: '0.5rem', color: '#0f172a' }}>Aptitud:</span>
+                <button className={`filter-btn ${soloAptos ? 'active' : ''}`} onClick={() => setSoloAptos(prev => !prev)}>Solo aptos para mi carrera</button>
+              </div>
+            )}
+            <div className="events-filters">
+              <span style={{ fontWeight: 600, marginRight: '0.5rem', color: '#0f172a' }}>Disponibilidad:</span>
+              <button className={`filter-btn ${disponibilidadFilter === 'todos' ? 'active' : ''}`} onClick={() => setDisponibilidadFilter('todos')}>Todos</button>
+              <button className={`filter-btn ${disponibilidadFilter === 'aptos' ? 'active' : ''}`} onClick={() => setDisponibilidadFilter('aptos')}>Aptos</button>
+              <button className={`filter-btn ${disponibilidadFilter === 'noaptos' ? 'active' : ''}`} onClick={() => setDisponibilidadFilter('noaptos')}>No aptos</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Grid de Cursos */}
@@ -211,6 +319,23 @@ const EstudianteEvents = () => {
               <div className="event-card-body">
                 <h3 className="event-title">{course.title}</h3>
                 <p className="event-description">{course.description}</p>
+
+                {/* Badge de aptitud */}
+                {course.hasCareerRestriction && (
+                  <div className="apt-badge" style={{
+                    display: 'inline-block',
+                    padding: '4px 10px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    marginBottom: '8px',
+                    background: course.esApto ? '#ecfdf3' : '#fef2f2',
+                    color: course.esApto ? '#065f46' : '#b91c1c',
+                    border: course.esApto ? '1px solid #bbf7d0' : '1px solid #fecdd3'
+                  }}>
+                    {course.esApto ? 'Apto para tu carrera' : 'No apto'}
+                  </div>
+                )}
 
                 {/* Información de progreso */}
                 <div className="progress-info">
@@ -250,12 +375,28 @@ const EstudianteEvents = () => {
                     {course.status === 'completed' ? 'Revisar' : 'Continuar'}
                   </button>
                 ) : (
-                  <button 
-                    className="continue-btn"
-                    onClick={() => navigate(`/payment/${course.raw?.id || course.id}`)}
-                  >
-                    Comprar
-                  </button>
+                  course.hasCareerRestriction && !course.esApto ? (
+                    <div style={{
+                      padding: '10px 12px',
+                      background: '#fef2f2',
+                      border: '1px solid #fecdd3',
+                      borderLeft: '4px solid #ef4444',
+                      borderRadius: '8px',
+                      color: '#991b1b',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      textAlign: 'center'
+                    }}>
+                      Solo para carreras habilitadas
+                    </div>
+                  ) : (
+                    <button 
+                      className="continue-btn"
+                      onClick={() => navigate(`/payment/${course.raw?.id || course.id}`)}
+                    >
+                      Comprar
+                    </button>
+                  )
                 )}
               </div>
             </div>

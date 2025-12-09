@@ -75,9 +75,9 @@ export default function AuthLogin() {
         } else if (data.data.codigoRol === 'RES') {
           navigate('/responsable/profile');
         } else if (data.data.codigoRol === 'DOC') {
-          navigate('/profesor/panel');
+          navigate('/'); // Docente se queda en la página principal
         } else if (data.data.codigoRol === 'EST') {
-          navigate('/user/panel');
+          navigate('/'); // Estudiante se queda en la página principal
         } else {
           navigate('/');
         }

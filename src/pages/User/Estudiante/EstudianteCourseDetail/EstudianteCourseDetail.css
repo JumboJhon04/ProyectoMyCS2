@@ -51,6 +51,18 @@
     font-weight: 500;
     color: #475569;
   }
+
+  .apt-tag {
+    background: #ecfdf3;
+    border-color: #bbf7d0;
+    color: #065f46;
+  }
+
+  .not-apt-tag {
+    background: #fef2f2;
+    border-color: #fecdd3;
+    color: #b91c1c;
+  }
   
   /* Título y descripción */
   .course-detail-title {
@@ -149,6 +161,27 @@
     background: #333;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  .not-apt-box {
+    padding: 1rem 1.25rem;
+    background: #fef2f2;
+    border: 1px solid #fecdd3;
+    border-left: 4px solid #ef4444;
+    border-radius: 10px;
+    color: #991b1b;
+    font-weight: 600;
+    min-width: 260px;
+  }
+
+  .not-apt-title {
+    font-size: 1rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .not-apt-text {
+    font-size: 0.95rem;
+    color: #b91c1c;
   }
   
   /* Logo del curso */
