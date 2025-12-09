@@ -1,15 +1,10 @@
 // src/pages/User/Profesor/ProfesorModules/ProfesorModules.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaBookOpen, FaUserFriends, FaSearch, FaUserGraduate, FaChalkboardTeacher } from 'react-icons/fa';
 import { useUser } from '../../../../context/UserContext';
 import './ProfesorModules.css';
-
-// Mock de datos para los módulos
-const mockModules = [
-  { id: 1, title: 'Base de Datos', type: 'Programacion', level: 'Intermedio', lessons: 20, students: 32, imageUrl: 'https://via.placeholder.com/150/007bff/FFFFFF?text=DB' },
-  { id: 2, title: 'Análisis de Datos', type: 'Matemáticas', level: 'Principiante', lessons: 30, students: 25, imageUrl: 'https://via.placeholder.com/150/28a745/FFFFFF?text=AD' },
-];
+import API_URL from '../../../../config/api';
 
 const ProfesorModules = () => {
     const { user } = useUser();
@@ -17,6 +12,48 @@ const ProfesorModules = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMateria, setSelectedMateria] = useState('Todas');
     const [selectedDificultad, setSelectedDificultad] = useState('Dificultad');
+    const [professorEvents, setProfessorEvents] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // Cargar eventos reales del profesor
+    useEffect(() => {
+        const fetchEvents = async () => {
+            if (!user || !user.id) {
+                setProfessorEvents([]);
+                setLoading(false);
+                return;
+            }
+            try {
+                setLoading(true);
+                const res = await fetch(`${API_URL}/api/docentes/${user.id}/eventos`);
+                if (!res.ok) {
+                    console.warn('No se pudieron cargar los eventos del docente');
+                    setProfessorEvents([]);
+                    return;
+                }
+                const json = await res.json();
+                setProfessorEvents(json.data || []);
+            } catch (e) {
+                console.error('Error cargando eventos del docente:', e.message);
+                setProfessorEvents([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchEvents();
+    }, [user]);
+
+    // Mapear eventos del backend al formato de módulos
+    const modules = professorEvents.map(ev => ({
+        id: ev.eventoId || ev.SECUENCIAL,
+        title: ev.TITULO || ev.title || 'Sin título',
+        type: ev.CODIGOTIPOEVENTO === 'CUR' ? 'Curso' : ev.CODIGOTIPOEVENTO === 'TALL' ? 'Taller' : ev.CODIGOTIPOEVENTO === 'SEM' ? 'Seminario' : 'Evento',
+        level: 'Intermedio', // Podría venir del backend si está disponible
+        lessons: ev.HORAS || 0,
+        students: ev.TOTAL_INSCRITOS || 0, // Si el backend lo provee
+        imageUrl: ev.URL_IMAGEN || 'https://via.placeholder.com/150/007bff/FFFFFF?text=Curso',
+        description: ev.DESCRIPCION || ''
+    }));
 
     // role switching by subRole removed; navigation should be based on actual codigoRol
 
@@ -60,7 +97,7 @@ const ProfesorModules = () => {
                     <h1 className="events-title">Módulos de enseñanza</h1>
                     <p className="events-subtitle">Explora y mejora tus cursos con los siguientes módulos</p>
                 </div>
-                
+
                 {/* role switcher removed: roles now come from backend via codigoRol */}
 
                 {/* Resumen de estadísticas (similar a la segunda imagen del estudiante) */}
@@ -68,17 +105,17 @@ const ProfesorModules = () => {
                     <div className="summary-card">
                         <FaBookOpen />
                         <p>Total de cursos</p>
-                        <strong>{mockModules.length}</strong>
+                        <strong>{modules.length}</strong>
                     </div>
                     <div className="summary-card">
                         <FaUserFriends />
                         <p>Estudiantes</p>
-                        <strong>{mockModules.reduce((acc, c) => acc + c.students, 0)}</strong>
+                        <strong>{modules.reduce((acc, c) => acc + c.students, 0)}</strong>
                     </div>
                     <div className="summary-card">
                         <span className="icon">⏱</span>
                         <p>Total de lecciones</p>
-                        <strong>{mockModules.reduce((acc, c) => acc + c.lessons, 0)}</strong>
+                        <strong>{modules.reduce((acc, c) => acc + c.lessons, 0)}</strong>
                     </div>
                 </div>
 
@@ -105,9 +142,19 @@ const ProfesorModules = () => {
 
             {/* Grid de Módulos */}
             <div className="modules-grid">
-                {mockModules.map(module => (
-                    <ModuleCard key={module.id} module={module} />
-                ))}
+                {loading ? (
+                    <div className="empty-state">
+                        <p>Cargando módulos...</p>
+                    </div>
+                ) : modules.length === 0 ? (
+                    <div className="empty-state">
+                        <p>No tienes cursos asignados actualmente</p>
+                    </div>
+                ) : (
+                    modules.map(module => (
+                        <ModuleCard key={module.id} module={module} />
+                    ))
+                )}
             </div>
         </div>
     );

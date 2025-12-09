@@ -24,7 +24,7 @@ function App() {
 }
 
 function AppLayout() {
-  const { user, setUser } = useUser();
+  const { user, setUser, activeRole } = useUser();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   // Sincronizar usuario de localStorage con el contexto al cargar
@@ -39,41 +39,31 @@ function AppLayout() {
   }, [user, setUser]);
 
   // Mapear codigoRol de la BD al formato que usa tu app
+  // Usar activeRole si está disponible, sino derivar del usuario  
   const getRoleKey = () => {
-    // Prefer a normalized `user.role` if present (handle variants like 'ESTUDIANTE', 'Docente', etc.)
-    if (user?.role) {
-      const r = String(user.role).toLowerCase();
-      const normalize = {
-        'admin': 'admin',
-        'administrador': 'admin',
-        'adm': 'admin',
-        'responsable': 'responsable',
-        'res': 'responsable',
-        'docente': 'docente',
-        'profesor': 'docente',
-        'doc': 'docente',
-        'estudiante': 'estudiante',
-        'est': 'estudiante',
-        'user': 'user',
-        'inv': 'user',
-        'otro': 'user'
-      };
-      return normalize[r] || r;
-    }
+    const roleToNormalize = activeRole || user?.role || user?.codigoRol;
 
-    if (user?.codigoRol) {
-      const roleMap = {
+    if (roleToNormalize) {
+      const r = String(roleToNormalize).toUpperCase();
+      const normalize = {
+        'ADMIN': 'admin',
+        'ADMINISTRADOR': 'admin',
         'ADM': 'admin',
+        'RESPONSABLE': 'responsable',
         'RES': 'responsable',
+        'DOCENTE': 'docente',
+        'PROFESOR': 'docente',
         'DOC': 'docente',
+        'ESTUDIANTE': 'estudiante',
         'EST': 'estudiante',
+        'USER': 'user',
         'INV': 'user',
         'OTRO': 'user'
       };
-      return roleMap[user.codigoRol] || 'user';
+      return normalize[r] || 'user';
     }
 
-    return 'admin';
+    return 'user';
   };
   const roleKey = getRoleKey();
 
