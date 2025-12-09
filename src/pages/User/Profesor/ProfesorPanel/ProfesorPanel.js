@@ -5,7 +5,7 @@ import UserPanel from '../../UserPanel';
 import EventoProfesor from '../EventoProfesor/EventoProfesor';
 import { useUser } from '../../../../context/UserContext';
 import { useEffect, useState } from 'react';
-import { FaDatabase, FaChartLine } from 'react-icons/fa'; // Iconos de ejemplo para los cursos
+import { FaFileAlt, FaUpload, FaChartBar } from 'react-icons/fa'; // Iconos para opciones rápidas
 import './ProfesorPanel.css';
 
 import API_URL from '../../../../config/api';
@@ -14,7 +14,7 @@ import API_URL from '../../../../config/api';
 const ProfesorPanel = () => {
   const { user } = useUser();
   const [professorEvents, setProfessorEvents] = useState([]);
-  
+
   useEffect(() => {
     const fetchEvents = async () => {
       if (!user || !user.id) return;
@@ -38,13 +38,13 @@ const ProfesorPanel = () => {
 
   return (
     <div className="dashboard-user-container"> {/* Reutiliza el contenedor principal */}
-      
+
       {/* Usamos UserPanel para la sección de bienvenida y cambio de rol */}
       <UserPanel userName={user?.nombres ? user.nombres.split(' ')[0] : 'Fulanito'} role="Docente" message="Continúa enseñando" />
 
       {/* --- Contenido Principal (Cursos y Opciones Rápidas) --- */}
       <div className="dashboard-content-grid"> {/* Reutiliza el grid de EstudiantePanel */}
-        
+
         {/* Columna Izquierda: Lista de Cursos del Profesor (Eventos) */}
         <main className="course-list-main"> {/* Reutiliza la clase de lista */}
           <div className="profesor-events-list">
@@ -70,15 +70,20 @@ const ProfesorPanel = () => {
         {/* Columna Derecha: Opciones Rápidas (Similar a Próximas Pruebas) */}
         <aside className="upcoming-exams-sidebar"> {/* Reutiliza la clase lateral */}
           <h3>Opciones Rápidas</h3>
-          
+
           <div className="options-list">
-            <button className="quick-option-btn">Crear prueba</button>
-            <button className="quick-option-btn">Subir contenido</button>
-            <button className="quick-option-btn">Estadísticas</button>
+            <button className="quick-option-btn">
+              <FaFileAlt className="option-icon" /> Crear prueba
+            </button>
+            <button className="quick-option-btn">
+              <FaUpload className="option-icon" /> Subir contenido
+            </button>
+            <button className="quick-option-btn">
+              <FaChartBar className="option-icon" /> Estadísticas
+            </button>
           </div>
 
         </aside>
-
       </div>
     </div>
   );

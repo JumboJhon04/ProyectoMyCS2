@@ -3,6 +3,11 @@ import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useCourses } from '../../../../context/CoursesContext';
 import { useUser } from '../../../../context/UserContext';
 import PublicHeader from '../../../../components/PublicHeader/PublicHeader';
+import {
+  FaClock, FaUsers, FaCalendarAlt, FaMoneyBillWave,
+  FaClipboardCheck, FaCheckCircle, FaChartBar, FaGraduationCap,
+  FaBook, FaCheck, FaSync, FaLock, FaEye
+} from 'react-icons/fa';
 import './EstudianteCourseDetail.css';
 
 import API_URL from '../../../../config/api';
@@ -28,7 +33,7 @@ const EstudianteCourseDetail = () => {
       .filter(Boolean)
       .map(Number);
   }, [user]);
-  
+
   // Determinar si es una ruta pública (acceso desde /courses/:courseId sin autenticación)
   const isPublicRoute = location.pathname.startsWith('/courses/') && !location.pathname.startsWith('/user/course/') && !location.pathname.startsWith('/profesor/course/');
 
@@ -88,7 +93,7 @@ const EstudianteCourseDetail = () => {
         setLoading(true);
         const response = await fetch(`${API_URL}/api/eventos/${courseId}`);
         const data = await response.json();
-        
+
         if (!response.ok) {
           throw new Error(data.error || 'Error al cargar el curso');
         }
@@ -107,7 +112,7 @@ const EstudianteCourseDetail = () => {
                 setIsInscrito(true);
                 const idInscripcion = inscripcionData.data.inscripcionId || inscripcionData.data.SECUENCIAL;
                 setInscripcionId(idInscripcion);
-                
+
                 // Verificar estado del pago si el curso es pagado (usar data.data que es la respuesta del fetch)
                 const cursoEsPagado = data.data?.ES_PAGADO === 1;
                 if (idInscripcion && cursoEsPagado) {
@@ -155,7 +160,7 @@ const EstudianteCourseDetail = () => {
   // Parsear topics del contenido
   const parseTopics = (contenido) => {
     if (!contenido) return [];
-    
+
     try {
       const contenidoStr = contenido.trim();
       if (contenidoStr.startsWith('{') && contenidoStr.endsWith('}')) {
@@ -174,10 +179,10 @@ const EstudianteCourseDetail = () => {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   };
 
@@ -250,16 +255,16 @@ const EstudianteCourseDetail = () => {
   const esPagado = courseData?.ES_PAGADO === 1 || course?.meta?.isPaid;
   const carreras = courseData?.CARRERAS || [];
   const topics = parseTopics(courseData?.CONTENIDO || '');
-  
+
   // Crear "lecciones" basadas en los topics
-  const lessons = topics.length > 0 
+  const lessons = topics.length > 0
     ? topics.map((topic, index) => ({
-        id: index + 1,
-        title: typeof topic === 'string' ? topic : topic.title || `Tema ${index + 1}`,
-        description: typeof topic === 'string' ? '' : topic.description || '',
-        status: 'locked', // Por defecto bloqueadas
-        type: 'lesson'
-      }))
+      id: index + 1,
+      title: typeof topic === 'string' ? topic : topic.title || `Tema ${index + 1}`,
+      description: typeof topic === 'string' ? '' : topic.description || '',
+      status: 'locked', // Por defecto bloqueadas
+      type: 'lesson'
+    }))
     : [];
 
   const totalLessons = lessons.length || topics.length || 0;
@@ -269,7 +274,7 @@ const EstudianteCourseDetail = () => {
   return (
     <div className="course-detail-container">
       {isPublicRoute && <PublicHeader />}
-      
+
       {/* Header del Curso */}
       <div className="course-detail-header">
         <div className="course-header-content">
@@ -299,13 +304,13 @@ const EstudianteCourseDetail = () => {
               )}
               {horas > 0 && (
                 <div className="meta-item">
-                  <span className="meta-icon">⏱</span>
+                  <span className="meta-icon"><FaClock /></span>
                   <span className="meta-text">{horas} horas</span>
                 </div>
               )}
               {capacidad && (
                 <div className="meta-item">
-                  <span className="meta-icon">👥</span>
+                  <span className="meta-icon"><FaUsers /></span>
                   <span className="meta-text">{capacidad} cupos</span>
                 </div>
               )}
@@ -314,35 +319,37 @@ const EstudianteCourseDetail = () => {
             {/* Información adicional */}
             <div className="course-additional-info">
               {fechaInicio && fechaFin && (
-                <div>
-                  <strong>📅 Fechas:</strong> Del {formatDate(fechaInicio)} al {formatDate(fechaFin)}
+                <div className="meta-row">
+                  <strong><FaCalendarAlt className="meta-icon-small" /> Fechas:</strong> Del {formatDate(fechaInicio)} al {formatDate(fechaFin)}
                 </div>
               )}
-              
+
               <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
                 {costo > 0 && (
-                  <div>
-                    <strong>💰 Costo:</strong> ${parseFloat(costo).toFixed(2)}
+                  <div className="meta-row">
+                    <strong><FaMoneyBillWave className="meta-icon-small" /> Costo:</strong> ${parseFloat(costo).toFixed(2)}
                   </div>
                 )}
                 {notaAprobacion && (
-                  <div>
-                    <strong>📝 Nota de aprobación:</strong> {notaAprobacion}/10
+                  <div className="meta-row">
+                    <strong><FaClipboardCheck className="meta-icon-small" /> Nota de aprobación:</strong> {notaAprobacion}/10
                   </div>
                 )}
                 {asistenciaMinima && (
-                  <div>
-                    <strong>✅ Asistencia mínima:</strong> {asistenciaMinima}%
+                  <div className="meta-row">
+                    <strong><FaCheckCircle className="meta-icon-small" /> Asistencia mínima:</strong> {asistenciaMinima}%
                   </div>
                 )}
-                <div>
-                  <strong>📊 Estado:</strong> {estado}
+                <div className="meta-row">
+                  <strong><FaChartBar className="meta-icon-small" /> Estado:</strong> {estado}
                 </div>
               </div>
 
               {carreras.length > 0 && (
                 <div style={{ marginTop: '0.75rem' }}>
-                  <strong>🎓 Carreras relacionadas:</strong>
+                  <div className="meta-row">
+                    <strong><FaGraduationCap className="meta-icon-small" /> Carreras relacionadas:</strong>
+                  </div>
                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
                     {carreras.map((carrera, idx) => (
                       <span key={idx} className="tag" style={{ fontSize: '0.85rem' }}>
@@ -364,11 +371,11 @@ const EstudianteCourseDetail = () => {
               ) : (
                 <>
                   {isPublicRoute ? (
-                    <Link 
+                    <Link
                       to={`/payment/${courseId}`}
                       className="btn btn-primary"
-                      style={{ 
-                        padding: '0.75rem 2rem', 
+                      style={{
+                        padding: '0.75rem 2rem',
                         fontSize: '1.1rem',
                         fontWeight: 600,
                         textDecoration: 'none',
@@ -380,21 +387,21 @@ const EstudianteCourseDetail = () => {
                   ) : (
                     // Solo mostrar botón si NO está inscrito O si está inscrito pero el pago no está aprobado
                     (!isInscrito || (isInscrito && esPagado && !pagoAprobado)) && (
-                      <Link 
+                      <Link
                         to={`/payment/${courseId}`}
                         className="btn btn-primary"
-                        style={{ 
-                          padding: '0.75rem 2rem', 
+                        style={{
+                          padding: '0.75rem 2rem',
                           fontSize: '1.1rem',
                           fontWeight: 600,
                           textDecoration: 'none',
                           display: 'inline-block'
                         }}
                       >
-                        {isInscrito && esPagado && !pagoAprobado 
-                          ? 'Completar Pago' 
-                          : esPagado 
-                            ? 'Comprar Curso' 
+                        {isInscrito && esPagado && !pagoAprobado
+                          ? 'Completar Pago'
+                          : esPagado
+                            ? 'Comprar Curso'
                             : 'Inscribirse Gratis'}
                       </Link>
                     )
@@ -408,9 +415,12 @@ const EstudianteCourseDetail = () => {
                       borderRadius: '8px',
                       color: '#065f46',
                       fontSize: '1rem',
-                      fontWeight: 500
+                      fontWeight: 500,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
                     }}>
-                      ✅ Ya estás inscrito en este curso
+                      <FaCheckCircle /> Ya estás inscrito en este curso
                     </div>
                   )}
                 </>
@@ -421,8 +431,8 @@ const EstudianteCourseDetail = () => {
           {/* Logo del curso */}
           <div className="course-header-right">
             <div className="course-logo-circle">
-              <img 
-                src={imageUrl} 
+              <img
+                src={imageUrl}
                 alt={title}
                 onError={(e) => { e.target.src = 'https://via.placeholder.com/200'; }}
               />
@@ -438,8 +448,8 @@ const EstudianteCourseDetail = () => {
               <span className="progress-text">{completedLessons} de {totalLessons} temas completados</span>
             </div>
             <div className="progress-bar-large">
-              <div 
-                className="progress-bar-fill-large" 
+              <div
+                className="progress-bar-fill-large"
                 style={{ width: `${progressPercentage}%` }}
               />
             </div>
@@ -452,7 +462,7 @@ const EstudianteCourseDetail = () => {
         <div className="course-lessons-section">
           <div className="lessons-header">
             <div className="lessons-count-box">
-              <span className="lessons-icon">📚</span>
+              <span className="lessons-icon"><FaBook /></span>
               <div>
                 <div className="lessons-count-label">Total de temas</div>
                 <div className="lessons-count-number">{totalLessons}</div>
@@ -463,14 +473,14 @@ const EstudianteCourseDetail = () => {
           {/* Lista de Temas */}
           <div className="lessons-list">
             {lessons.map((lesson) => (
-              <div 
-                key={lesson.id} 
+              <div
+                key={lesson.id}
                 className={`lesson-item ${lesson.status}`}
               >
                 <div className="lesson-status-icon">
-                  {lesson.status === 'completed' && <span className="status-check">✓</span>}
-                  {lesson.status === 'in-progress' && <span className="status-progress">⟳</span>}
-                  {lesson.status === 'locked' && <span className="status-lock">🔒</span>}
+                  {lesson.status === 'completed' && <FaCheck className="status-check" />}
+                  {lesson.status === 'in-progress' && <FaSync className="status-progress spinning" />}
+                  {lesson.status === 'locked' && <FaLock className="status-lock" />}
                 </div>
 
                 <div className="lesson-content">
@@ -488,11 +498,11 @@ const EstudianteCourseDetail = () => {
                   )}
                 </div>
 
-                <button 
+                <button
                   className="lesson-action-btn"
                   disabled={lesson.status === 'locked'}
                 >
-                  <span className="action-icon">👁</span>
+                  <span className="action-icon"><FaEye /></span>
                   Ver
                 </button>
               </div>

@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaClipboardList, FaCheckCircle, FaCalendarAlt, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { useUser } from '../../../../context/UserContext';
 import { useCourses } from '../../../../context/CoursesContext';
-import { useEffect, useState } from 'react';
 import UserPanel from '../../UserPanel';
 import './EstudiantePanel.css';
 import API_URL from '../../../../config/api';
@@ -12,11 +12,12 @@ const EstudiantePanel = () => {
   const { courses } = useCourses();
   const navigate = useNavigate();
   const [studentEvents, setStudentEvents] = useState([]);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // Obtener el primer nombre para el saludo (usa datos reales)
+  // Obtener el primer nombre para el saludo
   const firstName = user?.nombres ? user.nombres.split(' ')[0] : (user?.name ? user.name.split(' ')[0] : 'Fulanito');
 
-  // Usar SOLO eventos reales del estudiante (no mostrar cursos globales si el usuario no está inscrito)
+  // Usar SOLO eventos reales del estudiante
   const coursesWithProgress = studentEvents.map((course, index) => ({
     id: course.eventoId || course.id,
     title: course.TITULO || course.title || course.name,
@@ -25,16 +26,16 @@ const EstudiantePanel = () => {
     lessons: course.HORAS || course.lessons || course.meta?.lessons || 20
   }));
 
-  // Próximas pruebas: derivadas de los eventos del estudiante (si hay fechas)
-  const upcomingExams = (studentEvents || []).slice(0,3).map((ev, i) => ({
-    id: i+1,
-    name: `Actividad: ${ev.TITULO || ev.title}`,
+  // Próximas pruebas: derivadas de los eventos del estudiante
+  const upcomingExams = (studentEvents || []).slice(0, 3).map((ev, i) => ({
+    id: i + 1,
+    name: `Actividad: ${ev.TITULO || ev.title} `,
     courseId: ev.eventoId || ev.id,
     date: ev.FECHAINICIO || ev.startDate || 'Sin fecha',
-    icon: '📌'
+    icon: <FaClipboardList />
   }));
 
-  // Cargar eventos reales del estudiante (si está autenticado)
+  // Cargar eventos reales del estudiante
   useEffect(() => {
     const fetchEvents = async () => {
       if (!user || !user.id) return;
@@ -51,26 +52,24 @@ const EstudiantePanel = () => {
   }, [user]);
 
   return (
-    <div className="dashboard-user-container">
-      
+    <div className={`dashboard-user-container ${isDrawerOpen ? 'drawer-active' : ''}`}>
+
       {/* --- Sección de Bienvenida y Roles --- */}
       <UserPanel userName={firstName} role="Estudiante" message="Continúa aprendiendo" />
 
-      {/* --- Contenido Principal (Cursos y Pruebas) --- */}
+      {/* --- Contenido Principal (Cursos) --- */}
       <div className="dashboard-content-grid">
-        
-        {/* Columna Izquierda: Cursos */}
-        <main className="course-list-main">
+        <main className="course-list-main full-width">
           {coursesWithProgress.length > 0 ? coursesWithProgress.map((course) => (
-            <div 
-              key={course.id} 
-              className="course-card" 
+            <div
+              key={course.id}
+              className="course-card"
               onClick={() => navigate(`/user/course/${course.id}`)}
               style={{ cursor: 'pointer' }}
             >
-              <img 
-                src={course.imageUrl || 'https://via.placeholder.com/50'} 
-                alt={course.title} 
+              <img
+                src={course.imageUrl || 'https://via.placeholder.com/50'}
+                alt={course.title}
                 className="course-icon"
                 onError={(e) => { e.target.src = 'https://via.placeholder.com/50'; }}
               />
@@ -84,32 +83,50 @@ const EstudiantePanel = () => {
             </div>
           )) : (
             <div style={{ padding: 20 }}>
-              <p>No estás inscrito en ningún evento por el momento.</p>
-              <button className="view-all-btn" onClick={() => navigate('/user/events')}>Ver eventos disponibles</button>
+              <p>No estás inscrito en ningún curso por el momento.</p>
+              <button className="view-all-btn" onClick={() => navigate('/user/events')}>Ver cursos disponibles</button>
             </div>
           )}
         </main>
-
-        {/* Columna Derecha: Próximas Pruebas */}
-        <aside className="upcoming-exams-sidebar">
-          <h3>Próximas Pruebas</h3>
-          
-          {upcomingExams.map((exam) => {
-            const course = courses.find(c => c.id === exam.courseId);
-            return (
-              <div key={exam.id} className="exam-item">
-                <span className="exam-icon">{exam.icon}</span>
-                <div className="exam-details">
-                  <p>{exam.name}</p>
-                  <span className="exam-date">{exam.date}</span>
-                </div>
-              </div>
-            );
-          })}
-
-        </aside>
-
       </div>
+
+      {/* --- Cajón Retráctil de Próximas Pruebas (Sidebar) --- */}
+      <div className={`upcoming-drawer-container ${isDrawerOpen ? 'open' : 'closed'}`}>
+        <button
+          className="drawer-toggle-btn"
+          onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+          title={isDrawerOpen ? "Cerrar próximas pruebas" : "Ver próximas pruebas"}
+        >
+          {isDrawerOpen ? <FaChevronRight /> : <FaChevronLeft />}
+        </button>
+
+        <aside className="upcoming-exams-drawer-content">
+          <h3><FaCalendarAlt style={{ marginRight: '8px' }} /> Próximas Pruebas</h3>
+
+          {upcomingExams.length > 0 ? (
+            <div className="exams-list">
+              {upcomingExams.map((exam) => (
+                <div key={exam.id} className="exam-item">
+                  <div className="exam-icon-wrapper">
+                    <span className="exam-icon">{exam.icon}</span>
+                  </div>
+                  <div className="exam-details">
+                    <p className="exam-title">{exam.name}</p>
+                    <span className="exam-date"><FaCalendarAlt style={{ marginRight: '4px', fontSize: '0.85em' }} /> {exam.date}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-exams-state">
+              <span className="empty-icon"><FaCheckCircle /></span>
+              <p>¡Todo listo!</p>
+              <small>No tienes pruebas pendientes por ahora.</small>
+            </div>
+          )}
+        </aside>
+      </div>
+
     </div>
   );
 };

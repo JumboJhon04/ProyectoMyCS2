@@ -1,16 +1,16 @@
 /* src/pages/User/Profesor/ProfesorPanel/ProfesorPanel.css */
 
 /* Importar el estilo general del dashboard para mantener la consistencia */
-@import url("../../Estudiante/EstudiantePanel/EstudiantePanel.css"); 
+@import url("../../Estudiante/EstudiantePanel/EstudiantePanel.css");
 
 /* Las clases .dashboard-user-container, .dashboard-content-grid, .welcome-section, 
    .role-switcher, .course-list-main y .view-all-btn ya se manejan en los imports. */
 
 /* Estilos específicos para las tarjetas de evento del profesor */
 .profesor-events-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 /* Estilos para el panel de Opciones Rápidas (simulando Upcoming Exams) */
@@ -48,10 +48,22 @@
     font-size: 0.95rem;
     color: #333;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    /* Alinear a la izquierda para que el icono quede bien */
+    gap: 0.8rem;
+    padding-left: 1.2rem;
 }
 
 .quick-option-btn:hover {
     background-color: #e0e0e0;
     border-color: #bbb;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.option-icon {
+    font-size: 1.1rem;
+    color: #444;
+    /* Gris oscuro para consistencia */
 }
