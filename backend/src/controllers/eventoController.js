@@ -99,7 +99,7 @@ const crearEvento = async (req, res) => {
         hours || 0,
         capacity || null,
         passingGrade || null,
-        cost && parseFloat(cost) > 0 ? 1 : 0,
+        parseFloat(cost || 0) > 0 ? 1 : 0,
         cost || 0,
         attendanceRequired || null,
         docente || ''
@@ -343,7 +343,7 @@ const actualizarEvento = async (req, res) => {
         passingGrade || null,
         capacity || null,
         cost || 0,
-        isPaid ? 1 : 0,
+        parseFloat(cost || 0) > 0 ? 1 : 0,
         attendanceRequired || null,
         docente || '', // ✅ AGREGAR DOCENTE (guardar cadena vacía si no viene)
         eventoId
@@ -627,6 +627,76 @@ const eliminarEvento = async (req, res) => {
   }
 };
 
+
+// Nuevo endpoint para filtrar eventos/cursos
+const obtenerEventosFiltrados = async (req, res) => {
+  try {
+    const { tipo, pagado } = req.query;
+    let filtros = [];
+    let params = [];
+    if (tipo) {
+      filtros.push('e.CODIGOTIPOEVENTO = ?');
+      params.push(tipo);
+    }
+    if (pagado !== undefined) {
+      filtros.push('e.ES_PAGADO = ?');
+      params.push(Number(pagado));
+    }
+    let where = filtros.length ? `WHERE ${filtros.join(' AND ')}` : '';
+    const [eventos] = await pool.execute(
+      `SELECT 
+        e.SECUENCIAL,
+        e.TITULO,
+        e.DESCRIPCION,
+        e.CONTENIDO,
+        e.CODIGOTIPOEVENTO,
+        e.CODIGOMODALIDAD,
+        e.HORAS,
+        e.NOTAAPROBACION,
+        e.ASISTENCIAMINIMA,
+        e.CAPACIDAD,
+        e.COSTO,
+        e.ES_PAGADO,
+        e.FECHAINICIO,
+        e.FECHAFIN,
+        e.ESTADO,
+        e.Docente,
+        MAX(ie.URL_IMAGEN) as URL_IMAGEN
+       FROM evento e
+       LEFT JOIN imagen_evento ie ON e.SECUENCIAL = ie.SECUENCIALEVENTO 
+       AND ie.TIPO_IMAGEN = 'PORTADA'
+       ${where}
+       GROUP BY e.SECUENCIAL
+       ORDER BY e.SECUENCIAL DESC`,
+      params
+    );
+    for (let evento of eventos) {
+      const [carreras] = await pool.execute(
+        `SELECT c.SECUENCIAL, c.NOMBRE_CARRERA
+         FROM evento_carrera ec
+         INNER JOIN carrera c ON ec.SECUENCIALCARRERA = c.SECUENCIAL
+         WHERE ec.SECUENCIALEVENTO = ?`,
+        [evento.SECUENCIAL]
+      );
+      evento.CARRERAS = carreras;
+    }
+    const mapped = eventos.map(ev => ({
+      ...ev,
+      URL_IMAGEN: buildImageUrl(ev.URL_IMAGEN, req)
+    }));
+    res.json({
+      success: true,
+      data: mapped
+    });
+  } catch (error) {
+    console.error('❌ Error al filtrar eventos:', error);
+    res.status(500).json({ 
+      error: 'Error al filtrar eventos',
+      details: error.message
+    });
+  }
+};
+
 module.exports = {
   crearEvento,
   obtenerImagenes,
@@ -634,5 +704,6 @@ module.exports = {
   obtenerEvento,
   actualizarEvento,
   eliminarEvento,
-  actualizarImagenEvento
+  actualizarImagenEvento,
+  obtenerEventosFiltrados
 };

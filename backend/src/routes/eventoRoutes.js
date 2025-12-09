@@ -8,13 +8,16 @@ const {
   actualizarEvento,
   eliminarEvento,
   obtenerImagenes,
-  actualizarImagenEvento
+  actualizarImagenEvento,
+  obtenerEventosFiltrados
 } = require('../controllers/eventoController');
 
 // Rutas
+
 router.post('/', uploadEventos.single('image'), crearEvento);
 router.get('/', obtenerEventos);
 router.get('/imagenes', obtenerImagenes);
+router.get('/filtrar', obtenerEventosFiltrados);
 router.get('/:id', obtenerEvento);
 router.put('/:id', uploadEventos.single('image'), actualizarEvento);
 router.delete('/:id', eliminarEvento);

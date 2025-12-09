@@ -1,0 +1,77 @@
+.filters-bar {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.filters-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.filters-label {
+  font-weight: 500;
+  margin-right: 8px;
+  color: #222;
+}
+.filter-chip {
+  background: #f3f4f6;
+  border: 1px solid #dfe6ea;
+  border-radius: 20px;
+  padding: 6px 18px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s, border 0.2s;
+  color: #222;
+}
+.filter-chip.selected {
+  background: #202527;
+  color: #fff;
+  border-color: #202527;
+}
+.filter-chip:hover {
+  background: #e0e7ef;
+}
+.course-type {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 2px;
+}
+.course-meta-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.course-meta-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.course-apt-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  background: #e6f7ed;
+  color: #0f5132;
+  border: 1px solid #b9e5c8;
+}
+
+.not-apt-note {
+  font-size: 0.85rem;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecdd3;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-weight: 600;
+}
+.course-apt-badge.not-eligible {
+  background: #fff4f4;
+  color: #b23b3b;
+  border-color: #f0c4c4;
+}

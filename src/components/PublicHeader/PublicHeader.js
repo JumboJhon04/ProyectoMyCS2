@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import API_URL from '../../config/api';
 import '../../pages/landing.css';
+import { useUser } from '../../context/UserContext';
 
 export default function PublicHeader() {
   const [open, setOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [headerConfig, setHeaderConfig] = useState({
     siteName: 'Cursos UTA',
     menuItems: [
@@ -13,6 +15,44 @@ export default function PublicHeader() {
       { label: 'Contactos', link: '/contact' }
     ]
   });
+  const { user, setUser } = useUser();
+
+  const isAuthenticated = useMemo(() => {
+    if (user) return true;
+    return localStorage.getItem('isAuthenticated') === 'true' && !!localStorage.getItem('user');
+  }, [user]);
+
+  const displayName = useMemo(() => {
+    const u = user || JSON.parse(localStorage.getItem('user') || 'null');
+    if (!u) return '';
+    return u.nombres || u.NOMBRES || u.nombre || u.name || u.correo || u.email || 'Mi cuenta';
+  }, [user]);
+
+  const dashboardPath = useMemo(() => {
+    const u = user || JSON.parse(localStorage.getItem('user') || 'null');
+    const rol = u?.codigoRol || u?.CODIGOROL;
+    if (rol === 'ADM') return '/admin/panel';
+    if (rol === 'RES') return '/responsable/profile';
+    if (rol === 'DOC') return '/profesor/panel';
+    if (rol === 'EST') return '/user/panel';
+    return '/';
+  }, [user]);
+
+  const userInitials = useMemo(() => {
+    const name = displayName || '';
+    const parts = name.trim().split(' ').filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return 'U';
+  }, [displayName]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('isAuthenticated');
+    setUser(null);
+    setUserMenuOpen(false);
+    window.location.href = '/';
+  };
 
   useEffect(() => {
     const fetchHeaderConfig = async () => {
@@ -33,6 +73,7 @@ export default function PublicHeader() {
 
   function toggleMenu() {
     setOpen((s) => !s);
+    setUserMenuOpen(false);
   }
 
   function closeMenu() {
@@ -51,7 +92,20 @@ export default function PublicHeader() {
         </nav>
         <div className="right-controls">
           <div className="nav-actions">
-            <Link to="/login" className="btn btn-primary">Ingresar</Link>
+            {isAuthenticated ? (
+              <div className="user-chip" onClick={() => setUserMenuOpen(prev => !prev)}>
+                <div className="user-chip-avatar">{userInitials}</div>
+                <div className="user-chip-name">{displayName}</div>
+              </div>
+            ) : (
+              <Link to="/login" className="btn btn-primary">Ingresar</Link>
+            )}
+            {isAuthenticated && userMenuOpen && (
+              <div className="user-chip-menu">
+                <Link to={dashboardPath} onClick={() => setUserMenuOpen(false)}>Ir a mi panel</Link>
+                <button type="button" onClick={handleLogout}>Cerrar sesión</button>
+              </div>
+            )}
           </div>
 
           <button
