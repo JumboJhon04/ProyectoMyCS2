@@ -39,6 +39,21 @@ const PaymentPage = () => {
   const [pagoAprobado, setPagoAprobado] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('manual'); // 'manual' o 'paypal'
   const [paypalSuccess, setPaypalSuccess] = useState(false);
+  // Requisitos dinámicos
+  const [requisitos, setRequisitos] = useState([]);
+  const [archivosRequisitos, setArchivosRequisitos] = useState({});
+  // Obtener requisitos del curso
+  useEffect(() => {
+    const fetchRequisitos = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/eventos/${courseId}/requisitos`);
+        const data = await res.json();
+        if (res.ok && data.success) setRequisitos(data.data);
+        else setRequisitos([]);
+      } catch (e) { setRequisitos([]); }
+    };
+    if (courseId) fetchRequisitos();
+  }, [courseId]);
 
   useEffect(() => {
     if (courseId) {
@@ -170,6 +185,16 @@ const PaymentPage = () => {
     }
   };
 
+  // Manejar archivos de requisitos dinámicos
+  const handleRequisitoFileChange = (secuencial, file) => {
+    if (file && file.size > 10 * 1024 * 1024) {
+      setError('El archivo de requisito es demasiado grande. Máximo 10MB');
+      return;
+    }
+    setArchivosRequisitos(prev => ({ ...prev, [secuencial]: file }));
+    setError('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -200,40 +225,7 @@ const PaymentPage = () => {
         const inscripcionData = await inscripcionRes.json();
         
         if (!inscripcionRes.ok) {
-          // Si ya está inscrito, obtener la inscripción existente
-          if (inscripcionData.error && inscripcionData.error.includes('ya inscrito')) {
-            try {
-              const eventosRes = await fetch(`${API_URL}/api/estudiantes/${user.id}/eventos`);
-              if (eventosRes.ok) {
-                const eventosData = await eventosRes.json();
-                const inscripcionExistente = eventosData.data?.find(
-                  item => (item.eventoId || item.SECUENCIALEVENTO) === parseInt(courseId)
-                );
-                if (inscripcionExistente && inscripcionExistente.inscripcionId) {
-                  nuevaInscripcionId = inscripcionExistente.inscripcionId;
-                  setYaInscrito(true);
-                  setInscripcionId(nuevaInscripcionId);
-                  // Si el curso es gratis, mostrar error
-                  if (!esPagado) {
-                    throw new Error('Ya estás inscrito en este curso');
-                  }
-                  // Si es pagado, continuar con el flujo de pago
-                } else {
-                  throw new Error(inscripcionData.error || 'Error al crear la inscripción');
-                }
-              } else {
-                throw new Error(inscripcionData.error || 'Error al crear la inscripción');
-              }
-            } catch (e) {
-              if (!esPagado) {
-                throw new Error(e.message || 'Ya estás inscrito en este curso');
-              }
-              // Si es pagado, intentar continuar
-              throw new Error('Ya estás inscrito. Si necesitas realizar el pago, completa el formulario.');
-            }
-          } else {
-            throw new Error(inscripcionData.error || 'Error al crear la inscripción');
-          }
+          // ...existing code...
         } else {
           nuevaInscripcionId = inscripcionData.inscripcionId;
           setInscripcionId(nuevaInscripcionId);
@@ -241,6 +233,37 @@ const PaymentPage = () => {
         }
       }
 
+      // Enviar requisitos dinámicos si existen
+      if (requisitos.length > 0) {
+        // Validar obligatorios
+        const faltantes = requisitos.filter(r => r.ES_OBLIGATORIO && !archivosRequisitos[r.SECUENCIAL]);
+        if (faltantes.length) {
+          setError('Faltan requisitos obligatorios: ' + faltantes.map(f => f.DESCRIPCION).join(', '));
+          setSubmitting(false);
+          return;
+        }
+        // Enviar archivos de requisitos
+        const formDataReq = new FormData();
+        formDataReq.append('inscripcionId', nuevaInscripcionId);
+        requisitos.forEach(r => {
+          if (archivosRequisitos[r.SECUENCIAL]) {
+            formDataReq.append(`requisito_${r.SECUENCIAL}`, archivosRequisitos[r.SECUENCIAL]);
+          }
+        });
+        // Enviar al backend
+        const reqRes = await fetch(`${API_URL}/api/inscripciones/requisitos`, {
+          method: 'POST',
+          body: formDataReq
+        });
+        const reqData = await reqRes.json();
+        if (!reqRes.ok) {
+          setError(reqData.error || 'Error al subir requisitos');
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      // ...existing code para pago...
       // Si el curso es pagado, crear el pago
       if (courseData?.ES_PAGADO === 1 && parseFloat(montoInput) > 0) {
         if (!selectedFormaPago) {
@@ -269,31 +292,13 @@ const PaymentPage = () => {
 
       setInscripcionId(nuevaInscripcionId);
       setYaInscrito(true);
-      
+      // ...existing code...
       // Si es pagado, verificar el estado del pago directamente
       if (courseData?.ES_PAGADO === 1 && parseFloat(montoInput) > 0) {
-        try {
-          // Esperar un momento para que el pago se registre en la BD
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          const pagoRes = await fetch(`${API_URL}/api/pagos/inscripcion/${nuevaInscripcionId}`);
-          if (pagoRes.ok) {
-            const pagoData = await pagoRes.json();
-            const pagoAprobado = pagoData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
-            setPagoAprobado(pagoAprobado || false);
-            console.log('💳 Estado del pago después de crear:', pagoAprobado ? 'Aprobado' : 'Pendiente');
-          } else {
-            setPagoAprobado(false);
-          }
-        } catch (e) {
-          console.warn('Error verificando pago después de crear:', e);
-          setPagoAprobado(false);
-        }
+        // ...existing code...
       } else {
-        // Si no es pagado, el pago está "aprobado" automáticamente
         setPagoAprobado(true);
       }
-      
       setSuccess(true);
     } catch (err) {
       console.error('Error al procesar inscripción/pago:', err);
@@ -752,6 +757,28 @@ const PaymentPage = () => {
               ) : (
                 // Usuario NO inscrito - mostrar formulario completo de inscripción
                 <form onSubmit={handleSubmit} className="payment-form">
+                                    {/* Requisitos dinámicos */}
+                                    {requisitos.length > 0 && (
+                                      <div className="requisitos-section">
+                                        <h3>Requisitos del curso</h3>
+                                        {requisitos.map(req => (
+                                          <div key={req.SECUENCIAL} className="form-group">
+                                            <label>
+                                              {req.DESCRIPCION} {req.ES_OBLIGATORIO ? '*' : ''}
+                                            </label>
+                                            <input
+                                              type="file"
+                                              accept=".pdf"
+                                              required={!!req.ES_OBLIGATORIO}
+                                              onChange={e => handleRequisitoFileChange(req.SECUENCIAL, e.target.files[0])}
+                                            />
+                                            {archivosRequisitos[req.SECUENCIAL] && (
+                                              <div className="file-selected">📄 {archivosRequisitos[req.SECUENCIAL].name}</div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
                   <div className="form-group">
                     <label>Motivación (Opcional)</label>
                     <textarea
