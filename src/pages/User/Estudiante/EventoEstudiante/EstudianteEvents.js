@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaBook, FaGlobe, FaTag, FaDollarSign, FaCheckCircle, FaChartBar } from 'react-icons/fa';
 import { useUser } from '../../../../context/UserContext';
 import { useCourses } from '../../../../context/CoursesContext';
 import PaymentModal from '../../../../components/PaymentModal/PaymentModal';
@@ -130,7 +131,7 @@ const EstudianteEvents = () => {
       if (!res.ok) {
         throw new Error(json.error || 'Error al inscribirse');
       }
-      
+
       // Si requiere pago, abrir modal de pago
       if (json.requierePago && json.inscripcionId) {
         setPaymentModal({
@@ -141,7 +142,7 @@ const EstudianteEvents = () => {
       } else {
         alert('Inscripción realizada correctamente');
       }
-      
+
       // Recargar mis cursos
       await reloadStudentEvents();
     } catch (e) {
@@ -226,66 +227,109 @@ const EstudianteEvents = () => {
     <div className="user-events-container">
       {/* Header */}
       <div className="events-header">
-        <div className="header-content">
-          <h1 className="events-title">{view === 'mine' ? 'Mis Cursos' : 'Todos los Cursos'}</h1>
-          <p className="events-subtitle">Gestiona tu progreso de aprendizaje</p>
-          <div style={{ marginTop: 12 }}>
-            <button className={`filter-btn ${view === 'mine' ? 'active' : ''}`} onClick={() => setView('mine')}>Mis Cursos</button>
-            <button className={`filter-btn ${view === 'all' ? 'active' : ''}`} onClick={() => setView('all')} style={{ marginLeft: 8 }}>Todos los Cursos</button>
-          </div>
+        {/* View Tabs */}
+        <div className="view-tabs">
+          <button
+            className={`view-tab ${view === 'mine' ? 'active' : ''}`}
+            onClick={() => setView('mine')}
+          >
+            <FaBook className="tab-icon" />
+            <span>Mis Cursos</span>
+          </button>
+          <button
+            className={`view-tab ${view === 'all' ? 'active' : ''}`}
+            onClick={() => setView('all')}
+          >
+            <FaGlobe className="tab-icon" />
+            <span>Todos los Cursos</span>
+          </button>
         </div>
 
         {/* Filtros de progreso (solo para Mis Cursos) */}
         {view === 'mine' && (
-          <div className="events-filters">
-            <button
-              className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-              onClick={() => setFilter('all')}
-            >
-              Todos ({coursesWithStatus.length})
-            </button>
-            <button
-              className={`filter-btn ${filter === 'in-progress' ? 'active' : ''}`}
-              onClick={() => setFilter('in-progress')}
-            >
-              En Progreso ({coursesWithStatus.filter(c => c.status === 'in-progress').length})
-            </button>
-            <button
-              className={`filter-btn ${filter === 'completed' ? 'active' : ''}`}
-              onClick={() => setFilter('completed')}
-            >
-              Completados ({coursesWithStatus.filter(c => c.status === 'completed').length})
-            </button>
+          <div className="filters-section">
+            <div className="events-filters">
+              <button
+                className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+                onClick={() => setFilter('all')}
+              >
+                Todos ({coursesWithStatus.length})
+              </button>
+              <button
+                className={`filter-btn ${filter === 'in-progress' ? 'active' : ''}`}
+                onClick={() => setFilter('in-progress')}
+              >
+                En Progreso ({coursesWithStatus.filter(c => c.status === 'in-progress').length})
+              </button>
+              <button
+                className={`filter-btn ${filter === 'completed' ? 'active' : ''}`}
+                onClick={() => setFilter('completed')}
+              >
+                Completados ({coursesWithStatus.filter(c => c.status === 'completed').length})
+              </button>
+            </div>
           </div>
         )}
 
         {/* Filtros avanzados (solo para Todos los Cursos) */}
         {view === 'all' && (
-          <div style={{ marginTop: '1rem' }}>
-            <div className="events-filters" style={{ marginBottom: '0.75rem' }}>
-              <span style={{ fontWeight: 600, marginRight: '0.5rem', color: '#0f172a' }}>Tipo:</span>
-              <button className={`filter-btn ${tipoFilter === '' ? 'active' : ''}`} onClick={() => setTipoFilter('')}>Todo</button>
-              <button className={`filter-btn ${tipoFilter === 'CUR' ? 'active' : ''}`} onClick={() => setTipoFilter('CUR')}>Curso</button>
-              <button className={`filter-btn ${tipoFilter === 'TALL' ? 'active' : ''}`} onClick={() => setTipoFilter('TALL')}>Taller</button>
-              <button className={`filter-btn ${tipoFilter === 'SEM' ? 'active' : ''}`} onClick={() => setTipoFilter('SEM')}>Seminario</button>
-              <button className={`filter-btn ${tipoFilter === 'CONF' ? 'active' : ''}`} onClick={() => setTipoFilter('CONF')}>Conferencia</button>
-            </div>
-            <div className="events-filters" style={{ marginBottom: '0.75rem' }}>
-              <span style={{ fontWeight: 600, marginRight: '0.5rem', color: '#0f172a' }}>Costo:</span>
-              <button className={`filter-btn ${costoFilter === 'pagado' ? 'active' : ''}`} onClick={() => setCostoFilter(costoFilter === 'pagado' ? '' : 'pagado')}>Pagado</button>
-              <button className={`filter-btn ${costoFilter === 'gratis' ? 'active' : ''}`} onClick={() => setCostoFilter(costoFilter === 'gratis' ? '' : 'gratis')}>Gratis</button>
-            </div>
-            {userCareerIds.length > 0 && (
-              <div className="events-filters" style={{ marginBottom: '0.75rem' }}>
-                <span style={{ fontWeight: 600, marginRight: '0.5rem', color: '#0f172a' }}>Aptitud:</span>
-                <button className={`filter-btn ${soloAptos ? 'active' : ''}`} onClick={() => setSoloAptos(prev => !prev)}>Solo aptos para mi carrera</button>
+          <div className="filters-container">
+            <div className="filters-grid">
+              {/* Filtro de Tipo */}
+              <div className="filter-group">
+                <div className="filter-group-header">
+                  <FaTag className="filter-icon" />
+                  <span className="filter-label">Tipo de Evento</span>
+                </div>
+                <div className="filter-buttons">
+                  <button className={`filter-btn ${tipoFilter === '' ? 'active' : ''}`} onClick={() => setTipoFilter('')}>Todo</button>
+                  <button className={`filter-btn ${tipoFilter === 'CUR' ? 'active' : ''}`} onClick={() => setTipoFilter('CUR')}>Curso</button>
+                  <button className={`filter-btn ${tipoFilter === 'TALL' ? 'active' : ''}`} onClick={() => setTipoFilter('TALL')}>Taller</button>
+                  <button className={`filter-btn ${tipoFilter === 'SEM' ? 'active' : ''}`} onClick={() => setTipoFilter('SEM')}>Seminario</button>
+                  <button className={`filter-btn ${tipoFilter === 'CONF' ? 'active' : ''}`} onClick={() => setTipoFilter('CONF')}>Conferencia</button>
+                </div>
               </div>
-            )}
-            <div className="events-filters">
-              <span style={{ fontWeight: 600, marginRight: '0.5rem', color: '#0f172a' }}>Disponibilidad:</span>
-              <button className={`filter-btn ${disponibilidadFilter === 'todos' ? 'active' : ''}`} onClick={() => setDisponibilidadFilter('todos')}>Todos</button>
-              <button className={`filter-btn ${disponibilidadFilter === 'aptos' ? 'active' : ''}`} onClick={() => setDisponibilidadFilter('aptos')}>Aptos</button>
-              <button className={`filter-btn ${disponibilidadFilter === 'noaptos' ? 'active' : ''}`} onClick={() => setDisponibilidadFilter('noaptos')}>No aptos</button>
+
+              {/* Filtro de Costo */}
+              <div className="filter-group">
+                <div className="filter-group-header">
+                  <FaDollarSign className="filter-icon" />
+                  <span className="filter-label">Costo</span>
+                </div>
+                <div className="filter-buttons">
+                  <button className={`filter-btn ${costoFilter === '' ? 'active' : ''}`} onClick={() => setCostoFilter('')}>Todos</button>
+                  <button className={`filter-btn ${costoFilter === 'pagado' ? 'active' : ''}`} onClick={() => setCostoFilter('pagado')}>Pagado</button>
+                  <button className={`filter-btn ${costoFilter === 'gratis' ? 'active' : ''}`} onClick={() => setCostoFilter('gratis')}>Gratis</button>
+                </div>
+              </div>
+            </div>
+
+            {/* Filtros de aptitud y disponibilidad (ancho completo) */}
+            <div className="filters-full-width">
+              {userCareerIds.length > 0 && (
+                <div className="filter-group">
+                  <div className="filter-group-header">
+                    <FaCheckCircle className="filter-icon" />
+                    <span className="filter-label">Aptitud</span>
+                  </div>
+                  <div className="filter-buttons">
+                    <button className={`filter-btn ${!soloAptos ? 'active' : ''}`} onClick={() => setSoloAptos(false)}>Todos</button>
+                    <button className={`filter-btn ${soloAptos ? 'active' : ''}`} onClick={() => setSoloAptos(true)}>Solo aptos para mi carrera</button>
+                  </div>
+                </div>
+              )}
+
+              <div className="filter-group">
+                <div className="filter-group-header">
+                  <FaChartBar className="filter-icon" />
+                  <span className="filter-label">Disponibilidad</span>
+                </div>
+                <div className="filter-buttons">
+                  <button className={`filter-btn ${disponibilidadFilter === 'todos' ? 'active' : ''}`} onClick={() => setDisponibilidadFilter('todos')}>Todos</button>
+                  <button className={`filter-btn ${disponibilidadFilter === 'aptos' ? 'active' : ''}`} onClick={() => setDisponibilidadFilter('aptos')}>Aptos</button>
+                  <button className={`filter-btn ${disponibilidadFilter === 'noaptos' ? 'active' : ''}`} onClick={() => setDisponibilidadFilter('noaptos')}>No aptos</button>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -368,7 +412,7 @@ const EstudianteEvents = () => {
 
                 {/* Botón de acción */}
                 {view === 'mine' ? (
-                  <button 
+                  <button
                     className="continue-btn"
                     onClick={() => navigate(`/user/course/${course.id}`)}
                   >
@@ -390,7 +434,7 @@ const EstudianteEvents = () => {
                       Solo para carreras habilitadas
                     </div>
                   ) : (
-                    <button 
+                    <button
                       className="continue-btn"
                       onClick={() => navigate(`/payment/${course.raw?.id || course.id}`)}
                     >

@@ -1,11 +1,10 @@
 // src/pages/User/Profesor/ProfesorPanel/ProfesorPanel.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import UserPanel from '../../UserPanel';
-import EventoProfesor from '../EventoProfesor/EventoProfesor';
 import { useUser } from '../../../../context/UserContext';
-import { useEffect, useState } from 'react';
-import { FaDatabase, FaChartLine } from 'react-icons/fa'; // Iconos de ejemplo para los cursos
+import { FaFileAlt, FaUpload, FaChartBar, FaCheckCircle, FaChevronLeft, FaChevronRight } from 'react-icons/fa'; // Iconos para opciones rápidas
+import './ProfesorPanel.css';
 import './ProfesorPanel.css';
 
 import API_URL from '../../../../config/api';
@@ -14,7 +13,12 @@ import API_URL from '../../../../config/api';
 const ProfesorPanel = () => {
   const { user } = useUser();
   const [professorEvents, setProfessorEvents] = useState([]);
-  
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const navigate = useNavigate();
+
+  // Obtener nombre
+  const firstName = user?.nombres ? user.nombres.split(' ')[0] : 'Profesor';
+
   useEffect(() => {
     const fetchEvents = async () => {
       if (!user || !user.id) return;
@@ -30,56 +34,97 @@ const ProfesorPanel = () => {
     fetchEvents();
   }, [user]);
 
-  const navigate = useNavigate();
+  const hasAssignedCourses = professorEvents.length > 0;
 
-  const handleViewAllModules = () => {
-    navigate('/profesor/modules');
-  };
+  // "Actividades Pendientes" (Simuladas o reales si hubiera endpoint)
+  // Por ahora usaremos los eventos para poblar esto o mostrar empty state
+  const pendingActivities = []; // A futuro: filtrar entregas pendientes de calificar
 
   return (
-    <div className="dashboard-user-container"> {/* Reutiliza el contenedor principal */}
-      
-      {/* Usamos UserPanel para la sección de bienvenida y cambio de rol */}
-      <UserPanel userName={user?.nombres ? user.nombres.split(' ')[0] : 'Fulanito'} role="Docente" message="Continúa enseñando" />
+    <div className={`dashboard-user-container ${isDrawerOpen ? 'drawer-active' : ''}`}>
 
-      {/* --- Contenido Principal (Cursos y Opciones Rápidas) --- */}
-      <div className="dashboard-content-grid"> {/* Reutiliza el grid de EstudiantePanel */}
-        
-        {/* Columna Izquierda: Lista de Cursos del Profesor (Eventos) */}
-        <main className="course-list-main"> {/* Reutiliza la clase de lista */}
-          <div className="profesor-events-list">
-            {professorEvents.length > 0 ? professorEvents.map(ev => (
-              <EventoProfesor
-                key={ev.eventoId || ev.SECUENCIAL || ev.id}
-                id={ev.eventoId || ev.SECUENCIAL || ev.id}
-                title={ev.TITULO || ev.title}
-                students={ev.CAPACIDAD || ev.students || 0}
-                nextClassDate={ev.FECHAINICIO || ev.nextClassDate}
-                nextClassTime={ev.FECHAFIN || ev.nextClassTime}
-                imageUrl={ev.URL_IMAGEN || ev.imageUrl}
-              />
+      {/* Bienvenida */}
+      <UserPanel userName={firstName} role="Docente" message="Continúa enseñando" />
+
+      {/* Contenido Principal */}
+      <div className="dashboard-content-grid">
+
+        {/* --- Sección 1: Actividades Pendientes (Calificación) --- */}
+        <section className="dashboard-section pending-tasks-section">
+          <div className="section-header">
+            <h2>Actividades Pendientes</h2>
+            <small>Entregas por calificar</small>
+          </div>
+
+          <div className="tasks-grid">
+            {pendingActivities.length > 0 ? pendingActivities.map((task, i) => (
+              <div key={i} className="task-card-summary">
+                <div className="task-icon"><FaFileAlt /></div>
+                <div className="task-info">
+                  <h4>{task.title}</h4>
+                  <span className="task-date">{task.date}</span>
+                </div>
+              </div>
             )) : (
-              <div style={{ padding: 20 }}>
-                <p>No tienes eventos asignados actualmente.</p>
+              <div className="empty-section-state">
+                <FaCheckCircle className="empty-state-icon" style={{ color: hasAssignedCourses ? '#94e19a' : '#cbd5e1' }} />
+
+                {hasAssignedCourses ? (
+                  <>
+                    <p style={{ color: '#2c3e50', fontWeight: 'bold' }}>¡Todo al día!</p>
+                    <span style={{ color: '#64748b' }}>No tienes entregas pendientes de calificar.</span>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ color: '#2c3e50', fontWeight: 'bold' }}>Sin asignaciones</p>
+                    <span style={{ color: '#64748b', marginBottom: '1rem', display: 'block' }}>No tienes cursos asignados actualmente.</span>
+                  </>
+                )}
               </div>
             )}
           </div>
-          <button className="view-all-btn" onClick={handleViewAllModules}>Ver todos los módulos</button> {/* Reutiliza el botón */}
-        </main>
+        </section>
 
-        {/* Columna Derecha: Opciones Rápidas (Similar a Próximas Pruebas) */}
-        <aside className="upcoming-exams-sidebar"> {/* Reutiliza la clase lateral */}
-          <h3>Opciones Rápidas</h3>
-          
-          <div className="options-list">
-            <button className="quick-option-btn">Crear prueba</button>
-            <button className="quick-option-btn">Subir contenido</button>
-            <button className="quick-option-btn">Estadísticas</button>
-          </div>
+        {/* --- Sección 2: Mis Módulos (Cursos) --- */}
+        {/* Aquí podríamos mostrar un preview, o reutilizar la lista de eventos como "Cursos" */}
+        {/* Para mantener simetría con estudiante, si se requiere lista visual iría aquí. 
+            El usuario pidió "replicar", así que dejaremos la navegación principal abajo y el preview visual si aplica.*/}
 
-        </aside>
+        <div className="navigation-actions">
+          <button className="navigate-courses-btn" onClick={() => navigate('/profesor/modules')}>
+            Ver Mis Módulos
+          </button>
+        </div>
 
       </div>
+
+      {/* --- Cajón Retráctil de Opciones Rápidas (Sidebar) --- */}
+      <div className={`upcoming-drawer-container ${isDrawerOpen ? 'open' : 'closed'}`}>
+        <button
+          className="drawer-toggle-btn"
+          onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+          title={isDrawerOpen ? "Cerrar opciones" : "Ver opciones rápidas"}
+        >
+          {isDrawerOpen ? <FaChevronRight /> : <FaChevronLeft />}
+        </button>
+
+        <aside className="upcoming-exams-drawer-content">
+          <h3><FaChartBar style={{ marginRight: '8px' }} /> Opciones Rápidas</h3>
+
+          <div className="options-list">
+            <button className="quick-option-btn">
+              <FaFileAlt className="option-icon" /> Crear prueba
+            </button>
+            <button className="quick-option-btn">
+              <FaUpload className="option-icon" /> Subir contenido
+            </button>
+            <button className="quick-option-btn">
+              <FaChartBar className="option-icon" /> Estadísticas
+            </button>
+          </div>
+        </aside>
+      </div>
+
     </div>
   );
 };

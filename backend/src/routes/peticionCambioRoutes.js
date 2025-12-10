@@ -5,7 +5,8 @@ const {
   aprobarPeticionCambio,
   rechazarPeticionCambio,
   obtenerPeticionPorId,
-  crearPeticionCambioDirecta
+  crearPeticionCambioDirecta,
+  actualizarEstadoIssue
 } = require('../controllers/peticionCambioController');
 
 // Ruta para obtener todas las peticiones de cambio (admin)
@@ -22,6 +23,9 @@ router.post('/:id/aprobar', aprobarPeticionCambio);
 
 // Ruta para rechazar una petición de cambio (admin aprobador)
 router.post('/:id/rechazar', rechazarPeticionCambio);
+
+// Ruta para actualizar estado del issue
+router.put('/:id/estado-issue', actualizarEstadoIssue);
 
 module.exports = router;
 

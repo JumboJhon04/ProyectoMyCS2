@@ -20,10 +20,12 @@ const obtenerTodasPeticiones = async (req, res) => {
         rc.DECISION,
         rc.OBSERVACIONES,
         rc.RESPONSABLE_TECNICO,
+        CONCAT(COALESCE(resp.NOMBRES, ''), ' ', COALESCE(resp.APELLIDOS, '')) as RESPONSABLE_TECNICO_NOMBRE,
         rc.FECHA_DECISION,
         rc.FECHA_SOLICITUD,
         rc.FECHA_ENTREGA,
         rc.ESTADO,
+        rc.ESTADO_ISSUE,
         rc.APROBACIONES_COUNT,
         sc.MODULO_AFECTADO,
         sc.TIPO_SOLICITUD,
@@ -35,6 +37,7 @@ const obtenerTodasPeticiones = async (req, res) => {
       FROM recepcion_cambio rc
       LEFT JOIN solicitud_cambio sc ON rc.SECUENCIAL_CAMBIO = sc.SECUENCIAL
       LEFT JOIN usuario u ON sc.SECUENCIAL_USUARIO = u.SECUENCIAL
+      LEFT JOIN usuario resp ON rc.RESPONSABLE_TECNICO = resp.SECUENCIAL
       ORDER BY rc.FECHA_DECISION DESC`
     );
 
@@ -469,11 +472,16 @@ const obtenerPeticionPorId = async (req, res) => {
         u.CORREO,
         creador.NOMBRES as CREADOR_NOMBRES,
         creador.APELLIDOS as CREADOR_APELLIDOS,
-        creador.SECUENCIAL as CREADOR_ID
+        creador.SECUENCIAL as CREADOR_ID,
+        finalizador.NOMBRES as FINALIZADOR_NOMBRES,
+        finalizador.APELLIDOS as FINALIZADOR_APELLIDOS,
+        CONCAT(COALESCE(resp.NOMBRES, ''), ' ', COALESCE(resp.APELLIDOS, '')) as RESPONSABLE_TECNICO_NOMBRE
       FROM recepcion_cambio rc
       LEFT JOIN solicitud_cambio sc ON rc.SECUENCIAL_CAMBIO = sc.SECUENCIAL
       LEFT JOIN usuario u ON sc.SECUENCIAL_USUARIO = u.SECUENCIAL
       LEFT JOIN usuario creador ON rc.SECUENCIAL_CREADOR = creador.SECUENCIAL
+      LEFT JOIN usuario finalizador ON rc.SECUENCIAL_USUARIO_FINALIZACION = finalizador.SECUENCIAL
+      LEFT JOIN usuario resp ON rc.RESPONSABLE_TECNICO = resp.SECUENCIAL
       WHERE rc.SECUENCIAL = ?`,
       [id]
     );
@@ -700,11 +708,104 @@ const crearPeticionCambioDirecta = async (req, res) => {
   }
 };
 
+// Actualizar estado del issue de una petición
+const actualizarEstadoIssue = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { estadoIssue, urlGithubIssue, usuarioNombre } = req.body;
+    const usuarioId = req.user?.id || req.body.usuarioId;
+
+    if (!['Pendiente', 'Finalizado'].includes(estadoIssue)) {
+      return res.status(400).json({ error: 'Estado de issue inválido' });
+    }
+
+    // Obtener la petición para validar el responsable técnico y estado actual
+    const [peticiones] = await pool.execute(
+      `SELECT rc.RESPONSABLE_TECNICO, rc.ESTADO_ISSUE, u.NOMBRES, u.APELLIDOS 
+       FROM recepcion_cambio rc
+       LEFT JOIN usuario u ON rc.RESPONSABLE_TECNICO = u.SECUENCIAL
+       WHERE rc.SECUENCIAL = ?`,
+      [id]
+    );
+
+    if (peticiones.length === 0) {
+      return res.status(404).json({ error: 'Petición no encontrada' });
+    }
+
+    const peticion = peticiones[0];
+    const nombreResponsable = peticion.NOMBRES && peticion.APELLIDOS 
+      ? `${peticion.NOMBRES} ${peticion.APELLIDOS}` 
+      : 'Desconocido';
+
+    // Validar que no se pueda cambiar desde "Finalizado"
+    if (peticion.ESTADO_ISSUE === 'Finalizado') {
+      return res.status(403).json({ 
+        error: 'No se puede cambiar el estado de un issue que ya está finalizado' 
+      });
+    }
+
+    // Validar que solo el responsable técnico pueda marcar como finalizado
+    if (estadoIssue === 'Finalizado' && peticion.RESPONSABLE_TECNICO && peticion.RESPONSABLE_TECNICO !== usuarioId) {
+      return res.status(403).json({ 
+        error: `Solo el responsable técnico (${nombreResponsable}) puede marcar el issue como finalizado` 
+      });
+    }
+
+    let query = `UPDATE recepcion_cambio SET ESTADO_ISSUE = ?`;
+    const params = [estadoIssue];
+
+    // Si se marca como finalizado, guardar fecha, usuario y URL
+    if (estadoIssue === 'Finalizado') {
+      query += `, FECHA_FINALIZACION_ISSUE = NOW()`;
+      
+      if (usuarioId) {
+        query += `, SECUENCIAL_USUARIO_FINALIZACION = ?`;
+        params.push(usuarioId);
+      }
+      
+      if (urlGithubIssue) {
+        query += `, URL_GITHUB_ISSUE = ?`;
+        params.push(urlGithubIssue);
+      }
+    } else if (estadoIssue === 'Pendiente') {
+      // Si se vuelve a marcar como pendiente, limpiar datos de finalización
+      query += `, FECHA_FINALIZACION_ISSUE = NULL, SECUENCIAL_USUARIO_FINALIZACION = NULL`;
+    }
+
+    query += ` WHERE SECUENCIAL = ?`;
+    params.push(id);
+
+    const [result] = await pool.execute(query, params);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Petición no encontrada' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Estado del issue actualizado correctamente',
+      data: { 
+        SECUENCIAL: id, 
+        ESTADO_ISSUE: estadoIssue,
+        FECHA_FINALIZACION_ISSUE: estadoIssue === 'Finalizado' ? new Date() : null,
+        URL_GITHUB_ISSUE: urlGithubIssue || null
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error al actualizar estado del issue:', error);
+    res.status(500).json({ 
+      error: 'Error al actualizar estado del issue', 
+      details: error.message 
+    });
+  }
+};
+
 module.exports = {
   obtenerTodasPeticiones,
   aprobarPeticionCambio,
   rechazarPeticionCambio,
   obtenerPeticionPorId,
-  crearPeticionCambioDirecta
+  crearPeticionCambioDirecta,
+  actualizarEstadoIssue
 };
 

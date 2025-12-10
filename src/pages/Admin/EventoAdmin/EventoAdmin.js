@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { useCourses } from '../../../context/CoursesContext';
 import './EventoAdmin.css';
 import NewEventModal from './NewEventModal';
+import AssignResponsableModal from './AssignResponsableModal';
 
 const EventoAdmin = () => {
-  const { courses, loading, error, deleteCourse } = useCourses();
+  const { courses, loading, error, deleteCourse, fetchCourses } = useCourses();
   const [showModal, setShowModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
 
   const handleDelete = async (id) => {
     if (!window.confirm('¿Estás seguro de eliminar este curso?')) return;
@@ -21,6 +24,16 @@ const EventoAdmin = () => {
   const handleEdit = (courseId) => {
     console.log('Editar curso:', courseId);
     alert('Función de editar próximamente');
+  };
+
+  const handleEditResponsable = (course) => {
+    setSelectedCourse(course);
+    setShowAssignModal(true);
+  };
+
+  const handleAssignSaved = async () => {
+    // Refrescar cursos para reflejar el responsable
+    await fetchCourses();
   };
 
   const handleAddNew = () => {
@@ -114,6 +127,9 @@ const EventoAdmin = () => {
                       <span className="course-price">
                         ${Number(course.price || 0).toFixed(2)}
                       </span>
+                      <button className="edit-btn" onClick={() => handleEditResponsable(course)}>
+                        Editar responsable
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -126,6 +142,15 @@ const EventoAdmin = () => {
           <NewEventModal 
             isOpen={showModal} 
             onClose={() => setShowModal(false)} 
+          />
+        )}
+
+        {showAssignModal && selectedCourse && (
+          <AssignResponsableModal
+            isOpen={showAssignModal}
+            course={selectedCourse}
+            onClose={() => { setShowAssignModal(false); setSelectedCourse(null); }}
+            onSaved={handleAssignSaved}
           />
         )}
       </main>

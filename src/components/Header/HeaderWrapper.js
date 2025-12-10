@@ -9,12 +9,13 @@ import ProfesorHeader from './ProfesorHeader';
 
 const HeaderWrapper = ({ onToggleSidebar }) => {
   const navigate = useNavigate();
-  const { user, setUser } = useUser();
+  const { user, setUser, activeRole } = useUser();
 
   // Función de logout
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('activeRole');
     setUser(null);
     navigate('/login');
   };
@@ -22,36 +23,28 @@ const HeaderWrapper = ({ onToggleSidebar }) => {
   if (!user) return null;
 
   // Mapear codigoRol de la BD al formato que usa tu app
-  // Normalizar role si viene como texto (p.ej. 'ESTUDIANTE') o usar codigoRol si no
+  // Usar activeRole si está disponible, sino derivar del usuario
   let roleKey = 'user';
-  if (user?.role) {
-    const r = String(user.role).toLowerCase();
+  const roleToNormalize = activeRole || user?.role || user?.codigoRol;
+
+  if (roleToNormalize) {
+    const r = String(roleToNormalize).toUpperCase();
     const normalize = {
-      'admin': 'admin',
-      'administrador': 'admin',
-      'adm': 'admin',
-      'responsable': 'responsable',
-      'res': 'responsable',
-      'docente': 'docente',
-      'profesor': 'docente',
-      'doc': 'docente',
-      'estudiante': 'estudiante',
-      'est': 'estudiante',
-      'user': 'user',
-      'inv': 'user',
-      'otro': 'user'
-    };
-    roleKey = normalize[r] || r;
-  } else if (user?.codigoRol) {
-    const roleMap = {
+      'ADMIN': 'admin',
+      'ADMINISTRADOR': 'admin',
       'ADM': 'admin',
+      'RESPONSABLE': 'responsable',
       'RES': 'responsable',
+      'DOCENTE': 'docente',
+      'PROFESOR': 'docente',
       'DOC': 'docente',
+      'ESTUDIANTE': 'estudiante',
       'EST': 'estudiante',
+      'USER': 'user',
       'INV': 'user',
       'OTRO': 'user'
     };
-    roleKey = roleMap[user.codigoRol] || 'user';
+    roleKey = normalize[r] || 'user';
   }
 
   // Render a role-specific header

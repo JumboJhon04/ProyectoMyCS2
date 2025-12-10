@@ -16,13 +16,15 @@ const registrarUsuario = async (req, res) => {
       telefono,
       direccion,
       correo,
-      contrasena
+      contrasena,
+      facultad,
+      carrera
     } = req.body;
 
-    console.log('📝 Datos recibidos:', { nombres, apellidos, cedula, correo });
+    console.log('📝 Datos recibidos:', { nombres, apellidos, cedula, correo, facultad, carrera });
 
     // Validaciones básicas
-    if (!nombres || !apellidos || !cedula || !correo || !contrasena) {
+    if (!nombres || !apellidos || !cedula || !correo || !contrasena || !telefono || !fechaNacimiento) {
       return res.status(400).json({
         error: 'Todos los campos obligatorios deben ser completados'
       });
@@ -33,6 +35,61 @@ const registrarUsuario = async (req, res) => {
     if (!emailRegex.test(correo)) {
       return res.status(400).json({
         error: 'El formato del correo electrónico no es válido'
+      });
+    }
+
+    // Validar cédula ecuatoriana
+    if (cedula.length !== 10 || !/^\d+$/.test(cedula)) {
+      return res.status(400).json({
+        error: 'La cédula debe tener 10 dígitos numéricos'
+      });
+    }
+
+    // Validar teléfono (10 dígitos y debe comenzar con 09)
+    if (telefono.length !== 10 || !/^\d+$/.test(telefono)) {
+      return res.status(400).json({
+        error: 'El teléfono debe tener 10 dígitos numéricos'
+      });
+    }
+
+    if (!telefono.startsWith('09')) {
+      return res.status(400).json({
+        error: 'El teléfono debe comenzar con 09'
+      });
+    }
+
+    // Validar edad (mayor de 16 años)
+    const fechaNac = new Date(fechaNacimiento);
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - fechaNac.getFullYear();
+    const mes = hoy.getMonth() - fechaNac.getMonth();
+    if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) {
+      edad--;
+    }
+    if (edad < 16) {
+      return res.status(400).json({
+        error: 'Debes ser mayor de 16 años para registrarte'
+      });
+    }
+
+    // Validar contraseña segura
+    if (contrasena.length < 8 ||
+        !/[A-Z]/.test(contrasena) ||
+        !/[a-z]/.test(contrasena) ||
+        !/[0-9]/.test(contrasena) ||
+        !/[!@#$%^&*(),.?":{}|<>]/.test(contrasena)) {
+      return res.status(400).json({
+        error: 'La contraseña debe tener mínimo 8 caracteres, incluir mayúscula, minúscula, número y carácter especial'
+      });
+    }
+
+    // Verificar si es correo institucional UTA
+    const esCorreoUTA = correo.toLowerCase().endsWith('@uta.edu.ec');
+    
+    // Si es correo UTA, validar que se haya seleccionado facultad y carrera
+    if (esCorreoUTA && (!facultad || !carrera)) {
+      return res.status(400).json({
+        error: 'Debes seleccionar tu facultad y carrera'
       });
     }
 
@@ -64,6 +121,9 @@ const registrarUsuario = async (req, res) => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(contrasena, saltRounds);
 
+    // Determinar si es interno (correo UTA)
+    const esInterno = esCorreoUTA ? 1 : 0;
+
     // Insertar el nuevo usuario
     const [result] = await connection.execute(
       `INSERT INTO usuario (
@@ -78,31 +138,46 @@ const registrarUsuario = async (req, res) => {
         CODIGOROL,
         CODIGOESTADO,
         ES_INTERNO
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'EST', 'ACTIVO', 0)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'EST', 'ACTIVO', ?)`,
       [
         nombres,
         apellidos,
         cedula,
-        fechaNacimiento || null,
+        fechaNacimiento,
         telefono,
         direccion || null,
         correo,
-        hashedPassword
+        hashedPassword,
+        esInterno
       ]
     );
 
-    console.log('✅ Usuario registrado con ID:', result.insertId);
+    const usuarioId = result.insertId;
+    console.log('✅ Usuario registrado con ID:', usuarioId);
+
+    // Si es correo UTA, guardar la relación usuario-carrera
+    if (esCorreoUTA && carrera) {
+      await connection.execute(
+        `INSERT INTO usuario_carrera (
+          SECUENCIALUSUARIO,
+          SECUENCIALCARRERA
+        ) VALUES (?, ?)`,
+        [usuarioId, carrera]
+      );
+      console.log('✅ Relación usuario-carrera guardada');
+    }
 
     // Respuesta exitosa (no devolver la contraseña)
     res.status(201).json({
       success: true,
       message: 'Usuario registrado exitosamente',
       data: {
-        id: result.insertId,
+        id: usuarioId,
         nombres,
         apellidos,
         correo,
-        rol: 'Estudiante'
+        rol: 'Estudiante',
+        esInterno: esInterno === 1
       }
     });
 
@@ -354,10 +429,9 @@ const obtenerResponsables = async (req, res) => {
   }
 };
 
-
 module.exports = {
   registrarUsuario,
   loginUsuario,
-  registrarResponsable,  // NUEVO
-  obtenerResponsables    // NUEVO
+  registrarResponsable,
+  obtenerResponsables
 };
