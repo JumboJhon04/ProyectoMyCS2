@@ -64,6 +64,7 @@ app.use('/api/pagos', pagoRoutes);
 app.use('/api/solicitudes', solicitudRoutes);
 app.use('/api/peticiones-cambio', peticionCambioRoutes);
 app.use('/api/admins', adminRoutes);
+app.use('/api/users', require('./routes/userRoutes')); // NUEVA RUTA USUARIOS
 app.use('/api', facultadCarreraRoutes); // NUEVA RUTA
 app.use(cors());
 app.use(express.json());
