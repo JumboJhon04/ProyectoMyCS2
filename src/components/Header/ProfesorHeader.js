@@ -2,7 +2,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useUser } from '../../context/UserContext';
-import { FaBars, FaSignOutAlt } from 'react-icons/fa';
+import { FaBars, FaSignOutAlt, FaBell, FaEnvelope } from 'react-icons/fa';
 import './EstudianteHeader.css'; // Usar CSS compartido
 
 // Reutilizamos la lógica de iniciales de UserHeader.js
@@ -50,6 +50,18 @@ const ProfesorHeader = ({ onToggleSidebar, onLogout }) => {
             </nav>
 
             <div className="header-right">
+                {/* Notification Icon */}
+                <div className="icon-btn notification" title="Notificaciones">
+                    <FaBell style={{ fontSize: '1.2rem' }} />
+                    <span className="badge new">5</span>
+                </div>
+
+                {/* Messages Icon */}
+                <div className="icon-btn notification" title="Mensajes">
+                    <FaEnvelope style={{ fontSize: '1.2rem' }} />
+                    <span className="badge">4</span>
+                </div>
+
                 <div style={{ position: 'relative' }}>
                     <div className="user-avatar" title={user?.nombres ? `${user.nombres} ${user.apellidos}` : user?.name} onClick={toggleUserMenu} style={{ cursor: 'pointer' }}>
                         <span>{userInitials || 'FT'}</span>
