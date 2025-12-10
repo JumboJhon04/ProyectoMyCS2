@@ -30,6 +30,38 @@ export const UserProvider = ({ children }) => {
 
   const [notifications, setNotifications] = useState([]);
 
+  // Cargar datos del perfil (incluyendo foto) cuando el usuario se inicializa
+  useEffect(() => {
+    const loadProfileData = async () => {
+      if (user && (user.id || user.SECUENCIAL)) {
+        try {
+          const id = user.id || user.SECUENCIAL;
+          const response = await fetch(`${API_URL}/api/users/${id}/profile`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.data) {
+              const profileData = data.data;
+              const updatedUser = {
+                ...user,
+                nombres: profileData.NOMBRES || profileData.nombres || user.nombres,
+                apellidos: profileData.APELLIDOS || profileData.apellidos || user.apellidos,
+                telefono: profileData.TELEFONO || profileData.telefono || user.telefono,
+                fotoPerfil: profileData.FOTO_PERFIL || profileData.fotoPerfil || profileData.foto,
+                foto: profileData.FOTO_PERFIL || profileData.fotoPerfil || profileData.foto
+              };
+              setUser(updatedUser);
+              localStorage.setItem('user', JSON.stringify(updatedUser));
+            }
+          }
+        } catch (error) {
+          console.error('Error al cargar datos del perfil:', error);
+        }
+      }
+    };
+
+    loadProfileData();
+  }, []); // Solo ejecutar una vez al montar
+
   // Cargar notificaciones de pagos pendientes si el usuario es responsable
   useEffect(() => {
     const loadPagosNotifications = async () => {

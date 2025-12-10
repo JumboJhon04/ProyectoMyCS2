@@ -13,6 +13,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
     { id: "users", label: "Usuarios Responsables", icon: FaUsers, to: "/admin/users" },
     { id: "solicitudes", label: "Solicitudes de Soporte", icon: FaLifeRing, to: "/admin/solicitudes" },
     { id: "peticiones", label: "Peticiones de Cambio", icon: FaClipboardList, to: "/admin/peticiones-cambio" },
+    { id: "perfil", label: "Perfil", icon: FaUsers, to: "/perfil" },
   ];
 
   const filtered = menuItems.filter((item) =>

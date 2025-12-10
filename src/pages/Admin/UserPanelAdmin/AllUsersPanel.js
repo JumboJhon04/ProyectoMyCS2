@@ -33,7 +33,7 @@ export default function AllUsersPanel() {
       setUsers(usersData.data || []);
       // Filtrar roles para excluir INVITADO y USUARIO
       const rolesFiltered = (rolesData.data || []).filter(
-        role => !['INV', 'OTRO'].includes(role.CODIGO)
+        role => !['INV', 'OTRO', 'DOC'].includes(role.CODIGO)
       );
       setRoles(rolesFiltered);
     } catch (err) {
