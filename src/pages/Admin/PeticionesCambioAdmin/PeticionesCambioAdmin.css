@@ -36,7 +36,7 @@
 }
 
 .btn-crear-directa {
-  background-color: #667eea;
+  background-color: #494747;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -48,11 +48,11 @@
 }
 
 .btn-crear-directa:hover {
-  background-color: #5568d3;
+  background-color: #494747;
 }
 
 .btn-crear-peticion {
-  background-color: #667eea;
+  background-color: #494747;
   color: white;
   border: none;
   padding: 0.5rem 1rem;
