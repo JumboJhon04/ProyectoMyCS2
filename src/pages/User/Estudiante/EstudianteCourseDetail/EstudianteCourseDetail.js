@@ -3,6 +3,11 @@ import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useCourses } from '../../../../context/CoursesContext';
 import { useUser } from '../../../../context/UserContext';
 import PublicHeader from '../../../../components/PublicHeader/PublicHeader';
+import CourseNavigationTabs from '../../../../components/CourseNavigationTabs/CourseNavigationTabs';
+import MaterialTab from '../../../../components/CourseTabs/MaterialTab';
+import ParticipantesTab from '../../../../components/CourseTabs/ParticipantesTab';
+import CalificacionesTab from '../../../../components/CourseTabs/CalificacionesTab';
+import { getEventTheme } from '../../../../config/eventThemes';
 import {
   FaClock, FaUsers, FaCalendarAlt, FaMoneyBillWave,
   FaClipboardCheck, FaCheckCircle, FaChartBar, FaGraduationCap,
@@ -24,6 +29,7 @@ const EstudianteCourseDetail = () => {
   const [isInscrito, setIsInscrito] = useState(false);
   const [pagoAprobado, setPagoAprobado] = useState(false);
   const [inscripcionId, setInscripcionId] = useState(null);
+  const [activeTab, setActiveTab] = useState('material');
 
   const userCareerIds = useMemo(() => {
     if (!user) return [];
@@ -157,6 +163,19 @@ const EstudianteCourseDetail = () => {
     }
   }, [courseId, user]);
 
+  // Aplicar tema dinámico con CSS variables
+  useEffect(() => {
+    if (courseData?.CODIGOTIPOEVENTO) {
+      const eventTheme = getEventTheme(courseData.CODIGOTIPOEVENTO);
+      if (eventTheme) {
+        document.documentElement.style.setProperty('--event-primary-color', eventTheme.primaryColor);
+        document.documentElement.style.setProperty('--event-secondary-color', eventTheme.secondaryColor);
+        document.documentElement.style.setProperty('--event-accent-color', eventTheme.accentColor);
+        document.documentElement.style.setProperty('--event-light-bg', eventTheme.lightBg);
+      }
+    }
+  }, [courseData]);
+
   // Parsear topics del contenido
   const parseTopics = (contenido) => {
     if (!contenido) return [];
@@ -259,18 +278,11 @@ const EstudianteCourseDetail = () => {
   const carreras = courseData?.CARRERAS || [];
   const topics = parseTopics(courseData?.CONTENIDO || '');
 
-  // Crear "lecciones" basadas en los topics
-  const lessons = topics.length > 0
-    ? topics.map((topic, index) => ({
-      id: index + 1,
-      title: typeof topic === 'string' ? topic : topic.title || `Tema ${index + 1}`,
-      description: typeof topic === 'string' ? '' : topic.description || '',
-      status: 'locked', // Por defecto bloqueadas
-      type: 'lesson'
-    }))
-    : [];
+  // Obtener tema del evento
+  const eventTheme = getEventTheme(courseData?.CODIGOTIPOEVENTO || 'CUR');
+  const showGrades = eventTheme.showGrades;
 
-  const totalLessons = lessons.length || topics.length || 0;
+  const totalLessons = topics.length || 0;
   const completedLessons = 0; // Esto se podría obtener de la inscripción del estudiante
   const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
@@ -288,26 +300,36 @@ const EstudianteCourseDetail = () => {
         }}
       >
         <div className="header-overlay">
-          <div className="course-tags">
-            <span className="tag">{tipo}</span>
-            <span className="tag">{modalidad}</span>
-            {esPagado && <span className="tag tag-paid">Pago</span>}
-            {!esPagado && <span className="tag tag-free">Gratis</span>}
-            {hasCareerRestriction && (
-              <span className={`tag ${esAptoCarrera ? 'apt-tag' : 'not-apt-tag'}`}>
-                {esAptoCarrera ? 'Apto para tu carrera' : 'No apto'}
-              </span>
-            )}
-          </div>
+          {/* Layout de dos columnas */}
+          <div className="header-content-grid">
+            {/* Columna izquierda: Tags, Título y Docente */}
+            <div className="header-left">
+              <div className="course-tags">
+                <span className="tag">{tipo}</span>
+                <span className="tag">{modalidad}</span>
+                {esPagado && <span className="tag tag-paid">Pago</span>}
+                {!esPagado && <span className="tag tag-free">Gratis</span>}
+                {hasCareerRestriction && (
+                  <span className={`tag ${esAptoCarrera ? 'apt-tag' : 'not-apt-tag'}`}>
+                    {esAptoCarrera ? 'Apto para tu carrera' : 'No apto'}
+                  </span>
+                )}
+              </div>
 
-          <h1 className="course-detail-title">{title}</h1>
-          <p className="course-detail-description">
-            {description.length > 200 ? description.substring(0, 200) + '...' : description}
-          </p>
+              <h1 className="course-detail-title">{title}</h1>
 
-          <div className="teacher-info">
-            <span className="teacher-initials">{getDocenteInitials(docente)}</span>
-            <span className="teacher-name">{docente === 'Por asignar' ? 'Por asignar' : `Ing. ${docente}`}</span>
+              <div className="teacher-info">
+                <span className="teacher-initials">{getDocenteInitials(docente)}</span>
+                <span className="teacher-name">{docente === 'Por asignar' ? 'Por asignar' : `Ing. ${docente}`}</span>
+              </div>
+            </div>
+
+            {/* Columna derecha: Descripción */}
+            <div className="header-right">
+              <p className="course-detail-description">
+                {description}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -370,7 +392,8 @@ const EstudianteCourseDetail = () => {
                 </Link>
               )
             )}
-            {!isPublicRoute && isInscrito && (!esPagado || pagoAprobado) && (
+            {/* Mensaje de inscripción eliminado - el estudiante inscrito simplemente accede al material */}
+            {false && !isPublicRoute && isInscrito && (!esPagado || pagoAprobado) && (
               <div className="enrolled-message">
                 <FaCheckCircle /> Ya estás inscrito en este curso
               </div>
@@ -379,67 +402,38 @@ const EstudianteCourseDetail = () => {
         )}
       </div>
 
-      {/* Sección de Temas/Lecciones */}
-      {totalLessons > 0 && (
-        <div className="course-lessons-section">
-          <div className="lessons-header">
-            <div className="lessons-count-box">
-              <span className="lessons-icon"><FaBook /></span>
-              <div>
-                <div className="lessons-count-label">Total de temas</div>
-                <div className="lessons-count-number">{totalLessons}</div>
-              </div>
-            </div>
+      {/* Navegación por Tabs - Solo visible para estudiantes inscritos */}
+      {!isPublicRoute && isInscrito && pagoAprobado && (
+        <>
+          <CourseNavigationTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
+            showGrades={showGrades}
+          />
+
+          {/* Contenido de los Tabs */}
+          <div className="tab-content-container">
+            {activeTab === 'material' && (
+              <MaterialTab
+                topics={topics}
+                eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
+              />
+            )}
+            {activeTab === 'participantes' && (
+              <ParticipantesTab
+                courseData={courseData}
+                eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
+              />
+            )}
+            {activeTab === 'calificaciones' && showGrades && (
+              <CalificacionesTab
+                courseData={courseData}
+                eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
+              />
+            )}
           </div>
-
-          {/* Lista de Temas */}
-          <div className="lessons-list">
-            {lessons.map((lesson) => (
-              <div
-                key={lesson.id}
-                className={`lesson-item ${lesson.status}`}
-              >
-                <div className="lesson-status-icon">
-                  {lesson.status === 'completed' && <FaCheck className="status-check" />}
-                  {lesson.status === 'in-progress' && <FaSync className="status-progress spinning" />}
-                  {lesson.status === 'locked' && <FaLock className="status-lock" />}
-                </div>
-
-                <div className="lesson-content">
-                  <div className="lesson-header-row">
-                    <h4 className="lesson-title">{lesson.title}</h4>
-                    {lesson.status === 'completed' && (
-                      <span className="lesson-badge completed-badge">Completa</span>
-                    )}
-                    {lesson.status === 'in-progress' && (
-                      <span className="lesson-badge progress-badge">Iniciar</span>
-                    )}
-                  </div>
-                  {lesson.description && (
-                    <p className="lesson-description">{lesson.description}</p>
-                  )}
-                </div>
-
-                <button
-                  className="lesson-action-btn"
-                  disabled={lesson.status === 'locked'}
-                >
-                  <span className="action-icon"><FaEye /></span>
-                  Ver
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Si no hay temas, mostrar mensaje */}
-      {totalLessons === 0 && (
-        <div className="course-lessons-section">
-          <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
-            <p>Este curso no tiene temas definidos aún.</p>
-          </div>
-        </div>
+        </>
       )}
     </div>
   );
