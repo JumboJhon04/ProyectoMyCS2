@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { useCourses } from '../../../../context/CoursesContext';
+import {
+  FaClock, FaCalendarAlt, FaCheck, FaClipboardList,
+  FaLaptopCode, FaJava, FaJs, FaCheckDouble, FaExclamationTriangle
+} from 'react-icons/fa';
 import './EstudianteTest.css';
 
 const EstudianteTests = () => {
@@ -18,7 +22,7 @@ const EstudianteTests = () => {
       duration: '60 min',
       questions: 20,
       status: 'pending',
-      icon: '💻',
+      icon: <FaLaptopCode />,
       daysLeft: 0
     },
     {
@@ -31,7 +35,7 @@ const EstudianteTests = () => {
       duration: '90 min',
       questions: 30,
       status: 'pending',
-      icon: '☕',
+      icon: <FaJava />, // Icono específico
       daysLeft: 0
     },
     {
@@ -44,7 +48,7 @@ const EstudianteTests = () => {
       duration: '45 min',
       questions: 15,
       status: 'pending',
-      icon: '📜',
+      icon: <FaJs />,
       daysLeft: 0
     },
     {
@@ -57,7 +61,7 @@ const EstudianteTests = () => {
       duration: '45 min',
       questions: 15,
       status: 'pending',
-      icon: '💻',
+      icon: <FaLaptopCode />,
       daysLeft: 3
     },
     {
@@ -71,7 +75,7 @@ const EstudianteTests = () => {
       questions: 40,
       status: 'completed',
       score: 85,
-      icon: '📜',
+      icon: <FaJs />,
       daysLeft: -5
     }
   ].filter(test => courses.some(c => c.id === test.courseId));
@@ -122,7 +126,7 @@ const EstudianteTests = () => {
       {/* Estadísticas rápidas */}
       <div className="tests-stats">
         <div className="stat-card urgent">
-          <div className="stat-icon">⏰</div>
+          <div className="stat-icon"><FaExclamationTriangle /></div>
           <div className="stat-content">
             <div className="stat-number">{tests.filter(t => t.daysLeft === 0 && t.status === 'pending').length}</div>
             <div className="stat-label">Hoy</div>
@@ -130,7 +134,7 @@ const EstudianteTests = () => {
         </div>
 
         <div className="stat-card warning">
-          <div className="stat-icon">📅</div>
+          <div className="stat-icon"><FaCalendarAlt /></div>
           <div className="stat-content">
             <div className="stat-number">{pendingCount}</div>
             <div className="stat-label">Pendientes</div>
@@ -138,7 +142,7 @@ const EstudianteTests = () => {
         </div>
 
         <div className="stat-card success">
-          <div className="stat-icon">✓</div>
+          <div className="stat-icon"><FaCheckDouble /></div>
           <div className="stat-content">
             <div className="stat-number">{completedCount}</div>
             <div className="stat-label">Completados</div>
@@ -150,7 +154,7 @@ const EstudianteTests = () => {
       <div className="tests-list">
         {filteredTests.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">📝</div>
+            <div className="empty-icon"><FaClipboardList /></div>
             <p>No hay evaluaciones {filter === 'pending' ? 'pendientes' : filter === 'completed' ? 'completadas' : 'disponibles'}</p>
           </div>
         ) : (
@@ -168,7 +172,7 @@ const EstudianteTests = () => {
                 {/* Icono */}
                 <div className="test-icon-wrapper">
                   <div className={`test-icon ${test.status}`}>
-                    {test.status === 'completed' ? '✓' : test.icon}
+                    {test.status === 'completed' ? <FaCheck /> : test.icon}
                   </div>
                 </div>
 
@@ -181,15 +185,15 @@ const EstudianteTests = () => {
 
                   <div className="test-details">
                     <div className="detail-item">
-                      <span className="detail-icon">📅</span>
+                      <span className="detail-icon"><FaCalendarAlt /></span>
                       <span className="detail-text">{test.date} a las {test.time}</span>
                     </div>
                     <div className="detail-item">
-                      <span className="detail-icon">⏱</span>
+                      <span className="detail-icon"><FaClock /></span>
                       <span className="detail-text">{test.duration}</span>
                     </div>
                     <div className="detail-item">
-                      <span className="detail-icon">📋</span>
+                      <span className="detail-icon"><FaClipboardList /></span>
                       <span className="detail-text">{test.questions} preguntas</span>
                     </div>
                   </div>

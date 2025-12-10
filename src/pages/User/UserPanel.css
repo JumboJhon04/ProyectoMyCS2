@@ -37,7 +37,8 @@
     gap: 0.5rem;
     font-size: 0.9rem;
     transition: background-color 0.2s;
-    font-family: inherit; /* Asegura que use la fuente del proyecto */
+    font-family: inherit;
+    /* Asegura que use la fuente del proyecto */
 }
 
 .role-btn:not(:last-child) {
@@ -54,13 +55,16 @@
     font-weight: 600;
 }
 
-.role-btn svg { /* Usando iconos Fa de react-icons */
+.role-btn svg {
+    /* Usando iconos Fa de react-icons */
     font-size: 1.2rem;
-    color: #888;
+    color: #444;
+    /* Gris oscuro para inactivo */
 }
 
 .role-btn.active svg {
-    color: #333;
+    color: #000;
+    /* Negro para activo */
 }
 
 /* Responsive (copiado de EstudiantePanel.css) */
@@ -69,6 +73,7 @@
         width: 100%;
         flex-direction: column;
     }
+
     .role-btn:not(:last-child) {
         border-right: none;
         border-bottom: 1px solid #ddd;

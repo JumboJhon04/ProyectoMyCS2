@@ -5,48 +5,45 @@
 /* Adaptaciones para la vista de Profesor */
 
 .professor-test-container {
-  /* Reusa user-tests-container del EstudianteTest.css */
-  /* Dejar vacío para que herede de EstudianteTest.css */
-  width: 100%;
-  min-height: 100vh;
-  background: #f8fafc;
-  padding-bottom: 3rem;
+    width: 100%;
+    min-height: 100vh;
+    background: #f8f8f8;
+    padding-bottom: 3rem;
 }
 
 .tests-header-profesor {
-    /* Reusa tests-header de EstudianteTest.css */
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
     padding: 2rem 2.5rem;
     background: #ffffff;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    border-bottom: 1px solid #e0e0e0;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 /* Título y subtítulo ya usan las clases tests-title y tests-subtitle */
 
 .add-test-btn {
-    padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #007bff, #0056b3);
+    padding: 0.85rem 1.75rem;
+    background: linear-gradient(135deg, #333, #444);
     color: #ffffff;
     border: none;
     border-radius: 8px;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
     width: fit-content;
 }
 
 .add-test-btn:hover {
-    background: #0056b3;
+    background: linear-gradient(135deg, #444, #555);
     transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(0, 123, 255, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .tests-filters-profesor {
@@ -58,25 +55,35 @@
 }
 
 .filter-btn-profesor {
-    /* Reusa filter-btn de EstudianteTest.css */
-    padding: 0.7rem 1.25rem;
+    padding: 0.65rem 1.3rem;
     background: #ffffff;
-    border: 1px solid rgba(15, 23, 42, 0.08);
+    border: 1.5px solid #ddd;
     border-radius: 8px;
-    color: #334155;
+    color: #555;
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.filter-btn-profesor:hover {
+    background: #f8f8f8;
+    border-color: #999;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .filter-btn-profesor.active {
-    /* Reusa filter-btn.active de EstudianteTest.css */
-    background: #0f1724;
+    background: linear-gradient(135deg, #333 0%, #444 100%);
     color: #ffffff;
-    border-color: #0f1724;
-    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+    border-color: #333;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.filter-btn-profesor.active:hover {
+    background: linear-gradient(135deg, #444 0%, #555 100%);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
 }
 
 .search-input-test {
@@ -112,21 +119,28 @@
 }
 
 /* Colores adaptados para el profesor */
-.stat-card-profesor.urgent-profesor { border-left: 4px solid #ff4444; }
-.stat-card-profesor.warning-profesor { border-left: 4px solid #f59e0b; }
-.stat-card-profesor.success-profesor { border-left: 4px solid #10b981; }
+.stat-card-profesor.urgent-profesor {
+    border-left: 4px solid #ff4444;
+}
 
-.stat-icon-profesor { 
-    /* Reusa stat-icon de EstudianteTest.css */
+.stat-card-profesor.warning-profesor {
+    border-left: 4px solid #f59e0b;
+}
+
+.stat-card-profesor.success-profesor {
+    border-left: 4px solid #10b981;
+}
+
+.stat-icon-profesor {
     font-size: 2.5rem;
     width: 60px;
     height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f8fafc;
+    background: #f8f8f8;
     border-radius: 12px;
-    color: #0f1724; /* Color oscuro para el icono del profesor */
+    color: #555;
 }
 
 /* --- Lista de Tests del Profesor --- */
@@ -141,18 +155,33 @@
 }
 
 .test-card-profesor {
-    /* Reusa test-card de EstudianteTest.css */
     background: #ffffff;
-    border: 1px solid rgba(15, 23, 42, 0.06);
+    border: 1px solid #e0e0e0;
     border-radius: 12px;
     padding: 1.75rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     position: relative;
+    transition: all 0.3s ease;
 }
 
-.test-card-profesor.activa { border-left: 4px solid #007bff; }
-.test-card-profesor.inactiva { border-left: 4px solid #94a3b8; opacity: 0.8; }
-.test-card-profesor.pendiente { border-left: 4px solid #f59e0b; }
+.test-card-profesor:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    border-color: #bbb;
+}
+
+.test-card-profesor.activa {
+    border-left: 4px solid #555;
+}
+
+.test-card-profesor.inactiva {
+    border-left: 4px solid #999;
+    opacity: 0.8;
+}
+
+.test-card-profesor.pendiente {
+    border-left: 4px solid #f59e0b;
+}
 
 
 .test-card-content-profesor {
@@ -162,9 +191,25 @@
     gap: 1.75rem;
 }
 
-.test-info-profesor { flex: 1; min-width: 0; }
-.test-title-profesor { font-size: 1.2rem; font-weight: 600; color: #0f1724; margin: 0 0 0.3rem 0; line-height: 1.3; }
-.test-course-profesor { font-size: 0.9rem; color: #64748b; margin: 0; font-weight: 500; }
+.test-info-profesor {
+    flex: 1;
+    min-width: 0;
+}
+
+.test-title-profesor {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 0.3rem 0;
+    line-height: 1.3;
+}
+
+.test-course-profesor {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0;
+    font-weight: 500;
+}
 
 .test-details-profesor {
     display: flex;
@@ -181,28 +226,43 @@
     align-items: flex-end;
 }
 
-.btn-primary-test-profesor, .btn-secondary-test-profesor {
+.btn-primary-test-profesor,
+.btn-secondary-test-profesor {
     padding: 0.75rem 1.5rem;
     border-radius: 8px;
     font-size: 0.95rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 0.5rem;
     white-space: nowrap;
 }
 
 .btn-primary-test-profesor {
-    background: linear-gradient(135deg, #007bff, #0056b3);
+    background: linear-gradient(135deg, #333, #444);
     color: #ffffff;
     border: none;
 }
+
+.btn-primary-test-profesor:hover {
+    background: linear-gradient(135deg, #444, #555);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
 .btn-secondary-test-profesor {
-    background: #f8fafc;
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    color: #475569;
+    background: #f8f8f8;
+    border: 1.5px solid #ddd;
+    color: #555;
+}
+
+.btn-secondary-test-profesor:hover {
+    background: #ffffff;
+    border-color: #999;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .status-badge {
@@ -213,20 +273,37 @@
     margin-bottom: 0.5rem;
     text-transform: uppercase;
 }
-.status-badge.activa { background-color: #e6f7ff; color: #007bff; border: 1px solid #91d5ff; }
-.status-badge.inactiva { background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
-.status-badge.pendiente { background-color: #fffbe6; color: #b45309; border: 1px solid #fce38a; }
+
+.status-badge.activa {
+    background-color: #f8f8f8;
+    color: #555;
+    border: 1px solid #ddd;
+}
+
+.status-badge.inactiva {
+    background-color: #f8f8f8;
+    color: #999;
+    border: 1px solid #e0e0e0;
+}
+
+.status-badge.pendiente {
+    background-color: #fffbeb;
+    color: #f59e0b;
+    border: 1px solid #fde68a;
+}
 
 /* Responsive (mantener la coherencia con EstudianteTest.css) */
 @media (max-width: 1024px) {
     .test-card-content-profesor {
-      flex-wrap: wrap;
+        flex-wrap: wrap;
     }
+
     .test-actions-profesor {
         width: 100%;
         flex-direction: row;
         justify-content: space-between;
     }
+
     .btn-primary-test-profesor,
     .btn-secondary-test-profesor {
         flex: 1;

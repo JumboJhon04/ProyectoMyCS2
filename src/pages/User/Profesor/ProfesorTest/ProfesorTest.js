@@ -1,6 +1,9 @@
 // src/pages/User/Profesor/ProfesorTest/ProfesorTest.js
 import React, { useState } from 'react';
-import { FaPlus, FaCheckCircle, FaClock, FaBookOpen, FaChartBar } from 'react-icons/fa'; // Iconos de gestión
+import {
+  FaPlus, FaCheckCircle, FaClock, FaBookOpen, FaChartBar,
+  FaClipboardList, FaUsers, FaCalendarAlt
+} from 'react-icons/fa'; // Iconos de gestión
 import './ProfesorTest.css';
 
 const mockTests = [
@@ -10,7 +13,7 @@ const mockTests = [
 ];
 
 const ProfesorTest = () => {
-  const [filter, setFilter] = useState('all'); 
+  const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredTests = mockTests.filter(test => {
@@ -54,7 +57,7 @@ const ProfesorTest = () => {
           >
             Pendientes ({mockTests.filter(t => t.status === 'Pendiente').length})
           </button>
-          
+
           <input
             type="text"
             placeholder="Buscar evaluación..."
@@ -96,7 +99,7 @@ const ProfesorTest = () => {
       <div className="tests-list-profesor">
         {filteredTests.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">📝</div>
+            <div className="empty-icon"><FaClipboardList /></div>
             <p>No hay evaluaciones creadas o que coincidan con el filtro.</p>
           </div>
         ) : (
@@ -111,13 +114,13 @@ const ProfesorTest = () => {
 
                   <div className="test-details-profesor">
                     <div className="detail-item">
-                      <span>📋 {test.questions} Preguntas</span>
+                      <span><FaClipboardList /> {test.questions} Preguntas</span>
                     </div>
                     <div className="detail-item">
-                      <span>👥 {test.students} Estudiantes</span>
+                      <span><FaUsers /> {test.students} Estudiantes</span>
                     </div>
                     <div className="detail-item">
-                      <span>📅 Entrega: {test.due}</span>
+                      <span><FaCalendarAlt /> Entrega: {test.due}</span>
                     </div>
                   </div>
                 </div>

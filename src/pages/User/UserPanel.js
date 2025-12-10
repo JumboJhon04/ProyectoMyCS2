@@ -6,17 +6,19 @@ import { useUser } from '../../context/UserContext';
 import './UserPanel.css'; // Usamos un nuevo CSS para el UserPanel, replicando la apariencia.
 
 const UserPanel = ({ userName, role, message }) => {
-  const { user } = useUser();
+  const { user, switchRole } = useUser();
   const navigate = useNavigate();
-  
+
   // role: 'Estudiante' o 'Docente'
   const isStudentActive = role === 'Estudiante';
   const roleMessage = message || (isStudentActive ? "Continúa aprendiendo" : "Continúa enseñando");
 
   const handleRoleChange = (newRole) => {
     if (newRole === 'estudiante') {
+      switchRole('EST'); // Cambiar el rol activo en el contexto
       navigate('/user/panel');
     } else if (newRole === 'profesor') {
+      switchRole('DOC'); // Cambiar el rol activo en el contexto
       navigate('/profesor/panel');
     }
   };
