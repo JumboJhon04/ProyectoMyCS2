@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -15,6 +16,7 @@ const solicitudRoutes = require('./routes/solicitudRoutes');
 const peticionCambioRoutes = require('./routes/peticionCambioRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const facultadCarreraRoutes = require('./routes/facultadCarrera'); // NUEVA IMPORTACIÓN
+const requisitoRoutes = require('./routes/requisitoRoutes');
 
 
 const app = express();
@@ -66,6 +68,7 @@ app.use('/api/peticiones-cambio', peticionCambioRoutes);
 app.use('/api/admins', adminRoutes);
 app.use('/api/users', require('./routes/userRoutes')); // NUEVA RUTA USUARIOS
 app.use('/api', facultadCarreraRoutes); // NUEVA RUTA
+app.use('/api', requisitoRoutes);
 app.use(cors());
 app.use(express.json());
 

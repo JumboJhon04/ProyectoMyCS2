@@ -69,20 +69,28 @@ const UserHeader = ({ onToggleSidebar, onLogout }) => {
                     <span className="badge">2</span>
                 </div>
 
-                <div style={{ position: 'relative' }}>
-                    <div className="user-avatar" title={user?.nombres ? `${user.nombres} ${user.apellidos}` : user?.name} onClick={toggleUserMenu} style={{ cursor: 'pointer' }}>
-                        <span>{userInitials || 'FT'}</span>
-                    </div>
+
+                                <div style={{ position: 'relative' }}>
+                                        <div className="user-avatar" title={user?.nombres ? `${user.nombres} ${user.apellidos}` : user?.name} onClick={toggleUserMenu} style={{ cursor: 'pointer', overflow: 'hidden', background: '#333' }}>
+                                                {user?.foto ? (
+                                                    <img src={user.foto} alt="Foto de perfil" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <span>{userInitials || 'FT'}</span>
+                                                )}
+                                        </div>
 
                     {showUserMenu && (
                         <div className="user-menu-panel" ref={userMenuRef} onClick={(e) => e.stopPropagation()}>
-                            <div className="user-menu-header">
-                                <div className="user-menu-name">{user?.nombres ? `${user.nombres} ${user.apellidos}` : user?.name || 'Usuario'}</div>
-                                <div className="user-menu-email">{user?.correo || user?.email || ''}</div>
-                                <div className="user-menu-role">{user?.rol || user?.displayRole || user?.role || 'Estudiante'}</div>
-                            </div>
-                            <div className="user-menu-divider" />
-                            <button className="user-menu-item logout" onClick={handleLogout}><FaSignOutAlt /><span>Cerrar Sesión</span></button>
+                                                        <div className="user-menu-header">
+                                                                <div className="user-menu-name">{user?.nombres ? `${user.nombres} ${user.apellidos}` : user?.name || 'Usuario'}</div>
+                                                                <div className="user-menu-email">{user?.correo || user?.email || ''}</div>
+                                                                <div className="user-menu-role">{user?.rol || user?.displayRole || user?.role || 'Estudiante'}</div>
+                                                        </div>
+                                                        <div className="user-menu-divider" />
+                                                        <NavLink to="/perfil" className="user-menu-item" style={{ textDecoration: 'none', color: 'inherit' }} onClick={() => setShowUserMenu(false)}>
+                                                            Perfil
+                                                        </NavLink>
+                                                        <button className="user-menu-item logout" onClick={handleLogout}><FaSignOutAlt /><span>Cerrar Sesión</span></button>
                         </div>
                     )}
                 </div>

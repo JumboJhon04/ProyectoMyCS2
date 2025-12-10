@@ -46,6 +46,12 @@ export default function PublicHeader() {
     return 'U';
   }, [displayName]);
 
+  const userPhoto = useMemo(() => {
+    const u = user || JSON.parse(localStorage.getItem('user') || 'null');
+    if (!u) return null;
+    return u.fotoPerfil || u.FOTO_PERFIL || u.foto || null;
+  }, [user]);
+
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('isAuthenticated');
@@ -94,7 +100,13 @@ export default function PublicHeader() {
           <div className="nav-actions">
             {isAuthenticated ? (
               <div className="user-chip" onClick={() => setUserMenuOpen(prev => !prev)}>
-                <div className="user-chip-avatar">{userInitials}</div>
+                <div className="user-chip-avatar" style={{ overflow: 'hidden', background: '#e0e0e0' }}>
+                  {userPhoto ? (
+                    <img src={userPhoto} alt="Foto de perfil" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                  ) : (
+                    <span>{userInitials}</span>
+                  )}
+                </div>
                 <div className="user-chip-name">{displayName}</div>
               </div>
             ) : (

@@ -211,7 +211,7 @@
   position: relative;
   z-index: 1;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(255, 195, 77, 0.4);
+  box-shadow: 0 4px 15px #333;
   transition: all 0.3s ease;
   text-align: center;
 }
@@ -230,8 +230,8 @@
 @media (hover: hover) {
   .auth-login-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 25px rgba(255, 195, 77, 0.6);
-    background: linear-gradient(135deg, #ffe45c 0%, #ffd93d 50%, #ffc34d 100%);
+    box-shadow: 0 6px 25px #333;
+    background: #333;
   }
 
   .auth-login-btn:hover::before {
