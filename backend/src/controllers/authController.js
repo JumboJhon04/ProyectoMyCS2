@@ -220,6 +220,7 @@ const loginUsuario = async (req, res) => {
         u.CONTRASENA,
         u.CODIGOROL,
         u.CODIGOESTADO,
+        u.FOTO_PERFIL,
         r.NOMBRE as ROL_NOMBRE
        FROM usuario u
        LEFT JOIN rol_usuario r ON u.CODIGOROL = r.CODIGO
@@ -277,6 +278,8 @@ const loginUsuario = async (req, res) => {
         correo: usuario.CORREO,
         rol: usuario.ROL_NOMBRE,
         codigoRol: usuario.CODIGOROL,
+        fotoPerfil: usuario.FOTO_PERFIL,
+        foto: usuario.FOTO_PERFIL,
         carreras: carreras
       }
     });

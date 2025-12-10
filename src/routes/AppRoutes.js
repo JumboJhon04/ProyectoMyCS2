@@ -32,6 +32,8 @@ import ProfesorCourseDetail from '../pages/User/Profesor/ProfesorCourseDetail/Pr
 import UserPanel from '../pages/User/UserPanel';
 import SolicitudSoporte from '../pages/User/SolicitudSoporte/SolicitudSoporte';
 
+
+import Perfil from '../pages/Perfil/Perfil';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 export default function AppRoutes() {
@@ -119,6 +121,13 @@ export default function AppRoutes() {
       <Route path="/user/solicitud-soporte" element={
         <ProtectedRoute>
           <SolicitudSoporte />
+        </ProtectedRoute>
+      } />
+
+      {/* Perfil (acceso para cualquier usuario autenticado) */}
+      <Route path="/perfil" element={
+        <ProtectedRoute>
+          <Perfil />
         </ProtectedRoute>
       } />
 
