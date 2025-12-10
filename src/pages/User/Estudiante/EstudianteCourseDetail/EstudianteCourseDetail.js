@@ -3,6 +3,11 @@ import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useCourses } from '../../../../context/CoursesContext';
 import { useUser } from '../../../../context/UserContext';
 import PublicHeader from '../../../../components/PublicHeader/PublicHeader';
+import {
+  FaClock, FaUsers, FaCalendarAlt, FaMoneyBillWave,
+  FaClipboardCheck, FaCheckCircle, FaChartBar, FaGraduationCap,
+  FaBook, FaCheck, FaSync, FaLock, FaEye
+} from 'react-icons/fa';
 import './EstudianteCourseDetail.css';
 
 import API_URL from '../../../../config/api';
@@ -28,7 +33,7 @@ const EstudianteCourseDetail = () => {
       .filter(Boolean)
       .map(Number);
   }, [user]);
-  
+
   // Determinar si es una ruta pública (acceso desde /courses/:courseId sin autenticación)
   const isPublicRoute = location.pathname.startsWith('/courses/') && !location.pathname.startsWith('/user/course/') && !location.pathname.startsWith('/profesor/course/');
 
@@ -88,7 +93,7 @@ const EstudianteCourseDetail = () => {
         setLoading(true);
         const response = await fetch(`${API_URL}/api/eventos/${courseId}`);
         const data = await response.json();
-        
+
         if (!response.ok) {
           throw new Error(data.error || 'Error al cargar el curso');
         }
@@ -107,7 +112,7 @@ const EstudianteCourseDetail = () => {
                 setIsInscrito(true);
                 const idInscripcion = inscripcionData.data.inscripcionId || inscripcionData.data.SECUENCIAL;
                 setInscripcionId(idInscripcion);
-                
+
                 // Verificar estado del pago si el curso es pagado (usar data.data que es la respuesta del fetch)
                 const cursoEsPagado = data.data?.ES_PAGADO === 1;
                 if (idInscripcion && cursoEsPagado) {
@@ -155,7 +160,7 @@ const EstudianteCourseDetail = () => {
   // Parsear topics del contenido
   const parseTopics = (contenido) => {
     if (!contenido) return [];
-    
+
     try {
       const contenidoStr = contenido.trim();
       if (contenidoStr.startsWith('{') && contenidoStr.endsWith('}')) {
@@ -174,10 +179,10 @@ const EstudianteCourseDetail = () => {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   };
 
@@ -250,16 +255,16 @@ const EstudianteCourseDetail = () => {
   const esPagado = courseData?.ES_PAGADO === 1 || course?.meta?.isPaid;
   const carreras = courseData?.CARRERAS || [];
   const topics = parseTopics(courseData?.CONTENIDO || '');
-  
+
   // Crear "lecciones" basadas en los topics
-  const lessons = topics.length > 0 
+  const lessons = topics.length > 0
     ? topics.map((topic, index) => ({
-        id: index + 1,
-        title: typeof topic === 'string' ? topic : topic.title || `Tema ${index + 1}`,
-        description: typeof topic === 'string' ? '' : topic.description || '',
-        status: 'locked', // Por defecto bloqueadas
-        type: 'lesson'
-      }))
+      id: index + 1,
+      title: typeof topic === 'string' ? topic : topic.title || `Tema ${index + 1}`,
+      description: typeof topic === 'string' ? '' : topic.description || '',
+      status: 'locked', // Por defecto bloqueadas
+      type: 'lesson'
+    }))
     : [];
 
   const totalLessons = lessons.length || topics.length || 0;
@@ -269,181 +274,105 @@ const EstudianteCourseDetail = () => {
   return (
     <div className="course-detail-container">
       {isPublicRoute && <PublicHeader />}
-      
-      {/* Header del Curso */}
-      <div className="course-detail-header">
-        <div className="course-header-content">
-          {/* Información izquierda */}
-          <div className="course-header-left">
-            <div className="course-tags">
-              <span className="tag">{tipo}</span>
-              <span className="tag">{modalidad}</span>
-              {esPagado && <span className="tag">Pago</span>}
-              {!esPagado && <span className="tag">Gratis</span>}
-              {hasCareerRestriction && (
-                <span className={`tag ${esAptoCarrera ? 'apt-tag' : 'not-apt-tag'}`}>
-                  {esAptoCarrera ? 'Apto para tu carrera' : 'No apto'}
-                </span>
-              )}
-            </div>
 
-            <h1 className="course-detail-title">{title}</h1>
-            <p className="course-detail-description" dangerouslySetInnerHTML={{ __html: description }} />
-
-            <div className="course-meta-info">
-              {docente && (
-                <div className="meta-item">
-                  <span className="meta-badge">{getDocenteInitials(docente)}</span>
-                  <span className="meta-text">{docente}</span>
-                </div>
-              )}
-              {horas > 0 && (
-                <div className="meta-item">
-                  <span className="meta-icon">⏱</span>
-                  <span className="meta-text">{horas} horas</span>
-                </div>
-              )}
-              {capacidad && (
-                <div className="meta-item">
-                  <span className="meta-icon">👥</span>
-                  <span className="meta-text">{capacidad} cupos</span>
-                </div>
-              )}
-            </div>
-
-            {/* Información adicional */}
-            <div className="course-additional-info">
-              {fechaInicio && fechaFin && (
-                <div>
-                  <strong>📅 Fechas:</strong> Del {formatDate(fechaInicio)} al {formatDate(fechaFin)}
-                </div>
-              )}
-              
-              <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
-                {costo > 0 && (
-                  <div>
-                    <strong>💰 Costo:</strong> ${parseFloat(costo).toFixed(2)}
-                  </div>
-                )}
-                {notaAprobacion && (
-                  <div>
-                    <strong>📝 Nota de aprobación:</strong> {notaAprobacion}/10
-                  </div>
-                )}
-                {asistenciaMinima && (
-                  <div>
-                    <strong>✅ Asistencia mínima:</strong> {asistenciaMinima}%
-                  </div>
-                )}
-                <div>
-                  <strong>📊 Estado:</strong> {estado}
-                </div>
-              </div>
-
-              {carreras.length > 0 && (
-                <div style={{ marginTop: '0.75rem' }}>
-                  <strong>🎓 Carreras relacionadas:</strong>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                    {carreras.map((carrera, idx) => (
-                      <span key={idx} className="tag" style={{ fontSize: '0.85rem' }}>
-                        {carrera.NOMBRE_CARRERA || carrera}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Botón de comprar/inscribirse - Solo mostrar si NO está inscrito O si está inscrito pero el pago no está aprobado */}
-            <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-              {hasCareerRestriction && !esAptoCarrera ? (
-                <div className="not-apt-box">
-                  <div className="not-apt-title">Solo para carreras habilitadas</div>
-                  <div className="not-apt-text">No apto para tu perfil académico.</div>
-                </div>
-              ) : (
-                <>
-                  {isPublicRoute ? (
-                    <Link 
-                      to={`/payment/${courseId}`}
-                      className="btn btn-primary"
-                      style={{ 
-                        padding: '0.75rem 2rem', 
-                        fontSize: '1.1rem',
-                        fontWeight: 600,
-                        textDecoration: 'none',
-                        display: 'inline-block'
-                      }}
-                    >
-                      {esPagado ? 'Comprar Curso' : 'Inscribirse Gratis'}
-                    </Link>
-                  ) : (
-                    // Solo mostrar botón si NO está inscrito O si está inscrito pero el pago no está aprobado
-                    (!isInscrito || (isInscrito && esPagado && !pagoAprobado)) && (
-                      <Link 
-                        to={`/payment/${courseId}`}
-                        className="btn btn-primary"
-                        style={{ 
-                          padding: '0.75rem 2rem', 
-                          fontSize: '1.1rem',
-                          fontWeight: 600,
-                          textDecoration: 'none',
-                          display: 'inline-block'
-                        }}
-                      >
-                        {isInscrito && esPagado && !pagoAprobado 
-                          ? 'Completar Pago' 
-                          : esPagado 
-                            ? 'Comprar Curso' 
-                            : 'Inscribirse Gratis'}
-                      </Link>
-                    )
-                  )}
-                  {/* Mensaje si ya está inscrito y pagado */}
-                  {!isPublicRoute && isInscrito && (!esPagado || pagoAprobado) && (
-                    <div style={{
-                      padding: '1rem 1.5rem',
-                      background: '#d1fae5',
-                      border: '1px solid #6ee7b7',
-                      borderRadius: '8px',
-                      color: '#065f46',
-                      fontSize: '1rem',
-                      fontWeight: 500
-                    }}>
-                      ✅ Ya estás inscrito en este curso
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+      {/* Header del Curso con Imagen de Fondo */}
+      <div
+        className="course-detail-header"
+        style={{
+          backgroundImage: `url(${imageUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
+        <div className="header-overlay">
+          <div className="course-tags">
+            <span className="tag">{tipo}</span>
+            <span className="tag">{modalidad}</span>
+            {esPagado && <span className="tag tag-paid">Pago</span>}
+            {!esPagado && <span className="tag tag-free">Gratis</span>}
+            {hasCareerRestriction && (
+              <span className={`tag ${esAptoCarrera ? 'apt-tag' : 'not-apt-tag'}`}>
+                {esAptoCarrera ? 'Apto para tu carrera' : 'No apto'}
+              </span>
+            )}
           </div>
 
-          {/* Logo del curso */}
-          <div className="course-header-right">
-            <div className="course-logo-circle">
-              <img 
-                src={imageUrl} 
-                alt={title}
-                onError={(e) => { e.target.src = 'https://via.placeholder.com/200'; }}
-              />
-            </div>
+          <h1 className="course-detail-title">{title}</h1>
+          <p className="course-detail-description">
+            {description.length > 200 ? description.substring(0, 200) + '...' : description}
+          </p>
+
+          <div className="teacher-info">
+            <span className="teacher-initials">{getDocenteInitials(docente)}</span>
+            <span className="teacher-name">Ing. {docente}</span>
           </div>
         </div>
+      </div>
 
-        {/* Barra de progreso - solo mostrar si hay lecciones */}
-        {totalLessons > 0 && (
-          <div className="course-progress-section">
-            <div className="progress-header">
-              <h3>Progreso</h3>
-              <span className="progress-text">{completedLessons} de {totalLessons} temas completados</span>
-            </div>
-            <div className="progress-bar-large">
-              <div 
-                className="progress-bar-fill-large" 
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
+      {/* Stats Cards */}
+      <div className="course-detail-content">
+        <div className="course-summary-stats">
+          <div className="stat-item">
+            <FaBook className="stat-icon" />
+            <span>Total de temas</span>
+            <strong>{totalLessons}</strong>
           </div>
+          <div className="stat-item">
+            <FaClock className="stat-icon" />
+            <span>Horas</span>
+            <strong>{horas}</strong>
+          </div>
+          {esPagado && (
+            <div className="stat-item">
+              <FaMoneyBillWave className="stat-icon" />
+              <span>Costo</span>
+              <strong>${parseFloat(costo).toFixed(2)}</strong>
+            </div>
+          )}
+          {isInscrito && totalLessons > 0 && (
+            <div className="stat-item">
+              <FaChartBar className="stat-icon" />
+              <span>Progreso</span>
+              <strong>{progressPercentage}%</strong>
+            </div>
+          )}
+        </div>
+
+        {/* Botón de inscripción/compra - Solo si NO está inscrito O pago pendiente */}
+        {hasCareerRestriction && !esAptoCarrera ? (
+          <div className="not-apt-message">
+            <div className="not-apt-title">Solo para carreras habilitadas</div>
+            <div className="not-apt-text">Este curso no está disponible para tu perfil académico.</div>
+          </div>
+        ) : (
+          <>
+            {isPublicRoute ? (
+              <Link
+                to={`/payment/${courseId}`}
+                className="btn btn-primary enrollment-btn"
+              >
+                {esPagado ? 'Comprar Curso' : 'Inscribirse Gratis'}
+              </Link>
+            ) : (
+              (!isInscrito || (isInscrito && esPagado && !pagoAprobado)) && (
+                <Link
+                  to={`/payment/${courseId}`}
+                  className="btn btn-primary enrollment-btn"
+                >
+                  {isInscrito && esPagado && !pagoAprobado
+                    ? 'Completar Pago'
+                    : esPagado
+                      ? 'Comprar Curso'
+                      : 'Inscribirse Gratis'}
+                </Link>
+              )
+            )}
+            {!isPublicRoute && isInscrito && (!esPagado || pagoAprobado) && (
+              <div className="enrolled-message">
+                <FaCheckCircle /> Ya estás inscrito en este curso
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -452,7 +381,7 @@ const EstudianteCourseDetail = () => {
         <div className="course-lessons-section">
           <div className="lessons-header">
             <div className="lessons-count-box">
-              <span className="lessons-icon">📚</span>
+              <span className="lessons-icon"><FaBook /></span>
               <div>
                 <div className="lessons-count-label">Total de temas</div>
                 <div className="lessons-count-number">{totalLessons}</div>
@@ -463,14 +392,14 @@ const EstudianteCourseDetail = () => {
           {/* Lista de Temas */}
           <div className="lessons-list">
             {lessons.map((lesson) => (
-              <div 
-                key={lesson.id} 
+              <div
+                key={lesson.id}
                 className={`lesson-item ${lesson.status}`}
               >
                 <div className="lesson-status-icon">
-                  {lesson.status === 'completed' && <span className="status-check">✓</span>}
-                  {lesson.status === 'in-progress' && <span className="status-progress">⟳</span>}
-                  {lesson.status === 'locked' && <span className="status-lock">🔒</span>}
+                  {lesson.status === 'completed' && <FaCheck className="status-check" />}
+                  {lesson.status === 'in-progress' && <FaSync className="status-progress spinning" />}
+                  {lesson.status === 'locked' && <FaLock className="status-lock" />}
                 </div>
 
                 <div className="lesson-content">
@@ -488,11 +417,11 @@ const EstudianteCourseDetail = () => {
                   )}
                 </div>
 
-                <button 
+                <button
                   className="lesson-action-btn"
                   disabled={lesson.status === 'locked'}
                 >
-                  <span className="action-icon">👁</span>
+                  <span className="action-icon"><FaEye /></span>
                   Ver
                 </button>
               </div>
