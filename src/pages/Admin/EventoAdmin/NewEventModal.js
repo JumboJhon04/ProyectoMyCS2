@@ -1,17 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCourses } from '../../../context/CoursesContext';
+import API_URL from '../../../config/api';
 import './EventoAdmin.css';
 
 const NewEventModal = ({ isOpen, onClose }) => {
   const { addCourse } = useCourses();
   const [title, setTitle] = useState('');
   const [type, setType] = useState('Curso');
-  const [attendanceRequired, setAttendanceRequired] = useState('');
-  const [passingGrade, setPassingGrade] = useState('');
+  const [responsableId, setResponsableId] = useState('');
   const [imageFile, setImageFile] = useState(null); // Archivo real
   const [imagePreview, setImagePreview] = useState(null); // Solo preview
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Estados para responsables
+  const [responsables, setResponsables] = useState([]);
+  const [loadingResponsables, setLoadingResponsables] = useState(false);
+
+  // Cargar responsables cuando se abre el modal
+  useEffect(() => {
+    if (isOpen) {
+      cargarResponsables();
+    }
+  }, [isOpen]);
+
+  const cargarResponsables = async () => {
+    setLoadingResponsables(true);
+    try {
+      const response = await fetch(`${API_URL}/api/auth/responsables`);
+      const data = await response.json();
+      if (data.success) {
+        setResponsables(data.data);
+      }
+    } catch (err) {
+      console.error('Error cargando responsables:', err);
+    } finally {
+      setLoadingResponsables(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -35,15 +61,11 @@ const NewEventModal = ({ isOpen, onClose }) => {
     if (!title.trim()) return setError('El nombre del evento es obligatorio');
     if (!type) return setError('Seleccione un tipo de evento');
     if (!imageFile) return setError('Debe seleccionar una imagen');
-    if (passingGrade && isNaN(Number(passingGrade))) {
-      return setError('La nota de aprobación debe ser un número');
-    }
 
     const newCourse = {
       title: title.trim(),
       type,
-      attendanceRequired,
-      passingGrade: passingGrade ? Number(passingGrade) : null,
+      responsableId: responsableId || null,
       imageFile // Pasar el archivo real, NO el base64
     };
 
@@ -55,8 +77,7 @@ const NewEventModal = ({ isOpen, onClose }) => {
       // Limpiar formulario y cerrar
       setTitle('');
       setType('Curso');
-      setAttendanceRequired('');
-      setPassingGrade('');
+      setResponsableId('');
       setImageFile(null);
       setImagePreview(null);
       
@@ -101,25 +122,25 @@ const NewEventModal = ({ isOpen, onClose }) => {
               </label>
             </div>
 
-            <div className="two-col-grid">
-              <label>
-                Asistencia de aprobación
-                <input 
-                  value={attendanceRequired} 
-                  onChange={(e) => setAttendanceRequired(e.target.value)} 
-                  placeholder="% o condiciones" 
-                />
-              </label>
-
-              <label>
-                Nota de aprobación
-                <input 
-                  value={passingGrade} 
-                  onChange={(e) => setPassingGrade(e.target.value)} 
-                  placeholder="Ej. 60" 
-                />
-              </label>
-            </div>
+            <label>
+              Responsable del curso
+              <select 
+                value={responsableId} 
+                onChange={(e) => setResponsableId(e.target.value)}
+                style={{ padding: '0.5rem', borderRadius: '6px', width: '100%' }}
+              >
+                <option value="">-- Seleccione un responsable --</option>
+                {loadingResponsables ? (
+                  <option disabled>Cargando responsables...</option>
+                ) : (
+                  responsables.map(resp => (
+                    <option key={resp.id} value={resp.id}>
+                      {resp.NOMBRES} {resp.APELLIDOS} ({resp.CORREO})
+                    </option>
+                  ))
+                )}
+              </select>
+            </label>
 
             {error && <div className="form-error" style={{color: 'red', marginTop: '10px'}}>{error}</div>}
           </div>

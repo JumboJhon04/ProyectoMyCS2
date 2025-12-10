@@ -15,8 +15,27 @@ export const CoursesProvider = ({ children }) => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [responsableFilter, setResponsableFilter] = useState(null);
 
   useEffect(() => {
+    // Leer usuario guardado para decidir el alcance inicial de la carga
+    const storedUserRaw = localStorage.getItem('user');
+    if (storedUserRaw) {
+      try {
+        const storedUser = JSON.parse(storedUserRaw);
+        const isResponsable = storedUser?.codigoRol === 'RES' || storedUser?.CODIGOROL === 'RES';
+        const responsableId = storedUser?.id || storedUser?.SECUENCIAL;
+
+        if (isResponsable && responsableId) {
+          fetchCourses(responsableId);
+          return;
+        }
+      } catch (e) {
+        console.warn('No se pudo parsear usuario en localStorage:', e);
+      }
+    }
+
+    // Por defecto, cargar todos los eventos
     fetchCourses();
   }, []);
 
@@ -39,17 +58,26 @@ export const CoursesProvider = ({ children }) => {
     return modalidades[codigo] || 'Presencial';
   };
 
- const fetchCourses = async () => {
+ const fetchCourses = async (responsableId) => {
   try {
     setLoading(true);
-    const response = await fetch(`${API_URL}/api/eventos`);
+    const targetId = responsableId ?? responsableFilter;
+    setResponsableFilter(targetId ?? null);
+
+    const endpoint = targetId
+      ? `${API_URL}/api/eventos/responsable/${targetId}`
+      : `${API_URL}/api/eventos`;
+
+    const response = await fetch(endpoint);
     const data = await response.json();
     
     if (!response.ok) {
       throw new Error(data.error || 'Error al cargar eventos');
     }
 
-    const mappedCourses = data.data.map(evento => {
+    const eventos = data.data || [];
+
+    const mappedCourses = eventos.map(evento => {
       let contenidoData = {
         topics: []
       };
@@ -149,8 +177,7 @@ export const CoursesProvider = ({ children }) => {
       const formData = new FormData();
       formData.append('title', newCourse.title);
       formData.append('type', newCourse.type);
-      formData.append('attendanceRequired', newCourse.attendanceRequired || '');
-      formData.append('passingGrade', newCourse.passingGrade || '');
+      // Eliminamos envío de asistencia/nota; será gestionado por responsable más adelante
       formData.append('capacity', newCourse.capacity || '');
       formData.append('hours', newCourse.hours || '');
       formData.append('modality', newCourse.modality || '');
@@ -158,6 +185,11 @@ export const CoursesProvider = ({ children }) => {
       formData.append('career', newCourse.career || '');
       formData.append('teacher', newCourse.teacher || '');
       formData.append('objective', newCourse.objective || '');
+      
+      // Agregar responsableId si está presente
+      if (newCourse.responsableId) {
+        formData.append('responsableId', newCourse.responsableId);
+      }
       
       const topicsArray = Array.isArray(newCourse.topics) 
         ? newCourse.topics.filter(t => t && t.trim())
