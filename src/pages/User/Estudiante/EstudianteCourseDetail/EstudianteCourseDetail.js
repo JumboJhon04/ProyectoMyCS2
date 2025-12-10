@@ -186,14 +186,16 @@ const EstudianteCourseDetail = () => {
     });
   };
 
-  // Obtener iniciales del docente
+  // Obtener iniciales del docente (con manejo robusto de nulos e int)
   const getDocenteInitials = (docente) => {
-    if (!docente) return 'ND';
-    const parts = docente.trim().split(' ');
+    if (!docente || docente === 'Por asignar') return 'ND';
+    const docenteStr = String(docente).trim();
+    if (docenteStr === '' || docenteStr === 'null' || docenteStr === 'undefined') return 'ND';
+    const parts = docenteStr.split(' ');
     if (parts.length >= 2) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
-    return docente.substring(0, 2).toUpperCase();
+    return docenteStr.substring(0, 2).toUpperCase();
   };
 
   if (loading) {
@@ -244,7 +246,8 @@ const EstudianteCourseDetail = () => {
   const tipo = mapCodigoToType(courseData?.CODIGOTIPOEVENTO || course?.meta?.type);
   const modalidad = mapCodigoToModalidad(courseData?.CODIGOMODALIDAD || course?.meta?.modality);
   const horas = courseData?.HORAS || course?.meta?.hours || 0;
-  const docente = courseData?.Docente || course?.meta?.docente || 'No especificado';
+  // Ahora Docente puede ser int (SECUENCIAL) o string (nombre completo). Usar NOMBRE_DOCENTE si existe
+  const docente = courseData?.NOMBRE_DOCENTE || courseData?.Docente || course?.meta?.docente || 'Por asignar';
   const costo = courseData?.COSTO || course?.price || 0;
   const capacidad = courseData?.CAPACIDAD || course?.meta?.capacity || 'No especificada';
   const notaAprobacion = courseData?.NOTAAPROBACION || course?.meta?.passingGrade;
@@ -304,7 +307,7 @@ const EstudianteCourseDetail = () => {
 
           <div className="teacher-info">
             <span className="teacher-initials">{getDocenteInitials(docente)}</span>
-            <span className="teacher-name">Ing. {docente}</span>
+            <span className="teacher-name">{docente === 'Por asignar' ? 'Por asignar' : `Ing. ${docente}`}</span>
           </div>
         </div>
       </div>

@@ -637,10 +637,12 @@ const obtenerEvento = async (req, res) => {
     const [rows] = await pool.execute(
       `SELECT 
         e.*,
-        ie.URL_IMAGEN
+        ie.URL_IMAGEN,
+        CONCAT(u.NOMBRES, ' ', u.APELLIDOS) as NOMBRE_DOCENTE
        FROM evento e
        LEFT JOIN imagen_evento ie ON e.SECUENCIAL = ie.SECUENCIALEVENTO 
        AND ie.TIPO_IMAGEN = 'PORTADA'
+       LEFT JOIN usuario u ON e.Docente = u.SECUENCIAL
        WHERE e.SECUENCIAL = ?`,
       [eventoId]
     );

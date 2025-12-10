@@ -253,6 +253,19 @@ const loginUsuario = async (req, res) => {
 
     console.log('✅ Login exitoso para:', correo);
 
+    // Obtener carreras del usuario si es estudiante
+    let carreras = [];
+    if (usuario.CODIGOROL === 'EST') {
+      const [carrerasRows] = await connection.execute(
+        `SELECT c.SECUENCIAL, c.NOMBRE_CARRERA
+         FROM usuario_carrera uc
+         INNER JOIN carrera c ON uc.SECUENCIALCARRERA = c.SECUENCIAL
+         WHERE uc.SECUENCIALUSUARIO = ?`,
+        [usuario.SECUENCIAL]
+      );
+      carreras = carrerasRows;
+    }
+
     // Respuesta exitosa (no devolver la contraseña)
     res.json({
       success: true,
@@ -263,7 +276,8 @@ const loginUsuario = async (req, res) => {
         apellidos: usuario.APELLIDOS,
         correo: usuario.CORREO,
         rol: usuario.ROL_NOMBRE,
-        codigoRol: usuario.CODIGOROL
+        codigoRol: usuario.CODIGOROL,
+        carreras: carreras
       }
     });
 
