@@ -1,10 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useCourses } from '../../../context/CoursesContext';
+import { useUser } from '../../../context/UserContext';
 import './EventoResponsable.css';
 import NewEventModal from './NewEventModal';
 
 const EventoResponsable = () => {
-  const { courses, loading, error, mockMode, deleteCourse, loadCourses } = useCourses();
+  const { courses, loading, error, deleteCourse, fetchCourses } = useCourses();
+  const { user } = useUser();
+
+  useEffect(() => {
+    const responsableId = user?.id || user?.SECUENCIAL;
+    if (responsableId) {
+      fetchCourses(responsableId);
+    }
+  }, [user?.id, user?.SECUENCIAL]);
 
   const handleDelete = async (id) => {
     if (!window.confirm('¿Estás seguro de eliminar este curso?')) return;

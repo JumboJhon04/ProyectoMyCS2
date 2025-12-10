@@ -5,7 +5,9 @@ const {
   crearEvento,
   obtenerEventos,
   obtenerEvento,
+  obtenerEventosResponsable,
   actualizarEvento,
+  actualizarResponsableEvento,
   eliminarEvento,
   obtenerImagenes,
   actualizarImagenEvento,
@@ -16,10 +18,12 @@ const {
 
 router.post('/', uploadEventos.single('image'), crearEvento);
 router.get('/', obtenerEventos);
+router.get('/responsable/:id', obtenerEventosResponsable);
 router.get('/imagenes', obtenerImagenes);
 router.get('/filtrar', obtenerEventosFiltrados);
 router.get('/:id', obtenerEvento);
 router.put('/:id', uploadEventos.single('image'), actualizarEvento);
+router.put('/:id/responsable', actualizarResponsableEvento);
 router.delete('/:id', eliminarEvento);
 
 // Ruta para actualizar solo la imagen de un evento

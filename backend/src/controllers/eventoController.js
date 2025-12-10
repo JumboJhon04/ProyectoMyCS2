@@ -13,7 +13,8 @@ const crearEvento = async (req, res) => {
     const { 
       title, type, attendanceRequired, passingGrade,
       capacity, hours, modality, cost, description,
-      docente, objective, topics, startDate, endDate, carreras
+      docente, objective, topics, startDate, endDate, carreras,
+      responsableId
     } = req.body;
     
     // Log request body and file for debugging
@@ -131,6 +132,15 @@ const crearEvento = async (req, res) => {
         }
         console.log(`✅ ${carrerasArray.length} carreras asociadas`);
       }
+    }
+
+    // Asociar responsable en tabla puente (si existe la tabla)
+    if (responsableId) {
+      await connection.execute(
+        'INSERT INTO organizador_evento (SECUENCIALUSUARIO, SECUENCIALEVENTO, ROL_ORGANIZADOR) VALUES (?, ?, ?)',
+        [responsableId, eventoId, 'RESPONSABLE']
+      );
+      console.log('✅ Responsable asociado en organizador_evento:', responsableId);
     }
 
     // Guardar imagen (Cloudinary ya subió el archivo)
@@ -260,6 +270,7 @@ const actualizarEvento = async (req, res) => {
     const cost = source.cost ?? source.price ?? 0;
     const description = source.description || source.objective || '';
     const docente = source.docente;
+    const responsableId = source.responsableId; // para asignar/actualizar responsable
     const objective = source.objective;
     const topics = source.topics;
     const isPaid = source.isPaid;
@@ -359,6 +370,20 @@ const actualizarEvento = async (req, res) => {
 
     console.log('✅ Evento actualizado');
 
+    // Actualizar responsable en tabla puente
+    await connection.execute(
+      'DELETE FROM organizador_evento WHERE SECUENCIALEVENTO = ?',
+      [eventoId]
+    );
+
+    if (responsableId) {
+      await connection.execute(
+        'INSERT INTO organizador_evento (SECUENCIALUSUARIO, SECUENCIALEVENTO, ROL_ORGANIZADOR) VALUES (?, ?, ?)',
+        [responsableId, eventoId, 'RESPONSABLE']
+      );
+      console.log('✅ Responsable actualizado en organizador_evento:', responsableId);
+    }
+
     // Actualizar carreras
     console.log('🎓 Procesando carreras...');
     await connection.execute(
@@ -435,6 +460,56 @@ const actualizarEvento = async (req, res) => {
   }
 };
 
+// Actualizar solo responsable del evento
+const actualizarResponsableEvento = async (req, res) => {
+  let connection;
+  const eventoId = req.params.id;
+  const { responsableId } = req.body;
+
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    // Verificar que el evento exista
+    const [eventoRows] = await connection.execute(
+      'SELECT SECUENCIAL FROM evento WHERE SECUENCIAL = ?',
+      [eventoId]
+    );
+
+    if (eventoRows.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+
+    // Limpiar responsable previo
+    await connection.execute(
+      'DELETE FROM organizador_evento WHERE SECUENCIALEVENTO = ?',
+      [eventoId]
+    );
+
+    // Insertar nuevo responsable si se envió
+    if (responsableId) {
+      await connection.execute(
+        'INSERT INTO organizador_evento (SECUENCIALUSUARIO, SECUENCIALEVENTO, ROL_ORGANIZADOR) VALUES (?, ?, ?)',
+        [responsableId, eventoId, 'RESPONSABLE']
+      );
+    }
+
+    await connection.commit();
+
+    res.json({
+      success: true,
+      message: 'Responsable actualizado'
+    });
+  } catch (error) {
+    if (connection) await connection.rollback();
+    console.error('❌ Error al actualizar responsable del evento:', error);
+    res.status(500).json({ error: 'Error al actualizar el responsable', details: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
 // Obtener todos los eventos
 const obtenerEventos = async (req, res) => {
   try {
@@ -492,6 +567,65 @@ const obtenerEventos = async (req, res) => {
       error: 'Error al obtener eventos',
       details: error.message
     });
+  }
+};
+
+// Obtener eventos asignados a un responsable
+const obtenerEventosResponsable = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await pool.execute(
+      `SELECT 
+        e.SECUENCIAL,
+        e.TITULO,
+        e.DESCRIPCION,
+        e.CONTENIDO,
+        e.CODIGOTIPOEVENTO,
+        e.CODIGOMODALIDAD,
+        e.HORAS,
+        e.NOTAAPROBACION,
+        e.CAPACIDAD,
+        e.COSTO,
+        e.ES_PAGADO,
+        e.ASISTENCIAMINIMA,
+        e.FECHAINICIO,
+        e.FECHAFIN,
+        e.Docente,
+        ie.URL_IMAGEN
+       FROM organizador_evento oe
+       INNER JOIN evento e ON oe.SECUENCIALEVENTO = e.SECUENCIAL
+       LEFT JOIN imagen_evento ie ON ie.SECUENCIALEVENTO = e.SECUENCIAL AND ie.TIPO_IMAGEN = 'PORTADA'
+       WHERE oe.SECUENCIALUSUARIO = ?
+       ORDER BY e.SECUENCIAL DESC`,
+      [id]
+    );
+
+      const eventosConCarreras = [];
+
+      for (const evento of rows) {
+        const [carreras] = await pool.execute(
+          `SELECT c.SECUENCIAL, c.NOMBRE_CARRERA
+           FROM evento_carrera ec
+           INNER JOIN carrera c ON ec.SECUENCIALCARRERA = c.SECUENCIAL
+           WHERE ec.SECUENCIALEVENTO = ?`,
+          [evento.SECUENCIAL]
+        );
+
+        eventosConCarreras.push({
+          ...evento,
+          CARRERAS: carreras
+        });
+      }
+
+      const mapped = eventosConCarreras.map(ev => ({
+        ...ev,
+        URL_IMAGEN: buildImageUrl(ev.URL_IMAGEN, req)
+      }));
+
+    res.json({ success: true, data: mapped });
+  } catch (error) {
+    console.error('❌ Error al obtener eventos del responsable:', error);
+    res.status(500).json({ error: 'Error al obtener eventos del responsable', details: error.message });
   }
 };
 
@@ -702,7 +836,9 @@ module.exports = {
   obtenerImagenes,
   obtenerEventos,
   obtenerEvento,
+  obtenerEventosResponsable,
   actualizarEvento,
+  actualizarResponsableEvento,
   eliminarEvento,
   actualizarImagenEvento,
   obtenerEventosFiltrados
