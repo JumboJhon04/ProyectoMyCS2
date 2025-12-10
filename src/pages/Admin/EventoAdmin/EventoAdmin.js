@@ -127,6 +127,9 @@ const EventoAdmin = () => {
                       <span className="course-price">
                         ${Number(course.price || 0).toFixed(2)}
                       </span>
+                    </div>
+                    
+                    <div className="course-actions">
                       <button className="edit-btn" onClick={() => handleEditResponsable(course)}>
                         Editar responsable
                       </button>

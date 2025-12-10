@@ -19,7 +19,6 @@ export default function CoursesFilters() {
   const [query, setQuery] = useState('');
   const [tipo, setTipo] = useState('');
   const [costo, setCosto] = useState('');
-  const [soloAptos, setSoloAptos] = useState(false);
   const [disponibilidad, setDisponibilidad] = useState('todos'); // 'todos' | 'aptos' | 'noaptos'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -99,16 +98,17 @@ export default function CoursesFilters() {
       const tieneCarrerasAsociadas = eventoCarreras.length > 0;
       const esApto = !tieneCarrerasAsociadas || eventoCarreras.some(id => userCareerIds.includes(id));
 
-      // Disponibilidad: todos / solo aptos / solo no aptos (cuando haya carreras asociadas)
+      // Filtro por disponibilidad según carrera del usuario
+      // Si el usuario tiene carreras y activa el filtro "Cursos de mi Carrera", mostrar SOLO cursos de su carrera
       let matchesDisponibilidad = true;
-      if (disponibilidad === 'aptos') matchesDisponibilidad = esApto;
-      if (disponibilidad === 'noaptos') matchesDisponibilidad = tieneCarrerasAsociadas && !esApto;
+      if (userCareerIds.length > 0 && disponibilidad === 'aptos') {
+        // Solo mostrar si el curso tiene carreras asociadas Y el usuario es apto
+        matchesDisponibilidad = tieneCarrerasAsociadas && esApto;
+      }
 
-      const matchesApto = !soloAptos || esApto;
-
-      return matchesQuery && matchesTipo && matchesCosto && matchesApto && matchesDisponibilidad;
+      return matchesQuery && matchesTipo && matchesCosto && matchesDisponibilidad;
     });
-  }, [courses, query, tipo, costo, soloAptos, disponibilidad, userCareerIds]);
+  }, [courses, query, tipo, costo, disponibilidad, userCareerIds]);
 
   // Nombre de la sección activa
   const sectionName = tipoOptions.find(opt => opt.value === tipo)?.label || 'Todos los eventos';
@@ -178,34 +178,17 @@ export default function CoursesFilters() {
             </div>
             {userCareerIds.length > 0 && (
               <div className="filters-group">
-                <span className="filters-label">Aptitud:</span>
+                <span className="filters-label">Mi Carrera:</span>
                 <button
-                  className={`filter-chip${soloAptos ? ' selected' : ''}`}
-                  onClick={() => setSoloAptos(prev => !prev)}
+                  className={`filter-chip${disponibilidad === 'aptos' ? ' selected' : ''}`}
+                  onClick={() => setDisponibilidad(disponibilidad === 'aptos' ? 'todos' : 'aptos')}
                   type="button"
+                  title="Mostrar solo cursos disponibles para mi carrera"
                 >
-                  Solo aptos para mi carrera
+                  Cursos de mi Carrera
                 </button>
               </div>
             )}
-            <div className="filters-group">
-              <span className="filters-label">Disponibilidad:</span>
-              <button
-                className={`filter-chip${disponibilidad === 'todos' ? ' selected' : ''}`}
-                onClick={() => setDisponibilidad('todos')}
-                type="button"
-              >Todos</button>
-              <button
-                className={`filter-chip${disponibilidad === 'aptos' ? ' selected' : ''}`}
-                onClick={() => setDisponibilidad('aptos')}
-                type="button"
-              >Aptos</button>
-              <button
-                className={`filter-chip${disponibilidad === 'noaptos' ? ' selected' : ''}`}
-                onClick={() => setDisponibilidad('noaptos')}
-                type="button"
-              >No aptos</button>
-            </div>
           </div>
 
           {/* Estados de Carga y Error */}

@@ -110,7 +110,7 @@ function AppLayout() {
           display: isAuthRoute ? 'block' : 'flex',
           flexDirection: 'column',
           height: '100vh',
-          overflow: 'hidden',
+          overflow: 'auto',
           marginLeft: showSidebar ? undefined : 0
         }}
       >
