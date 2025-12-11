@@ -157,11 +157,11 @@ const ProfesorCourseDetail = () => {
     formData.append('moduloId', selectedModuleId);
     // ... agregar campos al formData ...
     for (const key in newTaskData) {
-        if (key === 'archivo') {
-            if (newTaskData.archivo) formData.append('archivoAdjunto', newTaskData.archivo);
-        } else {
-            formData.append(key, newTaskData[key]);
-        }
+      if (key === 'archivo') {
+        if (newTaskData.archivo) formData.append('archivoAdjunto', newTaskData.archivo);
+      } else {
+        formData.append(key, newTaskData[key]);
+      }
     }
 
     try {
@@ -277,10 +277,10 @@ const ProfesorCourseDetail = () => {
           <FaBook /> Módulos del Curso
         </div>
 
-        {/* LISTA DE MÓDULOS */}
+        {/* LISTA DE MÓDULOS (TARJETAS) - Siempre en el grid */}
         <div className="course-modules-list-profesor">
           {modules.length === 0 ? <p className="no-modules">No hay módulos definidos.</p> :
-            modules.map((module) => {
+            modules.map((module, index) => {
               const taskCount = tasksByModule[module.SECUENCIAL]?.length || 0;
               const resourceCount = resourcesByModule[module.SECUENCIAL]?.length || 0;
               const examCount = examsByModule[module.SECUENCIAL]?.length || 0; // Contar exámenes
@@ -289,8 +289,9 @@ const ProfesorCourseDetail = () => {
               return (
                 <div
                   key={module.SECUENCIAL}
-                  className={`module-card-profesor ${isSelected ? 'selected' : ''}`}
+                  className={`module-card-profesor ${isSelected ? 'selected' : ''} ${selectedModuleForView && !isSelected ? 'dimmed' : ''}`}
                   onClick={() => setSelectedModuleForView(isSelected ? null : module)}
+                  style={{ position: 'relative', zIndex: isSelected ? 10 : selectedModuleForView ? 6 : 2 }}
                 >
                   <div className="module-card-icon"><FaBook /></div>
                   <h4 className="module-card-title-centered">{module.TITULO}</h4>
@@ -302,13 +303,18 @@ const ProfesorCourseDetail = () => {
             })}
         </div>
 
-        {/* --- OVERLAY DETALLE MÓDULO --- */}
+        {/* OVERLAY OSCURO */}
         {selectedModuleForView && (
-          <div className="dark-overlay" onClick={() => setSelectedModuleForView(null)} />
+          <div
+            className="dark-overlay"
+            onClick={() => setSelectedModuleForView(null)}
+          />
         )}
 
+        {/* CONTENIDO EXPANDIDO - Aparece DESPUÉS del grid completo */}
         {selectedModuleForView && (
-          <div className="module-expanded-content">
+          <div className="module-expanded-content-below-grid">
+            {/* CABECERA DEL MÓDULO EXPANDIDO */}
             <div className="expanded-content-header">
               <div className="expanded-header-left">
                 <div className="module-modal-icon"><FaBook /></div>
@@ -317,7 +323,7 @@ const ProfesorCourseDetail = () => {
                   <p className="module-modal-description">{selectedModuleForView.DESCRIPCION}</p>
                 </div>
               </div>
-              
+
               <div className="expanded-actions" style={{ display: 'flex', gap: '10px' }}>
                 <button
                   className="add-task-btn-expanded"
@@ -385,7 +391,7 @@ const ProfesorCourseDetail = () => {
               {isEvaluative && (
                 <>
                   <hr style={{ margin: '20px 0', borderTop: '1px solid #eee' }} />
-                  
+
                   {/* B. TAREAS */}
                   <h3 className="tasks-title"><FaFileAlt /> Tareas ({tasksByModule[selectedModuleForView.SECUENCIAL]?.length || 0})</h3>
                   {tasksByModule[selectedModuleForView.SECUENCIAL]?.length > 0 ? (
@@ -408,26 +414,26 @@ const ProfesorCourseDetail = () => {
                   <hr style={{ margin: '20px 0', borderTop: '1px solid #eee' }} />
 
                   {/* C. EVALUACIONES (NUEVO) */}
-                  <h3 className="tasks-title" style={{color: '#d97706'}}>
+                  <h3 className="tasks-title" style={{ color: '#d97706' }}>
                     <FaClipboardList /> Exámenes ({examsByModule[selectedModuleForView.SECUENCIAL]?.length || 0})
                   </h3>
                   {examsByModule[selectedModuleForView.SECUENCIAL]?.length > 0 ? (
                     <div className="tasks-list-modal">
                       {examsByModule[selectedModuleForView.SECUENCIAL].map(exam => (
-                        <div key={exam.SECUENCIAL} className="task-item-modal" style={{borderLeft: '4px solid #d97706'}}>
+                        <div key={exam.SECUENCIAL} className="task-item-modal" style={{ borderLeft: '4px solid #d97706' }}>
                           <div className="task-modal-info">
-                            <FaClipboardList className="task-modal-icon" style={{color: '#d97706'}} />
+                            <FaClipboardList className="task-modal-icon" style={{ color: '#d97706' }} />
                             <div>
                               <h4>{exam.TITULO}</h4>
                               <p className="task-modal-date">
-                                <FaClock style={{marginRight:'5px'}}/> 
+                                <FaClock style={{ marginRight: '5px' }} />
                                 {exam.DURACION_MINUTOS} mins • Inicio: {new Date(exam.FECHA_INICIO).toLocaleDateString()}
                               </p>
                             </div>
                           </div>
-                          <button 
-                            className="task-modal-action-btn" 
-                            style={{background: '#fef3c7', color: '#92400e'}}
+                          <button
+                            className="task-modal-action-btn"
+                            style={{ background: '#fef3c7', color: '#92400e' }}
                             onClick={() => navigate(`/profesor/exam-editor/${exam.SECUENCIAL}`)}
                           >
                             <FaEdit /> Editar
@@ -452,9 +458,9 @@ const ProfesorCourseDetail = () => {
               <button onClick={() => setShowModal(false)} className="close-modal-btn"><FaTimes /></button>
             </div>
             <form onSubmit={handleCreateModule}>
-                <div className="form-group"><label>Título</label><input type="text" value={newModuleData.titulo} onChange={(e) => setNewModuleData({ ...newModuleData, titulo: e.target.value })} required /></div>
-                <div className="form-group"><label>Descripción</label><textarea value={newModuleData.descripcion} onChange={(e) => setNewModuleData({ ...newModuleData, descripcion: e.target.value })} /></div>
-                <div className="modal-actions"><button type="button" onClick={() => setShowModal(false)} className="cancel-btn">Cancelar</button><button type="submit" className="confirm-btn" disabled={creating}>Crear</button></div>
+              <div className="form-group"><label>Título</label><input type="text" value={newModuleData.titulo} onChange={(e) => setNewModuleData({ ...newModuleData, titulo: e.target.value })} required /></div>
+              <div className="form-group"><label>Descripción</label><textarea value={newModuleData.descripcion} onChange={(e) => setNewModuleData({ ...newModuleData, descripcion: e.target.value })} /></div>
+              <div className="modal-actions"><button type="button" onClick={() => setShowModal(false)} className="cancel-btn">Cancelar</button><button type="submit" className="confirm-btn" disabled={creating}>Crear</button></div>
             </form>
           </div>
         </div>
@@ -465,15 +471,15 @@ const ProfesorCourseDetail = () => {
           <div className="modal-content" style={{ maxWidth: '600px' }}>
             <div className="modal-header"><h3>Nueva Tarea</h3><button onClick={() => setShowTaskModal(false)} className="close-modal-btn"><FaTimes /></button></div>
             <form onSubmit={handleCreateTask}>
-                <div className="form-group"><label>Título</label><input type="text" required onChange={e => setNewTaskData({ ...newTaskData, titulo: e.target.value })} /></div>
-                <div className="form-group"><label>Instrucciones</label><textarea rows="3" onChange={e => setNewTaskData({ ...newTaskData, descripcion: e.target.value })} /></div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                    <div className="form-group" style={{ flex: 1 }}><label>Apertura</label><input type="datetime-local" required onChange={e => setNewTaskData({ ...newTaskData, fechaApertura: e.target.value })} /></div>
-                    <div className="form-group" style={{ flex: 1 }}><label>Límite</label><input type="datetime-local" required onChange={e => setNewTaskData({ ...newTaskData, fechaLimite: e.target.value })} /></div>
-                </div>
-                <div className="form-group"><label>Puntaje</label><input type="number" defaultValue="10" onChange={e => setNewTaskData({ ...newTaskData, puntos: e.target.value })} /></div>
-                <div className="form-group"><label>Archivo Guía</label><input type="file" onChange={e => setNewTaskData({ ...newTaskData, archivo: e.target.files[0] })} /></div>
-                <div className="modal-actions"><button type="button" onClick={() => setShowTaskModal(false)} className="cancel-btn">Cancelar</button><button type="submit" className="confirm-btn" disabled={creating}>Guardar</button></div>
+              <div className="form-group"><label>Título</label><input type="text" required onChange={e => setNewTaskData({ ...newTaskData, titulo: e.target.value })} /></div>
+              <div className="form-group"><label>Instrucciones</label><textarea rows="3" onChange={e => setNewTaskData({ ...newTaskData, descripcion: e.target.value })} /></div>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="form-group" style={{ flex: 1 }}><label>Apertura</label><input type="datetime-local" required onChange={e => setNewTaskData({ ...newTaskData, fechaApertura: e.target.value })} /></div>
+                <div className="form-group" style={{ flex: 1 }}><label>Límite</label><input type="datetime-local" required onChange={e => setNewTaskData({ ...newTaskData, fechaLimite: e.target.value })} /></div>
+              </div>
+              <div className="form-group"><label>Puntaje</label><input type="number" defaultValue="10" onChange={e => setNewTaskData({ ...newTaskData, puntos: e.target.value })} /></div>
+              <div className="form-group"><label>Archivo Guía</label><input type="file" onChange={e => setNewTaskData({ ...newTaskData, archivo: e.target.files[0] })} /></div>
+              <div className="modal-actions"><button type="button" onClick={() => setShowTaskModal(false)} className="cancel-btn">Cancelar</button><button type="submit" className="confirm-btn" disabled={creating}>Guardar</button></div>
             </form>
           </div>
         </div>
@@ -484,10 +490,10 @@ const ProfesorCourseDetail = () => {
           <div className="modal-content">
             <div className="modal-header"><h3>Subir Material</h3><button onClick={() => setShowResourceModal(false)} className="close-modal-btn"><FaTimes /></button></div>
             <form onSubmit={handleCreateResource}>
-                <div className="form-group"><label>Título</label><input type="text" required onChange={e => setNewResourceData({ ...newResourceData, titulo: e.target.value })} /></div>
-                <div className="form-group"><label>Descripción</label><textarea rows="2" onChange={e => setNewResourceData({ ...newResourceData, descripcion: e.target.value })} /></div>
-                <div className="form-group"><label>Archivo</label><input type="file" required onChange={e => setNewResourceData({ ...newResourceData, archivo: e.target.files[0] })} /></div>
-                <div className="modal-actions"><button type="button" onClick={() => setShowResourceModal(false)} className="cancel-btn">Cancelar</button><button type="submit" className="confirm-btn" disabled={creating}>Subir</button></div>
+              <div className="form-group"><label>Título</label><input type="text" required onChange={e => setNewResourceData({ ...newResourceData, titulo: e.target.value })} /></div>
+              <div className="form-group"><label>Descripción</label><textarea rows="2" onChange={e => setNewResourceData({ ...newResourceData, descripcion: e.target.value })} /></div>
+              <div className="form-group"><label>Archivo</label><input type="file" required onChange={e => setNewResourceData({ ...newResourceData, archivo: e.target.files[0] })} /></div>
+              <div className="modal-actions"><button type="button" onClick={() => setShowResourceModal(false)} className="cancel-btn">Cancelar</button><button type="submit" className="confirm-btn" disabled={creating}>Subir</button></div>
             </form>
           </div>
         </div>
@@ -526,7 +532,7 @@ const ProfesorCourseDetail = () => {
         </div>
       )}
       {showPreview && <FilePreview fileUrl={previewFile.url} fileName={previewFile.name} onClose={() => setShowPreview(false)} />}
-      
+
       <button className="fab-profesor" onClick={() => setShowModal(true)}><FaPlus /></button>
     </div>
   );

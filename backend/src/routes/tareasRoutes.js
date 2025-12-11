@@ -11,7 +11,8 @@ router.post('/entregar', uploadEntregas.single('archivoDeber'), tareasController
 
 // Otras rutas
 router.get('/modulo/:moduloId', tareasController.listarTareasPorModulo);
-router.put('/calificar/:entregaId', tareasController.calificarEntrega);
+router.get('/modulo/:moduloId/estudiante/:estudianteId', tareasController.listarTareasEstudiantePorModulo);
+// Ver quién entregó
 router.get('/:tareaId/entregas', tareasController.listarEntregasPorTarea);
 
 // Nueva ruta: Obtener entregas de un estudiante en un evento específico

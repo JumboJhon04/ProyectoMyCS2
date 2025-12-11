@@ -6,14 +6,14 @@ import FilePreview from '../../components/FilePreview/FilePreview';
 import API_URL from '../../config/api';
 import './MaterialTab.css';
 
-const MaterialTab = ({ topics, eventType, courseData }) => {
+const MaterialTab = ({ topics, eventType, courseData, modules, loading }) => {
     const { user } = useUser();
     const navigate = useNavigate();
-    const [modulos, setModulos] = useState([]);
+    const modulos = modules || [];
     const [entregas, setEntregas] = useState([]);
     const [examsByModule, setExamsByModule] = useState({}); // NUEVO ESTADO PARA EXAMENES
     const [intentos, setIntentos] = useState([]); // NUEVO: Estado para intentos de examenes
-    const [loading, setLoading] = useState(true);
+    // loading viene de props
     const [selectedTarea, setSelectedTarea] = useState(null);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [uploadFile, setUploadFile] = useState(null);
@@ -24,30 +24,15 @@ const MaterialTab = ({ topics, eventType, courseData }) => {
     const [showPreview, setShowPreview] = useState(false);
     const [previewFile, setPreviewFile] = useState({ url: '', name: '' });
 
-    // Obtener módulos con tareas y recursos
+    // Nuevo estado para módulo seleccionado (similar al profesor)
+    const [selectedModule, setSelectedModule] = useState(null);
+
+    // Cargar exámenes cuando cambian los módulos
     useEffect(() => {
-        const fetchModulos = async () => {
-            if (!courseData?.SECUENCIAL) return;
-
-            try {
-                setLoading(true);
-                const response = await fetch(`${API_URL}/api/modulos/evento/${courseData.SECUENCIAL}`);
-                const data = await response.json();
-
-                if (data.success) {
-                    setModulos(data.data || []);
-                    // Cargar examenes para cada modulo
-                    data.data.forEach(m => fetchExams(m.SECUENCIAL));
-                }
-            } catch (error) {
-                console.error('Error al cargar módulos:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchModulos();
-    }, [courseData]);
+        if (modulos.length > 0) {
+            modulos.forEach(m => fetchExams(m.SECUENCIAL));
+        }
+    }, [modulos]);
 
     // Obtener entregas del estudiante
     useEffect(() => {
@@ -196,37 +181,74 @@ const MaterialTab = ({ topics, eventType, courseData }) => {
                 </p>
             </div>
 
-            <div className="modulos-list">
-                {modulos.map((modulo, index) => (
-                    <div key={modulo.SECUENCIAL} className="modulo-card">
-                        <div className="modulo-header">
-                            <h4 className="modulo-title">
-                                <span className="modulo-number">Módulo {index + 1}:</span> {modulo.TITULO}
-                            </h4>
-                            {modulo.DESCRIPCION && (
-                                <p className="modulo-description">{modulo.DESCRIPCION}</p>
-                            )}
-                        </div>
+            {/* GRID DE TARJETAS DE MÓDULOS */}
+            <div className="modulos-grid-estudiante">
+                {modulos.map((modulo, index) => {
+                    const isSelected = selectedModule?.SECUENCIAL === modulo.SECUENCIAL;
+                    const taskCount = modulo.tareas?.length || 0;
+                    const resourceCount = modulo.recursos?.length || 0;
 
-                        {/* Recursos del módulo */}
-                        {modulo.recursos && modulo.recursos.length > 0 && (
-                            <div className="modulo-section">
-                                <h5 className="section-title">
-                                    <FaBook /> Recursos
-                                </h5>
-                                <div className="recursos-list">
-                                    {modulo.recursos.map((recurso) => (
-                                        <div key={recurso.SECUENCIAL} className="recurso-item">
-                                            <FaFilePdf className="recurso-icon" />
-                                            <div className="recurso-info">
-                                                <span className="recurso-name">{recurso.TITULO}</span>
-                                                {recurso.DESCRIPCION && (
-                                                    <span className="recurso-description">{recurso.DESCRIPCION}</span>
-                                                )}
+                    return (
+                        <div
+                            key={modulo.SECUENCIAL}
+                            className={`modulo-card-estudiante ${isSelected ? 'selected' : ''} ${selectedModule && !isSelected ? 'dimmed' : ''}`}
+                            onClick={() => setSelectedModule(isSelected ? null : modulo)}
+                            style={{ position: 'relative', zIndex: isSelected ? 10 : selectedModule ? 6 : 2 }}
+                        >
+                            <div className="modulo-card-icon-estudiante"><FaBook /></div>
+                            <h4 className="modulo-card-title-estudiante">{modulo.TITULO}</h4>
+                            <span className="modulo-card-count-estudiante">
+                                {resourceCount} Materiales • {taskCount} Tareas
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* OVERLAY OSCURO */}
+            {selectedModule && (
+                <div
+                    className="dark-overlay-estudiante"
+                    onClick={() => setSelectedModule(null)}
+                />
+            )}
+
+            {/* CONTENIDO EXPANDIDO DEBAJO DEL GRID */}
+            {selectedModule && (
+                <div className="modulo-expanded-estudiante">
+                    {/* CABECERA */}
+                    <div className="expanded-header-estudiante">
+                        <div className="expanded-header-left-estudiante">
+                            <div className="expanded-icon-estudiante"><FaBook /></div>
+                            <div>
+                                <h2>{selectedModule.TITULO}</h2>
+                                {selectedModule.DESCRIPCION && (
+                                    <p className="expanded-description-estudiante">{selectedModule.DESCRIPCION}</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="expanded-body-estudiante">
+                        {/* RECURSOS */}
+                        {selectedModule.recursos && selectedModule.recursos.length > 0 && (
+                            <div className="expanded-section">
+                                <h3 className="section-title-estudiante">
+                                    <FaFilePdf /> Material de Apoyo ({selectedModule.recursos.length})
+                                </h3>
+                                <div className="recursos-list-expandido">
+                                    {selectedModule.recursos.map((recurso) => (
+                                        <div key={recurso.SECUENCIAL} className="recurso-item-expandido">
+                                            <div className="recurso-info-expandido">
+                                                <FaFilePdf className="recurso-icon-expandido" />
+                                                <div>
+                                                    <h4>{recurso.TITULO}</h4>
+                                                    <p>{recurso.DESCRIPCION || 'Documento informativo'}</p>
+                                                </div>
                                             </div>
                                             <button
                                                 onClick={() => handleOpenPreview(recurso.URL_RECURSO, recurso.TITULO)}
-                                                className="recurso-btn"
+                                                className="recurso-btn-expandido"
                                                 style={{ border: 'none', cursor: 'pointer' }}
                                             >
                                                 <FaEye /> Ver
@@ -237,22 +259,22 @@ const MaterialTab = ({ topics, eventType, courseData }) => {
                             </div>
                         )}
 
-                        {/* Tareas del módulo */}
-                        {modulo.tareas && modulo.tareas.length > 0 && (
-                            <div className="modulo-section">
-                                <h5 className="section-title">
-                                    <FaClipboardList /> Tareas
-                                </h5>
-                                <div className="tareas-list">
-                                    {modulo.tareas.map((tarea) => {
+                        {/* TAREAS */}
+                        {selectedModule.tareas && selectedModule.tareas.length > 0 && (
+                            <div className="expanded-section">
+                                <h3 className="section-title-estudiante">
+                                    <FaClipboardList /> Tareas ({selectedModule.tareas.length})
+                                </h3>
+                                <div className="tareas-list-expandido">
+                                    {selectedModule.tareas.map((tarea) => {
                                         const entrega = getEntregaStatus(tarea.SECUENCIAL);
                                         const vencida = isTareaVencida(tarea.FECHA_LIMITE);
 
                                         return (
-                                            <div key={tarea.SECUENCIAL} className={`tarea-item ${entrega ? 'entregada' : ''} ${vencida && !entrega ? 'vencida' : ''}`}>
-                                                <div className="tarea-header">
-                                                    <div className="tarea-title-section">
-                                                        <h6 className="tarea-title">{tarea.TITULO}</h6>
+                                            <div key={tarea.SECUENCIAL} className={`tarea-item-expandido ${entrega ? 'entregada' : ''} ${vencida && !entrega ? 'vencida' : ''}`}>
+                                                <div className="tarea-header-expandido">
+                                                    <div className="tarea-title-section-expandido">
+                                                        <h6 className="tarea-title-expandido">{tarea.TITULO}</h6>
                                                         {entrega && (
                                                             <span className={`tarea-badge ${entrega.ESTADO === 'CALIFICADO' ? 'calificado-badge' : 'enviado-badge'}`}>
                                                                 {entrega.ESTADO === 'CALIFICADO' ? (
@@ -272,24 +294,24 @@ const MaterialTab = ({ topics, eventType, courseData }) => {
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <span className="tarea-puntos">{tarea.PUNTOS_MAXIMOS} pts</span>
+                                                    <span className="tarea-puntos-expandido">{tarea.PUNTOS_MAXIMOS} pts</span>
                                                 </div>
 
                                                 {tarea.DESCRIPCION && (
-                                                    <p className="tarea-description">{tarea.DESCRIPCION}</p>
+                                                    <p className="tarea-description-expandido">{tarea.DESCRIPCION}</p>
                                                 )}
 
-                                                <div className="tarea-dates">
-                                                    <span className="tarea-date">
+                                                <div className="tarea-dates-expandido">
+                                                    <span className="tarea-date-expandido">
                                                         <FaClock /> Apertura: {formatDate(tarea.FECHA_APERTURA)}
                                                     </span>
-                                                    <span className="tarea-date">
+                                                    <span className="tarea-date-expandido">
                                                         <FaClock /> Límite: {formatDate(tarea.FECHA_LIMITE)}
                                                     </span>
                                                 </div>
 
                                                 {tarea.URL_ADJUNTO && (
-                                                    <div className="tarea-adjunto">
+                                                    <div className="tarea-adjunto-expandido">
                                                         <button
                                                             onClick={() => handleOpenPreview(tarea.URL_ADJUNTO, `Consigna - ${tarea.TITULO}`)}
                                                             style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
@@ -300,25 +322,26 @@ const MaterialTab = ({ topics, eventType, courseData }) => {
                                                 )}
 
                                                 {entrega && entrega.RETROALIMENTACION && (
-                                                    <div className="tarea-retroalimentacion">
+                                                    <div className="tarea-retroalimentacion-expandido">
                                                         <strong>Retroalimentación:</strong>
                                                         <p>{entrega.RETROALIMENTACION}</p>
                                                     </div>
                                                 )}
 
-                                                <div className="tarea-actions">
+                                                <div className="tarea-actions-expandido">
                                                     {entrega ? (
                                                         <button
                                                             onClick={() => handleOpenPreview(entrega.URL_ARCHIVO, `Mi entrega - ${tarea.TITULO}`)}
-                                                            className="tarea-btn view-btn"
+                                                            className="tarea-btn-expandido view-btn"
                                                             style={{ border: 'none', cursor: 'pointer' }}
                                                         >
                                                             <FaEye /> Ver mi entrega
                                                         </button>
                                                     ) : (
                                                         <button
-                                                            className="tarea-btn upload-btn"
-                                                            onClick={() => {
+                                                            className="tarea-btn-expandido upload-btn"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
                                                                 setSelectedTarea(tarea);
                                                                 setShowUploadModal(true);
                                                             }}
@@ -336,13 +359,13 @@ const MaterialTab = ({ topics, eventType, courseData }) => {
                         )}
 
                         {/* Exámenes del módulo (NUEVO) */}
-                        {examsByModule[modulo.SECUENCIAL] && examsByModule[modulo.SECUENCIAL].length > 0 && (
+                        {examsByModule[selectedModule.SECUENCIAL] && examsByModule[selectedModule.SECUENCIAL].length > 0 && (
                             <div className="modulo-section">
                                 <h5 className="section-title" style={{ color: '#d97706' }}>
                                     <FaClipboardList /> Evaluaciones
                                 </h5>
                                 <div className="recursos-list">
-                                    {examsByModule[modulo.SECUENCIAL].map((exam) => {
+                                    {examsByModule[selectedModule.SECUENCIAL].map((exam) => {
                                         const intento = intentos.find(i => i.SECUENCIALEVALUACION === exam.SECUENCIAL);
                                         const isCompleted = !!intento;
 
@@ -380,14 +403,14 @@ const MaterialTab = ({ topics, eventType, courseData }) => {
                             </div>
                         )}
 
-                        {(!modulo.tareas || modulo.tareas.length === 0) && (!modulo.recursos || modulo.recursos.length === 0) && (
-                            <div className="empty-modulo">
+                        {(!selectedModule.tareas || selectedModule.tareas.length === 0) && (!selectedModule.recursos || selectedModule.recursos.length === 0) && (!examsByModule[selectedModule.SECUENCIAL] || examsByModule[selectedModule.SECUENCIAL].length === 0) && (
+                            <div className="empty-modulo-expandido">
                                 <p>Este módulo no tiene contenido disponible aún.</p>
                             </div>
                         )}
                     </div>
-                ))}
-            </div>
+                </div>
+            )}
 
             {/* Modal de subida de tarea */}
             {showUploadModal && (

@@ -62,18 +62,28 @@ exports.listarTareasPorModulo = async (req, res) => {
     }
 };
 
-// 4. Calificar Entrega (Profesor)
-exports.calificarEntrega = async (req, res) => {
-    const { entregaId } = req.params;
-    const { calificacion, retroalimentacion } = req.body;
+// 3.5 Listar Tareas de un Módulo CON ESTADO DEL ESTUDIANTE
+exports.listarTareasEstudiantePorModulo = async (req, res) => {
+    const { moduloId, estudianteId } = req.params;
     try {
-        await pool.query(
-            `UPDATE entrega_tarea SET CALIFICACION = ?, RETROALIMENTACION = ?, ESTADO = 'CALIFICADO' WHERE SECUENCIAL = ?`,
-            [calificacion, retroalimentacion, entregaId]
+        const [tareas] = await pool.query(
+            `SELECT 
+                t.*,
+                et.ESTADO as ESTADO_ENTREGA,
+                et.CALIFICACION,
+                et.RETROALIMENTACION,
+                et.FECHA_ENTREGA,
+                et.URL_ARCHIVO as ARCHIVO_ENTREGADO
+             FROM tarea t
+             LEFT JOIN entrega_tarea et ON t.SECUENCIAL = et.SECUENCIALTAREA AND et.SECUENCIALESTUDIANTE = ?
+             WHERE t.SECUENCIALMODULO = ?
+             ORDER BY t.FECHA_LIMITE ASC`,
+            [estudianteId, moduloId]
         );
-        res.json({ success: true, message: 'Calificación registrada' });
+        res.json({ success: true, data: tareas });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Error al calificar' });
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Error al listar tareas del estudiante' });
     }
 };
 

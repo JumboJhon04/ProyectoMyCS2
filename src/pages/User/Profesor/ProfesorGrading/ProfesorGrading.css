@@ -13,11 +13,20 @@
     background: white;
     padding: 1.5rem;
     border-radius: 12px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
-.grading-header h1 { margin: 0; font-size: 1.5rem; color: #1e293b; }
-.task-id-label { margin: 0; color: #64748b; font-size: 0.9rem; }
+.grading-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #1e293b;
+}
+
+.task-id-label {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.9rem;
+}
 
 .back-btn {
     background: #e2e8f0;
@@ -32,7 +41,10 @@
     color: #475569;
     transition: all 0.2s;
 }
-.back-btn:hover { background: #cbd5e1; }
+
+.back-btn:hover {
+    background: #cbd5e1;
+}
 
 /* TABLA */
 .table-responsive {
@@ -42,19 +54,69 @@
     overflow: hidden;
 }
 
-.grading-table { width: 100%; border-collapse: collapse; }
-.grading-table th { background: #f8fafc; text-align: left; padding: 1rem; color: #64748b; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
-.grading-table td { padding: 1rem; border-top: 1px solid #e2e8f0; vertical-align: middle; }
+.grading-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.grading-table th {
+    background: #f8fafc;
+    text-align: left;
+    padding: 1rem;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.grading-table td {
+    padding: 1rem;
+    border-top: 1px solid #e2e8f0;
+    vertical-align: middle;
+}
 
 /* Estilos de Fila */
-.row-graded { background-color: #f0fdf4; } /* Verde muy suave si ya está calificado */
+.row-graded {
+    background-color: #f0fdf4;
+}
 
-.student-info { display: flex; align-items: center; gap: 10px; }
-.student-icon { width: 35px; height: 35px; background: #e0f2fe; color: #0284c7; border-radius: 50%; display: flex; alignItems: center; justify-content: center; }
-.student-info span { display: block; font-size: 0.8rem; color: #94a3b8; }
+/* Verde muy suave si ya está calificado */
 
-.date-info { color: #64748b; font-size: 0.9rem; display: flex; flex-direction: column; }
-.date-info small { font-size: 0.75rem; color: #94a3b8; }
+.student-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.student-icon {
+    width: 35px;
+    height: 35px;
+    background: #e0f2fe;
+    color: #0284c7;
+    border-radius: 50%;
+    display: flex;
+    alignItems: center;
+    justify-content: center;
+}
+
+.student-info span {
+    display: block;
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+.date-info {
+    color: #64748b;
+    font-size: 0.9rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.date-info small {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
 
 .download-link {
     text-decoration: none;
@@ -69,7 +131,10 @@
     gap: 5px;
     transition: 0.2s;
 }
-.download-link:hover { background: #dbeafe; }
+
+.download-link:hover {
+    background: #dbeafe;
+}
 
 .grade-input {
     width: 60px;
@@ -80,7 +145,11 @@
     font-weight: bold;
     font-size: 1rem;
 }
-.grade-input:focus { border-color: #3b82f6; outline: none; }
+
+.grade-input:focus {
+    border-color: #3b82f6;
+    outline: none;
+}
 
 .feedback-input {
     width: 100%;
@@ -105,9 +174,19 @@
     gap: 5px;
     transition: 0.2s;
 }
-.save-grade-btn:hover { background: #2563eb; }
-.save-grade-btn.updated { background: #10b981; } /* Verde si es actualizar */
-.save-grade-btn.updated:hover { background: #059669; }
+
+.save-grade-btn:hover {
+    background: #2563eb;
+}
+
+.save-grade-btn.updated {
+    background: #10b981;
+}
+
+/* Verde si es actualizar */
+.save-grade-btn.updated:hover {
+    background: #059669;
+}
 
 .empty-state-grading {
     text-align: center;

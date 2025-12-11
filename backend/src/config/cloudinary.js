@@ -74,12 +74,13 @@ const uploadHome = multer({
 });
 
 // --- NUEVO: Configuración para TAREAS (Archivos que sube el profesor) ---
+// --- NUEVO: Configuración para TAREAS (Archivos que sube el profesor) ---
 const tareasStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'material_clase', // Nombre de la carpeta en Cloudinary
     allowed_formats: ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'zip', 'rar', 'jpg', 'png'],
-    resource_type: 'auto' // 'auto' permite detectar si es imagen o archivo raw (pdf/doc)
+    resource_type: 'raw' // 'raw' es más seguro para archivos mixtos y PDFs
   }
 });
 
@@ -89,19 +90,19 @@ const entregasStorage = new CloudinaryStorage({
   params: {
     folder: 'deberes_estudiantes',
     allowed_formats: ['pdf', 'doc', 'docx', 'zip', 'rar', 'jpg', 'png', 'txt'],
-    resource_type: 'auto'
+    resource_type: 'raw'
   }
 });
 
 // ... (MANTÉN TUS UPLOADS EXISTENTES) ...
 
 // --- NUEVO: Multer instances ---
-const uploadTareas = multer({ 
+const uploadTareas = multer({
   storage: tareasStorage,
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB límite
 });
 
-const uploadEntregas = multer({ 
+const uploadEntregas = multer({
   storage: entregasStorage,
   limits: { fileSize: 20 * 1024 * 1024 } // 20MB límite (los deberes pueden ser pesados)
 });
