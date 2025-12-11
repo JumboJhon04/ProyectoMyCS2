@@ -5,32 +5,32 @@ const { buildImageUrl } = require('../utils/imageUrlHelper');
 // Crear evento
 const crearEvento = async (req, res) => {
   let connection;
-  
+
   try {
     connection = await pool.getConnection();
     await connection.beginTransaction();
-    
-    const { 
+
+    const {
       title, type, attendanceRequired, passingGrade,
       capacity, hours, modality, cost, description,
       docente, objective, topics, startDate, endDate, carreras,
       responsableId
     } = req.body;
-    
+
     // Log request body and file for debugging
     console.log('📝 Creando evento:', title);
     console.log('DEBUG req.body:', req.body);
     console.log('DEBUG req.file:', req.file);
-    
+
     if (!title || !type) {
-      return res.status(400).json({ 
-        error: 'El nombre y tipo de evento son obligatorios' 
+      return res.status(400).json({
+        error: 'El nombre y tipo de evento son obligatorios'
       });
     }
 
     if (!req.file) {
-      return res.status(400).json({ 
-        error: 'La imagen del evento es obligatoria' 
+      return res.status(400).json({
+        error: 'La imagen del evento es obligatoria'
       });
     }
 
@@ -173,7 +173,7 @@ const crearEvento = async (req, res) => {
       await connection.rollback();
     }
     console.error('❌ Error al crear evento:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Error al guardar el evento',
       details: error.message
     });
@@ -248,11 +248,11 @@ const actualizarImagenEvento = async (req, res) => {
 // Actualizar evento
 const actualizarEvento = async (req, res) => {
   let connection;
-  
+
   try {
     connection = await pool.getConnection();
     await connection.beginTransaction();
-    
+
     const eventoId = req.params.id;
 
     // Aceptar formato plano o con `meta` (frontend usa `meta`) y aceptar aliases en español/inglés
@@ -277,13 +277,13 @@ const actualizarEvento = async (req, res) => {
     const startDate = source.startDate;
     const endDate = source.endDate;
     const carreras = source.carreras;
-    
+
     console.log('📝 Actualizando evento ID:', eventoId);
     console.log('👨‍🏫 Docente:', docente);
-    
+
     if (!title || !type) {
-      return res.status(400).json({ 
-        error: 'El nombre y tipo de evento son obligatorios' 
+      return res.status(400).json({
+        error: 'El nombre y tipo de evento son obligatorios'
       });
     }
 
@@ -363,8 +363,8 @@ const actualizarEvento = async (req, res) => {
 
     if (result.affectedRows === 0) {
       await connection.rollback();
-      return res.status(404).json({ 
-        error: 'Evento no encontrado' 
+      return res.status(404).json({
+        error: 'Evento no encontrado'
       });
     }
 
@@ -393,7 +393,7 @@ const actualizarEvento = async (req, res) => {
 
     if (carreras) {
       let carrerasArray = [];
-      
+
       if (typeof carreras === 'string') {
         try {
           carrerasArray = JSON.parse(carreras);
@@ -418,7 +418,7 @@ const actualizarEvento = async (req, res) => {
     // Actualizar imagen si existe
     if (req.file) {
       const imageUrl = req.file.path; // URL de Cloudinary
-      
+
       await connection.execute(
         `DELETE FROM imagen_evento 
          WHERE SECUENCIALEVENTO = ? AND TIPO_IMAGEN = 'PORTADA'`,
@@ -451,7 +451,7 @@ const actualizarEvento = async (req, res) => {
       await connection.rollback();
     }
     console.error('❌ Error al actualizar evento:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Error al actualizar el evento',
       details: error.message
     });
@@ -550,7 +550,7 @@ const obtenerEventos = async (req, res) => {
       );
       evento.CARRERAS = carreras;
     }
-    
+
     // Convertir URL_IMAGEN relativo a URL absoluta
     const mapped = eventos.map(ev => ({
       ...ev,
@@ -563,7 +563,7 @@ const obtenerEventos = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error al obtener eventos:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Error al obtener eventos',
       details: error.message
     });
@@ -600,27 +600,27 @@ const obtenerEventosResponsable = async (req, res) => {
       [id]
     );
 
-      const eventosConCarreras = [];
+    const eventosConCarreras = [];
 
-      for (const evento of rows) {
-        const [carreras] = await pool.execute(
-          `SELECT c.SECUENCIAL, c.NOMBRE_CARRERA
+    for (const evento of rows) {
+      const [carreras] = await pool.execute(
+        `SELECT c.SECUENCIAL, c.NOMBRE_CARRERA
            FROM evento_carrera ec
            INNER JOIN carrera c ON ec.SECUENCIALCARRERA = c.SECUENCIAL
            WHERE ec.SECUENCIALEVENTO = ?`,
-          [evento.SECUENCIAL]
-        );
+        [evento.SECUENCIAL]
+      );
 
-        eventosConCarreras.push({
-          ...evento,
-          CARRERAS: carreras
-        });
-      }
+      eventosConCarreras.push({
+        ...evento,
+        CARRERAS: carreras
+      });
+    }
 
-      const mapped = eventosConCarreras.map(ev => ({
-        ...ev,
-        URL_IMAGEN: buildImageUrl(ev.URL_IMAGEN, req)
-      }));
+    const mapped = eventosConCarreras.map(ev => ({
+      ...ev,
+      URL_IMAGEN: buildImageUrl(ev.URL_IMAGEN, req)
+    }));
 
     res.json({ success: true, data: mapped });
   } catch (error) {
@@ -633,7 +633,7 @@ const obtenerEventosResponsable = async (req, res) => {
 const obtenerEvento = async (req, res) => {
   try {
     const eventoId = req.params.id;
-    
+
     const [rows] = await pool.execute(
       `SELECT 
         e.*,
@@ -646,7 +646,7 @@ const obtenerEvento = async (req, res) => {
        WHERE e.SECUENCIAL = ?`,
       [eventoId]
     );
-    
+
     if (rows.length === 0) {
       return res.status(404).json({
         error: 'Evento no encontrado'
@@ -674,7 +674,7 @@ const obtenerEvento = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error al obtener evento:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Error al obtener evento',
       details: error.message
     });
@@ -690,7 +690,7 @@ const obtenerImagenes = async (req, res) => {
        LEFT JOIN evento e ON ie.SECUENCIALEVENTO = e.SECUENCIAL
        ORDER BY ie.SECUENCIAL DESC`
     );
-    
+
     res.json({
       success: true,
       data: rows.map(img => ({
@@ -700,7 +700,7 @@ const obtenerImagenes = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error al obtener imágenes:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Error al obtener las imágenes',
       details: error.message
     });
@@ -710,11 +710,11 @@ const obtenerImagenes = async (req, res) => {
 // Eliminar evento
 const eliminarEvento = async (req, res) => {
   let connection;
-  
+
   try {
     connection = await pool.getConnection();
     await connection.beginTransaction();
-    
+
     const eventoId = req.params.id;
 
     // ✅ ELIMINAR CARRERAS ASOCIADAS
@@ -737,8 +737,8 @@ const eliminarEvento = async (req, res) => {
 
     if (result.affectedRows === 0) {
       await connection.rollback();
-      return res.status(404).json({ 
-        error: 'Evento no encontrado' 
+      return res.status(404).json({
+        error: 'Evento no encontrado'
       });
     }
 
@@ -754,7 +754,7 @@ const eliminarEvento = async (req, res) => {
       await connection.rollback();
     }
     console.error('❌ Error al eliminar evento:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Error al eliminar evento',
       details: error.message
     });
@@ -826,7 +826,7 @@ const obtenerEventosFiltrados = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error al filtrar eventos:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Error al filtrar eventos',
       details: error.message
     });

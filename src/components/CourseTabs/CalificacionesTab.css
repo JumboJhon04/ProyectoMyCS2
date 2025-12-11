@@ -1,0 +1,382 @@
+/* ==========================================
+   CALIFICACIONES TAB
+   ========================================== */
+
+.calificaciones-tab-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2.5rem;
+}
+
+.calificaciones-header {
+    margin-bottom: 2rem;
+}
+
+.calificaciones-header h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+/* Summary Cards */
+.calificaciones-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.summary-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #ffffff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s;
+}
+
+.summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.summary-icon {
+    font-size: 2.5rem;
+    color: var(--event-primary-color, #3b82f6);
+}
+
+.summary-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.summary-label {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.summary-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.estado-card.aprobado {
+    border-color: #10b981;
+    background: linear-gradient(135deg, #ecfdf5, #ffffff);
+}
+
+.estado-card.aprobado .summary-icon {
+    color: #10b981;
+}
+
+.estado-card.aprobado .summary-value {
+    color: #10b981;
+}
+
+.estado-card.pendiente {
+    border-color: #f59e0b;
+    background: linear-gradient(135deg, #fffbeb, #ffffff);
+}
+
+.estado-card.pendiente .summary-icon {
+    color: #f59e0b;
+}
+
+/* Sections */
+.requisitos-section,
+.calificaciones-table-section,
+.progreso-visual-section {
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 1rem 0;
+}
+
+/* Requisitos */
+.requisitos-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.requisito-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.requisito-status {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.requisito-status.cumplido {
+    background: #d1fae5;
+    color: #10b981;
+}
+
+.requisito-status.pendiente {
+    background: #fef3c7;
+    color: #f59e0b;
+}
+
+.requisito-text {
+    font-size: 0.95rem;
+    color: #475569;
+    font-weight: 500;
+}
+
+/* Tabla de Calificaciones */
+.calificaciones-table {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.table-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    background: var(--event-light-bg, #eff6ff);
+    border-bottom: 2px solid var(--event-accent-color, #60a5fa);
+    font-weight: 600;
+    color: var(--event-secondary-color, #1d4ed8);
+}
+
+.table-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    border-bottom: 1px solid #e2e8f0;
+    transition: background 0.2s;
+}
+
+.table-row:hover {
+    background: #f8fafc;
+}
+
+.table-row:last-child {
+    border-bottom: none;
+}
+
+.table-cell {
+    padding: 1rem 1.25rem;
+    font-size: 0.9rem;
+    color: #475569;
+    display: flex;
+    align-items: center;
+}
+
+.table-header .table-cell {
+    color: var(--event-secondary-color, #1d4ed8);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.nota-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border: 1px solid currentColor;
+}
+
+.pendiente-badge {
+    background: #f1f5f9;
+    color: #94a3b8;
+    border-color: #cbd5e1;
+}
+
+.estado-badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.estado-badge.aprobado {
+    background: #d1fae5;
+    color: #047857;
+    border: 1px solid #6ee7b7;
+}
+
+.estado-badge.pendiente {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fcd34d;
+}
+
+/* Progreso Visual */
+.progreso-visual {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.progreso-bar-large {
+    width: 100%;
+    height: 30px;
+    background: #e2e8f0;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.progreso-fill-large {
+    height: 100%;
+    border-radius: 20px;
+    transition: width 0.5s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 1rem;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.progreso-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: #64748b;
+    position: relative;
+}
+
+.meta-aprobacion {
+    position: absolute;
+    transform: translateX(-50%);
+    font-weight: 600;
+    color: var(--event-primary-color, #3b82f6);
+    background: var(--event-light-bg, #eff6ff);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    border: 1px solid var(--event-accent-color, #60a5fa);
+    white-space: nowrap;
+}
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+
+@media (max-width: 1024px) {
+    .calificaciones-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .table-header,
+    .table-row {
+        grid-template-columns: 2fr 1fr 0.8fr 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .calificaciones-tab-container {
+        padding: 0 1.5rem;
+    }
+
+    .calificaciones-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .calificaciones-table {
+        overflow-x: auto;
+    }
+
+    .table-header,
+    .table-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .table-cell {
+        padding: 0.5rem 1rem;
+    }
+
+    .table-header .table-cell {
+        display: none;
+    }
+
+    .table-row {
+        padding: 1rem;
+    }
+
+    .table-row .table-cell::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #1e293b;
+        margin-right: 0.5rem;
+    }
+
+    .progreso-visual {
+        padding: 1.5rem;
+    }
+
+    .meta-aprobacion {
+        position: static;
+        transform: none;
+        display: inline-block;
+        margin-top: 0.5rem;
+    }
+
+    .progreso-labels {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .calificaciones-tab-container {
+        padding: 0 1rem;
+    }
+
+    .calificaciones-header h3 {
+        font-size: 1.3rem;
+    }
+
+    .summary-card {
+        padding: 1.25rem;
+    }
+
+    .summary-icon {
+        font-size: 2rem;
+    }
+
+    .summary-value {
+        font-size: 1.5rem;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+    }
+
+    .progreso-bar-large {
+        height: 24px;
+    }
+}
