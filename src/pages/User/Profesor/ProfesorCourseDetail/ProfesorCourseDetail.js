@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaBook, FaUsers, FaChartBar, FaPlus, FaTimes, FaFileAlt } from 'react-icons/fa';
+import { 
+    FaBook, FaUsers, FaChartBar, FaPlus, FaTimes, FaFileAlt, 
+    FaFilePdf, FaEdit, FaClipboardList, FaFileUpload 
+} from 'react-icons/fa';
 import './ProfesorCourseDetail.css';
 import API_URL from '../../../../config/api';
 
@@ -8,51 +11,76 @@ const ProfesorCourseDetail = () => {
   const { courseId } = useParams(); 
   const navigate = useNavigate();
   
-  // Estados de datos
+  // --- ESTADOS DE DATOS ---
   const [course, setCourse] = useState(null);
   const [modules, setModules] = useState([]);
-  const [tasksByModule, setTasksByModule] = useState({}); // Almacena tareas por ID de módulo
   const [loading, setLoading] = useState(true);
+  
+  // Tareas y Recursos por Módulo
+  const [tasksByModule, setTasksByModule] = useState({}); 
+  const [resourcesByModule, setResourcesByModule] = useState({});
 
-  // Estados Modal MÓDULO
+  // --- ESTADOS PARA MODALES ---
+  // 1. Crear Módulo
   const [showModal, setShowModal] = useState(false);
   const [newModuleData, setNewModuleData] = useState({ titulo: '', descripcion: '' });
-  
-  // Estados Modal TAREA
+
+  // 2. Crear Tarea
   const [showTaskModal, setShowTaskModal] = useState(false);
-  const [selectedModuleId, setSelectedModuleId] = useState(null);
   const [newTaskData, setNewTaskData] = useState({
       titulo: '', descripcion: '', fechaApertura: '', fechaLimite: '', puntos: 10, archivo: null
   });
-  
+
+  // 3. Crear Recurso (Material)
+  const [showResourceModal, setShowResourceModal] = useState(false);
+  const [newResourceData, setNewResourceData] = useState({ titulo: '', descripcion: '', archivo: null });
+
+  // Estado general de "Cargando/Guardando" para botones
   const [creating, setCreating] = useState(false);
+  const [selectedModuleId, setSelectedModuleId] = useState(null);
+
+  console.log("Datos del curso:", course);
+  // --- LÓGICA DE NEGOCIO: TIPOS DE EVENTO ---
+  // Si el curso ya cargó, verificamos si es Evaluativo (Curso/Taller) o solo Informativo
+  const isEvaluative = course && (course.CODIGOTIPOEVENTO === 'CUR' || course.CODIGOTIPOEVENTO === 'TALL');
 
   // --- CARGA DE DATOS ---
+  // --- CARGA DE DATOS CORREGIDA ---
   const fetchData = async () => {
     try {
       setLoading(true);
-      // 1. Curso
-      const resCourse = await fetch(`${API_URL}/api/docentes/${courseId}/mis-cursos`); // O tu endpoint de detalle evento
-      // NOTA: Si usas el endpoint de lista, filtra o ajusta. 
-      // Por simplicidad, asumo que tienes un endpoint para ver 1 evento o reusamos la lógica de lista.
-      // Si no tienes endpoint de "ver 1 evento", usaremos el de modulos para pintar titulo si viene.
       
-      // 2. Módulos
+      // 1. Obtener Info del Curso
+      // Nota: Usamos el endpoint que devuelve { success: true, data: ... }
+      const resCourse = await fetch(`${API_URL}/api/eventos/${courseId}`);
+      const dataCourse = await resCourse.json();
+      
+      // --- CORRECCIÓN AQUÍ ---
+      if (dataCourse.success && dataCourse.data) {
+          // Si 'data' es un array (ej: [{id:1...}]), tomamos el primero [0]
+          // Si 'data' es un objeto directo (ej: {id:1...}), lo tomamos directo
+          const cursoReal = Array.isArray(dataCourse.data) ? dataCourse.data[0] : dataCourse.data;
+          
+          setCourse(cursoReal);
+          console.log("✅ Curso cargado correctamente:", cursoReal); // Para verificar en consola
+      } else {
+          // Fallback por si la estructura es diferente
+          setCourse(dataCourse[0] || dataCourse);
+      }
+
+      // 2. Obtener Módulos
       const resModules = await fetch(`${API_URL}/api/modulos/evento/${courseId}`);
       const dataModules = await resModules.json();
       
       if (dataModules.success) {
         setModules(dataModules.data);
-        // 3. Cargar tareas para cada módulo encontrado
-        dataModules.data.forEach(mod => fetchTasks(mod.SECUENCIAL));
+        
+        // 3. Cargar contenido interno de cada módulo
+        dataModules.data.forEach(mod => {
+            fetchResources(mod.SECUENCIAL); 
+            fetchTasks(mod.SECUENCIAL);     
+        });
       }
-      
-      // Simulación de datos del curso si no tienes endpoint específico de detalle
-      // (Idealmente deberías tener un endpoint GET /api/eventos/:id público o protegido)
-      const resEvento = await fetch(`${API_URL}/api/eventos/${courseId}`); // Asegúrate de tener esta ruta
-      const dataEvento = await resEvento.json();
-      if(dataEvento) setCourse(dataEvento[0] || dataEvento);
-
     } catch (error) {
       console.error("Error cargando datos:", error);
     } finally {
@@ -60,27 +88,35 @@ const ProfesorCourseDetail = () => {
     }
   };
 
-  // Función auxiliar para cargar tareas de un módulo
+  // Helper: Cargar Tareas
   const fetchTasks = async (moduloId) => {
       try {
           const res = await fetch(`${API_URL}/api/tareas/modulo/${moduloId}`);
           const data = await res.json();
           if (data.success) {
-              setTasksByModule(prev => ({
-                  ...prev,
-                  [moduloId]: data.data
-              }));
+              setTasksByModule(prev => ({ ...prev, [moduloId]: data.data }));
           }
-      } catch (error) {
-          console.error("Error cargando tareas del módulo " + moduloId, error);
-      }
+      } catch (error) { console.error(error); }
+  };
+
+  // Helper: Cargar Recursos
+  const fetchResources = async (moduloId) => {
+      try {
+          const res = await fetch(`${API_URL}/api/recursos/modulo/${moduloId}`);
+          const data = await res.json();
+          if (data.success) {
+              setResourcesByModule(prev => ({ ...prev, [moduloId]: data.data }));
+          }
+      } catch (error) { console.error(error); }
   };
 
   useEffect(() => {
     fetchData();
   }, [courseId]);
 
-  // --- CREAR MÓDULO ---
+  // --- HANDLERS DE CREACIÓN ---
+
+  // 1. Crear Módulo
   const handleCreateModule = async (e) => {
     e.preventDefault();
     if (!newModuleData.titulo) return alert("El título es obligatorio");
@@ -106,10 +142,9 @@ const ProfesorCourseDetail = () => {
     } catch (error) { console.error(error); } finally { setCreating(false); }
   };
 
-  // --- CREAR TAREA ---
+  // 2. Crear Tarea
   const handleCreateTask = async (e) => {
     e.preventDefault();
-    
     const formData = new FormData();
     formData.append('moduloId', selectedModuleId);
     formData.append('titulo', newTaskData.titulo);
@@ -117,33 +152,43 @@ const ProfesorCourseDetail = () => {
     formData.append('fechaApertura', newTaskData.fechaApertura);
     formData.append('fechaLimite', newTaskData.fechaLimite);
     formData.append('puntos', newTaskData.puntos);
-    if (newTaskData.archivo) {
-        formData.append('archivoAdjunto', newTaskData.archivo);
-    }
+    if (newTaskData.archivo) formData.append('archivoAdjunto', newTaskData.archivo);
 
     try {
         setCreating(true);
-        const res = await fetch(`${API_URL}/api/tareas/crear`, {
-            method: 'POST',
-            body: formData,
-        });
+        const res = await fetch(`${API_URL}/api/tareas/crear`, { method: 'POST', body: formData });
         const data = await res.json();
-        
         if (data.success) {
             alert("Tarea creada exitosamente");
             setShowTaskModal(false);
-            fetchTasks(selectedModuleId); // Recargar solo las tareas de este módulo
+            fetchTasks(selectedModuleId);
             setNewTaskData({ titulo: '', descripcion: '', fechaApertura: '', fechaLimite: '', puntos: 10, archivo: null });
-        } else {
-            alert("Error: " + data.message);
-        }
-    } catch (error) {
-        console.error("Error:", error);
-        alert("Error al subir la tarea");
-    } finally {
-        setCreating(false);
-    }
+        } else { alert("Error: " + data.message); }
+    } catch (error) { alert("Error al subir la tarea"); } finally { setCreating(false); }
   };
+
+  // 3. Crear Recurso
+  const handleCreateResource = async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('moduloId', selectedModuleId);
+    formData.append('titulo', newResourceData.titulo);
+    formData.append('descripcion', newResourceData.descripcion);
+    if (newResourceData.archivo) formData.append('archivoRecurso', newResourceData.archivo);
+
+    try {
+        setCreating(true);
+        const res = await fetch(`${API_URL}/api/recursos/crear`, { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+            alert("Material subido correctamente");
+            setShowResourceModal(false);
+            fetchResources(selectedModuleId);
+            setNewResourceData({ titulo: '', descripcion: '', archivo: null });
+        } else { alert("Error: " + data.message); }
+    } catch (error) { alert("Error al subir recurso"); } finally { setCreating(false); }
+  };
+
 
   if (loading) return <div className="loading-state">Cargando contenido...</div>;
   if (!course) return <div className="error-state">No se encontró información del curso.</div>;
@@ -157,12 +202,16 @@ const ProfesorCourseDetail = () => {
         <div className="header-overlay-profesor">
             <h1 className="course-detail-title-profesor">{course.TITULO}</h1>
             <p style={{color: '#fff'}}>{course.DESCRIPCION}</p>
+            {/* Etiqueta de Tipo de Evento */}
+            <span className="tag-profesor" style={{marginTop:'10px', background: isEvaluative ? '#28a745' : '#17a2b8'}}>
+                {isEvaluative ? 'Curso Evaluativo' : 'Evento Informativo'}
+            </span>
         </div>
       </div>
 
       <div className="course-detail-content-profesor">
         
-        {/* TABS & ACCIONES */}
+        {/* BARRA DE ACCIONES PRINCIPAL */}
         <div className="course-tabs-profesor">
           <button className="tab-button-profesor active"><FaBook /> Contenido</button>
           <button className="tab-button-profesor create-button" onClick={() => setShowModal(true)}>
@@ -170,61 +219,123 @@ const ProfesorCourseDetail = () => {
           </button>
         </div>
 
-        {/* LISTA DE MÓDULOS Y SUS TAREAS */}
+        {/* LISTA DE MÓDULOS */}
         <div className="course-modules-list-profesor">
-        {modules.length === 0 ? <p className="no-modules">No hay módulos definidos.</p> : 
+        {modules.length === 0 ? <p className="no-modules">No hay módulos definidos. Crea el primero.</p> : 
           modules.map((module) => (
             <div key={module.SECUENCIAL} className="lesson-item-profesor" style={{flexDirection: 'column', alignItems: 'flex-start'}}>
               
-              {/* Cabecera del Módulo */}
-              <div style={{width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px'}}>
-                  <div>
+              {/* CABECERA DEL MÓDULO + BOTONES */}
+              <div style={{width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px'}}>
+                  <div style={{maxWidth: '60%'}}>
                     <h4 className="lesson-title-profesor">{module.TITULO}</h4>
                     <p className="lesson-description-profesor">{module.DESCRIPCION}</p>
                   </div>
-                  <button 
-                    className="action-btn-profesor secondary"
-                    style={{backgroundColor: '#28a745', color: 'white'}}
-                    onClick={() => { setSelectedModuleId(module.SECUENCIAL); setShowTaskModal(true); }}
-                  >
-                    <FaPlus /> Agregar Tarea
-                  </button>
+                  
+                  {/* BOTONES DE ACCIÓN POR MÓDULO */}
+                  <div style={{display: 'flex', gap: '5px'}}>
+                      
+                      {/* Botón TAREA (Solo si es Evaluativo) */}
+                      {isEvaluative && (
+                        <button 
+                            className="action-btn-profesor secondary"
+                            style={{backgroundColor: '#28a745', color: 'white'}}
+                            onClick={() => { setSelectedModuleId(module.SECUENCIAL); setShowTaskModal(true); }}
+                        >
+                            <FaEdit /> Tarea
+                        </button>
+                      )}
+
+                      {/* Botón PRUEBA (Solo si es Evaluativo - Placeholder) */}
+                      {isEvaluative && (
+                        <button 
+                            className="action-btn-profesor secondary"
+                            style={{backgroundColor: '#ffc107', color: '#000'}}
+                            onClick={() => alert("Próximamente: Crear Examen")}
+                        >
+                            <FaClipboardList /> Prueba
+                        </button>
+                      )}
+
+                      {/* Botón MATERIAL (Siempre visible) */}
+                      <button 
+                        className="action-btn-profesor secondary"
+                        style={{backgroundColor: '#17a2b8', color: 'white'}}
+                        onClick={() => { setSelectedModuleId(module.SECUENCIAL); setShowResourceModal(true); }}
+                      >
+                        <FaFileUpload /> Material
+                      </button>
+                  </div>
               </div>
 
-              {/* Lista de Tareas dentro del Módulo */}
-              <div className="tasks-container" style={{width: '100%', paddingLeft: '20px', borderLeft: '3px solid #eee'}}>
-                  {tasksByModule[module.SECUENCIAL] && tasksByModule[module.SECUENCIAL].length > 0 ? (
-                      tasksByModule[module.SECUENCIAL].map(task => (
-                          <div key={task.SECUENCIAL} style={{background: '#f9f9f9', padding: '10px', marginBottom: '5px', borderRadius: '5px', display: 'flex', justifyContent: 'space-between'}}>
-                              <div style={{display:'flex', alignItems:'center', gap: '10px'}}>
-                                  <FaFileAlt color="#555"/>
+              {/* A. LISTA DE RECURSOS (Material de Apoyo) */}
+              <div className="resources-container" style={{width: '100%', marginBottom: '10px'}}>
+                  {resourcesByModule[module.SECUENCIAL]?.map(res => (
+                      <div key={res.SECUENCIAL} style={{
+                          padding: '10px', 
+                          borderLeft: '4px solid #17a2b8', 
+                          marginBottom: '8px', 
+                          background: '#f0faff',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          alignItems: 'center'
+                      }}>
+                          <FaFilePdf style={{marginRight: '10px', color: '#17a2b8', fontSize: '1.2rem'}}/>
+                          <div>
+                              <a href={res.URL_RECURSO} target="_blank" rel="noreferrer" style={{color: '#0056b3', fontWeight: 'bold', textDecoration:'none'}}>
+                                  {res.TITULO}
+                              </a>
+                              <div style={{fontSize: '0.85rem', color: '#666'}}>{res.DESCRIPCION || 'Material de lectura'}</div>
+                          </div>
+                      </div>
+                  ))}
+              </div>
+
+              {/* B. LISTA DE TAREAS (Solo si es evaluativo) */}
+              {isEvaluative && (
+                  <div className="tasks-container" style={{width: '100%', paddingLeft: '15px', borderLeft: '3px solid #eee'}}>
+                      {tasksByModule[module.SECUENCIAL]?.map(task => (
+                          <div key={task.SECUENCIAL} style={{
+                              background: '#fff', 
+                              border: '1px solid #eee',
+                              padding: '12px', 
+                              marginBottom: '8px', 
+                              borderRadius: '6px', 
+                              display: 'flex', 
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                          }}>
+                              <div style={{display:'flex', alignItems:'center', gap: '12px'}}>
+                                  <FaFileAlt color="#555" size={20}/>
                                   <div>
-                                      <strong>{task.TITULO}</strong>
+                                      <strong style={{color: '#333'}}>{task.TITULO}</strong>
                                       <div style={{fontSize: '0.8rem', color: '#777'}}>
                                         Vence: {task.FECHA_LIMITE ? new Date(task.FECHA_LIMITE).toLocaleDateString() : 'Sin fecha'}
                                       </div>
                                   </div>
                               </div>
                               <button 
-                                    className="action-btn-profesor" 
-                                    style={{fontSize: '0.8rem'}}
-                                    onClick={() => navigate(`/profesor/grading/${task.SECUENCIAL}`)} // <--- ESTO ES LO NUEVO
-                                >
-                                    Calificar
+                                className="action-btn-profesor" 
+                                style={{fontSize: '0.8rem', padding: '6px 12px'}}
+                                onClick={() => navigate(`/profesor/grading/${task.SECUENCIAL}`)}
+                              >
+                                Calificar
                               </button>
                           </div>
-                      ))
-                  ) : (
-                      <p style={{fontSize: '0.9rem', color: '#999', fontStyle: 'italic'}}>No hay tareas en este módulo.</p>
-                  )}
-              </div>
+                      ))}
+                      {(!tasksByModule[module.SECUENCIAL] || tasksByModule[module.SECUENCIAL].length === 0) && (
+                          <p style={{fontSize: '0.9rem', color: '#aaa', fontStyle: 'italic', padding: '10px'}}>No hay tareas asignadas.</p>
+                      )}
+                  </div>
+              )}
 
             </div>
         ))}
         </div>
       </div>
 
-      {/* --- MODAL CREAR MÓDULO --- */}
+      {/* --- MODAL 1: CREAR MÓDULO --- */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -250,7 +361,7 @@ const ProfesorCourseDetail = () => {
         </div>
       )}
 
-      {/* --- MODAL CREAR TAREA --- */}
+      {/* --- MODAL 2: CREAR TAREA --- */}
       {showTaskModal && (
         <div className="modal-overlay">
           <div className="modal-content" style={{maxWidth: '600px'}}>
@@ -282,12 +393,42 @@ const ProfesorCourseDetail = () => {
                 <input type="number" defaultValue="10" onChange={e => setNewTaskData({...newTaskData, puntos: e.target.value})} />
               </div>
               <div className="form-group">
-                <label>Archivo Guía (PDF/Doc/Imagen)</label>
+                <label>Archivo Guía (Opcional)</label>
                 <input type="file" onChange={e => setNewTaskData({...newTaskData, archivo: e.target.files[0]})} />
               </div>
               <div className="modal-actions">
                 <button type="button" onClick={() => setShowTaskModal(false)} className="cancel-btn">Cancelar</button>
-                <button type="submit" className="confirm-btn" disabled={creating}>{creating ? 'Subiendo...' : 'Guardar Tarea'}</button>
+                <button type="submit" className="confirm-btn" disabled={creating}>{creating ? 'Guardando...' : 'Guardar Tarea'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL 3: CREAR RECURSO (NUEVO) --- */}
+      {showResourceModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Subir Material de Apoyo</h3>
+              <button onClick={() => setShowResourceModal(false)} className="close-modal-btn"><FaTimes /></button>
+            </div>
+            <form onSubmit={handleCreateResource}>
+              <div className="form-group">
+                <label>Título del Material</label>
+                <input type="text" placeholder="Ej: Diapositivas Clase 1" onChange={e => setNewResourceData({...newResourceData, titulo: e.target.value})} required />
+              </div>
+              <div className="form-group">
+                <label>Descripción (Opcional)</label>
+                <textarea rows="2" onChange={e => setNewResourceData({...newResourceData, descripcion: e.target.value})} />
+              </div>
+              <div className="form-group">
+                <label>Archivo (PDF, Imagen, Zip)</label>
+                <input type="file" required onChange={e => setNewResourceData({...newResourceData, archivo: e.target.files[0]})} />
+              </div>
+              <div className="modal-actions">
+                <button type="button" onClick={() => setShowResourceModal(false)} className="cancel-btn">Cancelar</button>
+                <button type="submit" className="confirm-btn" disabled={creating}>{creating ? 'Subiendo...' : 'Subir Material'}</button>
               </div>
             </form>
           </div>
