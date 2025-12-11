@@ -49,8 +49,12 @@ export const UserProvider = ({ children }) => {
                 fotoPerfil: profileData.FOTO_PERFIL || profileData.fotoPerfil || profileData.foto,
                 foto: profileData.FOTO_PERFIL || profileData.fotoPerfil || profileData.foto
               };
-              setUser(updatedUser);
-              localStorage.setItem('user', JSON.stringify(updatedUser));
+              
+              // Simple check to avoid unnecessary updates
+              if (JSON.stringify(updatedUser) !== JSON.stringify(user)) {
+                  setUser(updatedUser);
+                  localStorage.setItem('user', JSON.stringify(updatedUser));
+              }
             }
           }
         } catch (error) {
@@ -59,13 +63,12 @@ export const UserProvider = ({ children }) => {
       }
     };
 
-    loadProfileData();
-  }, []); // Solo ejecutar una vez al montar
+    if (user) loadProfileData();
+  }, []); // Run once on mount, but check user inside
 
-  // Cargar notificaciones de pagos pendientes si el usuario es responsable
+  // Cargar notificaciones
   useEffect(() => {
     const loadPagosNotifications = async () => {
-      // Verificar si el usuario es responsable
       const isResponsable = user?.codigoRol === 'RES' || user?.CODIGOROL === 'RES';
 
       if (isResponsable) {
@@ -75,73 +78,47 @@ export const UserProvider = ({ children }) => {
 
           if (data.success && data.data?.total > 0) {
             const total = data.data.total;
-
-            // Actualizar notificaciones usando función de estado
             setNotifications(prev => {
-              const existingNotification = prev.find(n => n.type === 'pagos-pendientes');
+              const existing = prev.find(n => n.type === 'pagos-pendientes');
+              if (existing && existing.text.includes(total)) return prev; // No change
 
-              if (existingNotification) {
-                // Actualizar notificación existente
-                return prev.map(n =>
-                  n.type === 'pagos-pendientes'
-                    ? { ...n, text: `Tienes ${total} ${total === 1 ? 'pago pendiente' : 'pagos pendientes'} de revisión`, unread: true }
-                    : n
-                );
+              const text = `Tienes ${total} ${total === 1 ? 'pago pendiente' : 'pagos pendientes'} de revisión`;
+              if (existing) {
+                  return prev.map(n => n.type === 'pagos-pendientes' ? { ...n, text, unread: true } : n);
               } else {
-                // Agregar nueva notificación
-                const newNotification = {
-                  id: Date.now(),
-                  type: 'pagos-pendientes',
-                  text: `Tienes ${total} ${total === 1 ? 'pago pendiente' : 'pagos pendientes'} de revisión`,
-                  unread: true,
-                  createdAt: new Date().toISOString()
-                };
-                return [newNotification, ...prev.filter(n => n.type !== 'pagos-pendientes')];
+                  return [{ id: Date.now(), type: 'pagos-pendientes', text, unread: true, createdAt: new Date().toISOString() }, ...prev];
               }
             });
           } else {
-            // Remover notificación si no hay pagos pendientes
-            setNotifications(prev => prev.filter(n => n.type !== 'pagos-pendientes'));
+             setNotifications(prev => prev.filter(n => n.type !== 'pagos-pendientes'));
           }
         } catch (error) {
           console.error('Error al cargar notificaciones de pagos:', error);
         }
-      } else {
-        // Si no es responsable, remover notificaciones de pagos
-        setNotifications(prev => prev.filter(n => n.type !== 'pagos-pendientes'));
       }
     };
 
     if (user) {
       loadPagosNotifications();
-      // Actualizar cada 30 segundos
-      const interval = setInterval(loadPagosNotifications, 30000);
+      const interval = setInterval(loadPagosNotifications, 60000); // 60 seconds
       return () => clearInterval(interval);
     }
-  }, [user]);
+  }, [user?.codigoRol, user?.CODIGOROL, user?.id]); // Only re-run if Identity/Role changes, not every field
 
-  // Persistir activeRole en localStorage
+  // Persistir activeRole
   useEffect(() => {
-    if (activeRole) {
-      localStorage.setItem('activeRole', activeRole);
-    }
+    if (activeRole) localStorage.setItem('activeRole', activeRole);
   }, [activeRole]);
 
-  // Sincronizar activeRole cuando cambia el usuario
   useEffect(() => {
-    if (user?.codigoRol && !activeRole) {
-      setActiveRole(user.codigoRol);
-    }
-  }, [user, activeRole]);
+    if (user?.codigoRol && !activeRole) setActiveRole(user.codigoRol);
+  }, [user?.codigoRol, activeRole]);
 
   useEffect(() => {
-    // Sincronizar con localStorage cuando el usuario cambia
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
-    } else {
-      // Si no hay usuario, limpiar también el activeRole
-      localStorage.removeItem('activeRole');
-      setActiveRole(null);
+    if (user) localStorage.setItem('user', JSON.stringify(user));
+    else {
+        localStorage.removeItem('activeRole');
+        setActiveRole(null);
     }
   }, [user]);
 
@@ -156,19 +133,16 @@ export const UserProvider = ({ children }) => {
 
   const unreadCount = notifications.filter((n) => n.unread).length;
 
-  // Función para cambiar el rol activo
   const switchRole = (newRole) => {
-    if (newRole === 'EST' || newRole === 'DOC') {
-      setActiveRole(newRole);
-    }
+    if (newRole === 'EST' || newRole === 'DOC') setActiveRole(newRole);
   };
 
-  // Roles se determinan a partir de `user.codigoRol` (p.ej. 'EST' -> estudiante, 'DOC' -> docente)
-  // activeRole permite cambiar entre vistas sin modificar el usuario real
+  const value = React.useMemo(() => ({
+      user, setUser, activeRole, switchRole, notifications, addNotification, markAllRead, unreadCount
+  }), [user, activeRole, notifications, unreadCount]);
+
   return (
-    <UserContext.Provider
-      value={{ user, setUser, activeRole, switchRole, notifications, addNotification, markAllRead, unreadCount }}
-    >
+    <UserContext.Provider value={value}>
       {children}
     </UserContext.Provider>
   );
