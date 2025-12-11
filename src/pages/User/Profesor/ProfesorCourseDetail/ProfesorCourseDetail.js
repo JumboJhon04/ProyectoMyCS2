@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   FaBook, FaUsers, FaChartBar, FaPlus, FaTimes, FaFileAlt,
-  FaFilePdf, FaEdit, FaClipboardList, FaFileUpload
+  FaFilePdf, FaEdit, FaClipboardList, FaFileUpload, FaCheckCircle, FaExclamationCircle, FaUserGraduate, FaChevronDown, FaChevronRight
 } from 'react-icons/fa';
 import './ProfesorCourseDetail.css';
 import API_URL from '../../../../config/api';
@@ -38,6 +38,11 @@ const ProfesorCourseDetail = () => {
   // Estado general de "Cargando/Guardando" para botones
   const [creating, setCreating] = useState(false);
   const [selectedModuleId, setSelectedModuleId] = useState(null);
+
+  // Estados para Modal de Notificación (RESTAURADOS)
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationType, setNotificationType] = useState('success'); // 'success' o 'error'
 
   console.log("Datos del curso:", course);
   // --- LÓGICA DE NEGOCIO: TIPOS DE EVENTO ---
@@ -350,8 +355,9 @@ const ProfesorCourseDetail = () => {
                 )}
 
               </div>
-          </div>
-        )}
+            ))
+          }
+        </div>
       </div>
 
       {/* --- MODAL 1: CREAR MÓDULO --- */}
