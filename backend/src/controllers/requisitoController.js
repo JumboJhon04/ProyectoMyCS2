@@ -11,6 +11,22 @@ exports.getRequisitosEvento = async (req, res) => {
   }
 };
 
+// Obtener catálogo de tipos de requisitos (NUEVO)
+exports.getTiposRequisito = async (req, res) => {
+  // Lista quemada de requisitos comunes, ya que no existe tabla catálogo explícita
+  const requisitosComunes = [
+    { id: 'CEDULA', nombre: 'Cédula de Identidad / Pasaporte' },
+    { id: 'TITULO', nombre: 'Título de Tercer Nivel' },
+    { id: 'PAGO', nombre: 'Comprobante de Pago' },
+    { id: 'VOTACION', nombre: 'Certificado de Votación' },
+    { id: 'FOTO', nombre: 'Foto Tamaño Carnet' },
+    { id: 'RECORD', nombre: 'Récord Académico' },
+    { id: 'CARTA', nombre: 'Carta de Motivación' },
+    { id: 'HOJA_VIDA', nombre: 'Hoja de Vida (CV)' }
+  ];
+  res.json({ success: true, data: requisitosComunes });
+};
+
 // Guardar archivos (PEQUEÑOS AJUSTES)
 exports.subirArchivosRequisitos = async (req, res) => {
   const { inscripcionId } = req.body;

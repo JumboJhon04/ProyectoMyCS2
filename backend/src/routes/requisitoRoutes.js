@@ -10,6 +10,9 @@ const { uploadSolicitudes } = require('../config/cloudinary');
 // Obtener requisitos de un evento
 router.get('/eventos/:id/requisitos', requisitoController.getRequisitosEvento);
 
+// Obtener tipos de requisitos disponibles
+router.get('/requisitos/tipos', requisitoController.getTiposRequisito);
+
 // 2. USA EL MIDDLEWARE DE CLOUDINARY
 // Cambiamos 'upload.any()' por 'uploadSolicitudes.any()'
 // Esto subirá todos los archivos directamente a la nube

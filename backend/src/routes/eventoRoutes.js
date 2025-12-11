@@ -11,7 +11,9 @@ const {
   eliminarEvento,
   obtenerImagenes,
   actualizarImagenEvento,
-  obtenerEventosFiltrados
+  obtenerEventosFiltrados,
+  obtenerCategoriasEvento,
+  obtenerTiposEvento
 } = require('../controllers/eventoController');
 
 // Rutas
@@ -20,6 +22,8 @@ router.post('/', uploadEventos.single('image'), crearEvento);
 router.get('/', obtenerEventos);
 router.get('/responsable/:id', obtenerEventosResponsable);
 router.get('/imagenes', obtenerImagenes);
+router.get('/tipos', obtenerTiposEvento);
+router.get('/categorias', obtenerCategoriasEvento);
 router.get('/filtrar', obtenerEventosFiltrados);
 router.get('/:id', obtenerEvento);
 router.put('/:id', uploadEventos.single('image'), actualizarEvento);

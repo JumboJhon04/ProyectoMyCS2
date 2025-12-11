@@ -89,24 +89,22 @@ export const CoursesProvider = ({ children }) => {
           try {
             const parsed = JSON.parse(contenido);
             
+            // Extract topics
             let topicsParsed = [];
             if (parsed.topics) {
               if (Array.isArray(parsed.topics)) {
                 topicsParsed = parsed.topics;
               } else if (typeof parsed.topics === 'string') {
                 try {
-                  topicsParsed = JSON.parse(parsed.topics);
-                  if (!Array.isArray(topicsParsed)) {
-                    topicsParsed = [];
-                  }
-                } catch {
-                  topicsParsed = [];
-                }
+                    const t = JSON.parse(parsed.topics);
+                    if (Array.isArray(t)) topicsParsed = t;
+                } catch {}
               }
             }
 
             contenidoData = {
-              topics: topicsParsed
+              topics: topicsParsed,
+              modules: parsed.modules || [] // Extract modules
             };
           } catch (e) {
             console.warn(`⚠️ Error parseando CONTENIDO del evento ${evento.SECUENCIAL}`);
@@ -144,10 +142,17 @@ export const CoursesProvider = ({ children }) => {
           docente: evento.Docente || '', // ✅ DOCENTE
           objective: evento.DESCRIPCION || '',
           topics: contenidoData.topics,
+          modules: contenidoData.modules, // Pass modules
           startDate: formatDate(evento.FECHAINICIO),
           endDate: formatDate(evento.FECHAFIN),
           carreras: carreras
-        }
+        },
+        // Top level fields needed by Modal
+        CODIGOTIPOEVENTO: evento.CODIGOTIPOEVENTO,
+        NOMBRE_TIPO_EVENTO: evento.NOMBRE_TIPO_EVENTO,
+        CONTENIDO: evento.CONTENIDO, // Pass raw content for Modal parsing if needed
+        categoryId: evento.SECUENCIALCATEGORIA, // Alias for consistencym
+        REQUISITOS: evento.REQUISITOS || [] // Pass Requirements properly
       };
     });
 
@@ -177,7 +182,6 @@ export const CoursesProvider = ({ children }) => {
       const formData = new FormData();
       formData.append('title', newCourse.title);
       formData.append('type', newCourse.type);
-      // Eliminamos envío de asistencia/nota; será gestionado por responsable más adelante
       formData.append('capacity', newCourse.capacity || '');
       formData.append('hours', newCourse.hours || '');
       formData.append('modality', newCourse.modality || '');
@@ -186,6 +190,13 @@ export const CoursesProvider = ({ children }) => {
       formData.append('teacher', newCourse.teacher || '');
       formData.append('objective', newCourse.objective || '');
       
+      // Nuevos campos
+      if (newCourse.categoriaId) formData.append('categoriaId', newCourse.categoriaId);
+      if (newCourse.docente) formData.append('docente', newCourse.docente);
+      
+      const requirements = newCourse.requirements || [];
+      formData.append('requirements', JSON.stringify(requirements));
+
       // Agregar responsableId si está presente
       if (newCourse.responsableId) {
         formData.append('responsableId', newCourse.responsableId);
@@ -219,9 +230,50 @@ export const CoursesProvider = ({ children }) => {
     }
   };
 
+
+  
 const updateCourse = async (id, updatedData) => {
   try {
     const formData = new FormData();
+    
+    // Attempt to get current responsable ID to preserve ownership
+    const storedUserRaw = localStorage.getItem('user');
+    let currentResponsableId = null;
+    if (storedUserRaw) {
+        try {
+            const storedUser = JSON.parse(storedUserRaw);
+            // Only use if role is RESPONSABLE or ADMIN?
+            // Actually, if I am the one updating, I must be the one responsible or admin.
+            // If I am admin, I might be editing someone else's course?
+            // If I am admin, `currentResponsableId` would be me. If I assign it to me, I might steal it from the original responsible?
+            // Ideally, we should only re-send `responsableId` if it was intended to be changed OR if we want to preserve it.
+            // But the backend `DELETE`s it unconditionally.
+            // If I am Admin editing, `updatedData` might not have `responsableId`.
+            // If I don't send it, it's deleted.
+            // The logic in backend is flawed: "If responsableId provided -> Insert. Else -> Do nothing (just delete)".
+            // So if I am Admin and I edit an event but don't select a responsible, the event becomes "orphan" (no responsible).
+            // That might be intended behavior for Admin?
+            // But for "Responsable" user, they definitely want to keep it.
+            
+            // Let's use `updatedData.responsableId` if present.
+            // If NOT present, and I am a Responsable (not Admin), I should append myself.
+            // If I am Admin, and I don't send it, it implies orphan/unchanged? NO, backend deletes it.
+            // So Admin MUST send it if they want to keep it.
+            
+            // Safer fix: Backend should NOT delete if `responsableId` is undefined.
+            // But I cannot easily change backend logic that might be relied upon (clearing responsible).
+            // However, the user is a "Responsable" (context is `EventoResponsable`).
+            // So for this user, we must send their ID.
+            
+            if (storedUser?.codigoRol === 'RES' || storedUser?.CODIGOROL === 'RES') {
+                currentResponsableId = storedUser?.id || storedUser?.SECUENCIAL;
+            }
+        } catch {}
+    }
+
+    if (updatedData.responsableId || currentResponsableId) {
+        formData.append('responsableId', updatedData.responsableId || currentResponsableId);
+    }
     
     formData.append('title', updatedData.title);
     formData.append('type', updatedData.meta?.type || 'Curso');
@@ -233,10 +285,28 @@ const updateCourse = async (id, updatedData) => {
     formData.append('modality', updatedData.meta?.modality || '');
     formData.append('cost', updatedData.price || 0);
     formData.append('isPaid', updatedData.meta?.isPaid ? '1' : '0');
-    formData.append('docente', updatedData.meta?.docente || ''); // ✅ DOCENTE
+    formData.append('docente', updatedData.meta?.docente || ''); 
     formData.append('objective', updatedData.meta?.objective || '');
     formData.append('startDate', updatedData.meta?.startDate || '');
     formData.append('endDate', updatedData.meta?.endDate || '');
+
+
+
+    // Pass Modules
+    if (updatedData.modules) {
+        formData.append('modules', JSON.stringify(updatedData.modules));
+    }
+
+    // Pass Codigo Tipo Evento
+    if (updatedData.meta?.codigoTipoEvento) {
+        formData.append('codigoTipoEvento', updatedData.meta.codigoTipoEvento);
+    }
+    
+    // Nuevos campos update
+    if (updatedData.categoriaId) formData.append('categoriaId', updatedData.categoriaId);
+    
+    const requirements = updatedData.requirements || updatedData.meta?.requirements || [];
+    formData.append('requirements', JSON.stringify(requirements));
     
     const carrerasArray = Array.isArray(updatedData.meta?.carreras) 
       ? updatedData.meta.carreras
@@ -263,7 +333,7 @@ const updateCourse = async (id, updatedData) => {
       throw new Error(data.error || 'Error al actualizar evento');
     }
 
-    await fetchCourses();
+    await fetchCourses(currentResponsableId);
     return data;
   } catch (error) {
     console.error('Error al actualizar evento:', error);
