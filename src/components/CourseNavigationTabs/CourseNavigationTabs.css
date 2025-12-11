@@ -1,0 +1,160 @@
+/* ==========================================
+   COURSE NAVIGATION TABS
+   ========================================== */
+
+.course-nav-tabs {
+    background: #ffffff;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.nav-tabs-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2.5rem;
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.nav-tabs-container::-webkit-scrollbar {
+    display: none;
+}
+
+/* Tab Items */
+.nav-tab-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #64748b;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    position: relative;
+}
+
+.nav-tab-item:hover {
+    color: #334155;
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.nav-tab-item.active {
+    color: var(--event-primary-color, #3b82f6);
+    border-bottom-color: var(--event-primary-color, #3b82f6);
+    font-weight: 600;
+}
+
+.tab-icon {
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+}
+
+.tab-label {
+    display: inline-block;
+}
+
+/* ==========================================
+   THEME VARIATIONS
+   ========================================== */
+
+/* Curso - Azul */
+.theme-cur {
+    --event-primary-color: #3b82f6;
+    --event-secondary-color: #1d4ed8;
+    --event-accent-color: #60a5fa;
+    --event-light-bg: #eff6ff;
+}
+
+.theme-cur .nav-tab-item.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+}
+
+/* Taller - Púrpura */
+.theme-tall {
+    --event-primary-color: #8b5cf6;
+    --event-secondary-color: #6d28d9;
+    --event-accent-color: #a78bfa;
+    --event-light-bg: #f5f3ff;
+}
+
+.theme-tall .nav-tab-item.active {
+    color: #8b5cf6;
+    border-bottom-color: #8b5cf6;
+}
+
+/* Seminario - Verde */
+.theme-sem {
+    --event-primary-color: #10b981;
+    --event-secondary-color: #059669;
+    --event-accent-color: #34d399;
+    --event-light-bg: #ecfdf5;
+}
+
+.theme-sem .nav-tab-item.active {
+    color: #10b981;
+    border-bottom-color: #10b981;
+}
+
+/* Conferencia - Naranja */
+.theme-conf {
+    --event-primary-color: #f59e0b;
+    --event-secondary-color: #d97706;
+    --event-accent-color: #fbbf24;
+    --event-light-bg: #fffbeb;
+}
+
+.theme-conf .nav-tab-item.active {
+    color: #f59e0b;
+    border-bottom-color: #f59e0b;
+}
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+
+@media (max-width: 768px) {
+    .nav-tabs-container {
+        padding: 0 1.5rem;
+    }
+
+    .nav-tab-item {
+        padding: 0.875rem 1.25rem;
+        font-size: 0.9rem;
+    }
+
+    .tab-label {
+        display: none;
+    }
+
+    .tab-icon {
+        font-size: 1.25rem;
+    }
+
+    .nav-tab-item.active .tab-label {
+        display: inline-block;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-tabs-container {
+        padding: 0 1rem;
+        gap: 0.25rem;
+    }
+
+    .nav-tab-item {
+        padding: 0.75rem 1rem;
+    }
+}

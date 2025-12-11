@@ -79,7 +79,13 @@ const EstudianteEvents = () => {
           };
         });
 
-        setCourses(mapped);
+        const uniqueMapped = mapped.filter((item, index, self) =>
+          index === self.findIndex((t) => (
+            t.id === item.id
+          ))
+        );
+
+        setCourses(uniqueMapped);
       } catch (e) {
         console.error('Error cargando eventos del estudiante:', e.message);
         setCourses([]);
@@ -234,14 +240,14 @@ const EstudianteEvents = () => {
             onClick={() => setView('mine')}
           >
             <FaBook className="tab-icon" />
-            <span>Mis Cursos</span>
+            <span>Mis Eventos</span>
           </button>
           <button
             className={`view-tab ${view === 'all' ? 'active' : ''}`}
             onClick={() => setView('all')}
           >
             <FaGlobe className="tab-icon" />
-            <span>Todos los Cursos</span>
+            <span>Todos los Eventos</span>
           </button>
         </div>
 

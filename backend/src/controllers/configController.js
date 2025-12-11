@@ -26,15 +26,17 @@ const subirImagenCarrusel = async (req, res) => {
         ORDEN,
         ACTIVO
       ) VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          titulo || null,
-          subtitulo || null,
-          imageUrl,
-          enlace || null,
-          orden || 0,
-          activo !== undefined ? activo : 1
-        ]
-      );
+
+
+      [
+        titulo || null,
+        subtitulo || null,
+        imageUrl,
+        enlace || null,
+        orden || 0,
+        activo !== undefined ? activo : 1
+      ]
+    );
 
     res.status(201).json({
       success: true,
@@ -277,7 +279,7 @@ const obtenerHome = async (req, res) => {
     }
 
     const content = JSON.parse(config[0].valor);
-    
+
     // Construir URLs completas para las imágenes en secciones
     if (content.sections && Array.isArray(content.sections)) {
       content.sections = content.sections.map(section => {
@@ -303,7 +305,7 @@ const obtenerHome = async (req, res) => {
         return section;
       });
     }
-    
+
     // Construir URLs para hero fallback
     if (content.hero && content.hero.fallbackImageUrl && !content.hero.fallbackImageUrl.startsWith('http')) {
       content.hero.fallbackImageUrl = buildImageUrl(content.hero.fallbackImageUrl, req);
@@ -339,68 +341,68 @@ const actualizarHome = async (req, res) => {
       });
     }
 
-      // Procesar imágenes en el contenido
-      if (content.hero && uploadedFiles['heroFallbackImage']) {
-        content.hero.fallbackImageUrl = uploadedFiles['heroFallbackImage'];
-      }
+    // Procesar imágenes en el contenido
+    if (content.hero && uploadedFiles['heroFallbackImage']) {
+      content.hero.fallbackImageUrl = uploadedFiles['heroFallbackImage'];
+    }
 
-      // Procesar secciones
-      if (content.sections && Array.isArray(content.sections)) {
-        content.sections = content.sections.map((section, sectionIndex) => {
-          if (section.type === 'testimonials' && section.items) {
-            section.items = section.items.map((item, itemIndex) => {
-              const fieldName = `section_${sectionIndex}_item_${itemIndex}_avatar`;
-              if (uploadedFiles[fieldName]) {
-                item.avatar = uploadedFiles[fieldName];
-              }
-              return item;
-            });
-          } else if (section.type === 'content-image') {
-            const fieldName = `section_${sectionIndex}_image`;
+    // Procesar secciones
+    if (content.sections && Array.isArray(content.sections)) {
+      content.sections = content.sections.map((section, sectionIndex) => {
+        if (section.type === 'testimonials' && section.items) {
+          section.items = section.items.map((item, itemIndex) => {
+            const fieldName = `section_${sectionIndex}_item_${itemIndex}_avatar`;
             if (uploadedFiles[fieldName]) {
-              section.imageUrl = uploadedFiles[fieldName];
+              item.avatar = uploadedFiles[fieldName];
             }
-          } else if (section.type === 'gallery' && section.images) {
-            section.images = section.images.map((img, imgIndex) => {
-              const fieldName = `section_${sectionIndex}_gallery_${imgIndex}`;
-              if (uploadedFiles[fieldName]) {
-                img.url = uploadedFiles[fieldName];
-              }
-              return img;
-            });
-          } else if (section.type === 'cards' && section.items) {
-            section.items = section.items.map((item, itemIndex) => {
-              const fieldName = `section_${sectionIndex}_card_${itemIndex}_image`;
-              if (uploadedFiles[fieldName]) {
-                item.imageUrl = uploadedFiles[fieldName];
-              }
-              return item;
-            });
+            return item;
+          });
+        } else if (section.type === 'content-image') {
+          const fieldName = `section_${sectionIndex}_image`;
+          if (uploadedFiles[fieldName]) {
+            section.imageUrl = uploadedFiles[fieldName];
           }
-          return section;
-        });
-      }
+        } else if (section.type === 'gallery' && section.images) {
+          section.images = section.images.map((img, imgIndex) => {
+            const fieldName = `section_${sectionIndex}_gallery_${imgIndex}`;
+            if (uploadedFiles[fieldName]) {
+              img.url = uploadedFiles[fieldName];
+            }
+            return img;
+          });
+        } else if (section.type === 'cards' && section.items) {
+          section.items = section.items.map((item, itemIndex) => {
+            const fieldName = `section_${sectionIndex}_card_${itemIndex}_image`;
+            if (uploadedFiles[fieldName]) {
+              item.imageUrl = uploadedFiles[fieldName];
+            }
+            return item;
+          });
+        }
+        return section;
+      });
+    }
 
-      const contentJSON = JSON.stringify(content);
+    const contentJSON = JSON.stringify(content);
 
-      // Verificar si ya existe configuración
-      const [existing] = await connection.execute(
-        "SELECT * FROM configuracion WHERE clave = 'contenido_home'"
+    // Verificar si ya existe configuración
+    const [existing] = await connection.execute(
+      "SELECT * FROM configuracion WHERE clave = 'contenido_home'"
+    );
+
+    if (existing.length > 0) {
+      // Actualizar
+      await connection.execute(
+        "UPDATE configuracion SET valor = ? WHERE clave = 'contenido_home'",
+        [contentJSON]
       );
-
-      if (existing.length > 0) {
-        // Actualizar
-        await connection.execute(
-          "UPDATE configuracion SET valor = ? WHERE clave = 'contenido_home'",
-          [contentJSON]
-        );
-      } else {
-        // Insertar
-        await connection.execute(
-          "INSERT INTO configuracion (clave, valor, descripcion) VALUES ('contenido_home', ?, 'Contenido de la página principal')",
-          [contentJSON]
-        );
-      }
+    } else {
+      // Insertar
+      await connection.execute(
+        "INSERT INTO configuracion (clave, valor, descripcion) VALUES ('contenido_home', ?, 'Contenido de la página principal')",
+        [contentJSON]
+      );
+    }
 
     res.json({
       success: true,

@@ -23,11 +23,13 @@ import EstudiantePanel from '../pages/User/Estudiante/EstudiantePanel/Estudiante
 import EstudianteEvents from '../pages/User/Estudiante/EventoEstudiante/EstudianteEvents';
 import EstudianteTest from '../pages/User/Estudiante/EstudianteTest/EstudianteTest';
 import EstudianteCourseDetail from '../pages/User/Estudiante/EstudianteCourseDetail/EstudianteCourseDetail';
+import TakingExam from '../pages/User/Estudiante/TakingExam/TakingExam';
 
 import ProfesorPanel from '../pages/User/Profesor/ProfesorPanel/ProfesorPanel';
 import ProfesorModules from '../pages/User/Profesor/ProfesorModules/ProfesorModules';
 import ProfesorTest from '../pages/User/Profesor/ProfesorTest/ProfesorTest';
 import ProfesorCourseDetail from '../pages/User/Profesor/ProfesorCourseDetail/ProfesorCourseDetail';
+import ExamEditor from '../pages/User/Profesor/ExamEditor/ExamEditor';
 
 import UserPanel from '../pages/User/UserPanel';
 import SolicitudSoporte from '../pages/User/SolicitudSoporte/SolicitudSoporte';
@@ -35,7 +37,7 @@ import SolicitudSoporte from '../pages/User/SolicitudSoporte/SolicitudSoporte';
 
 import Perfil from '../pages/Perfil/Perfil';
 import ProtectedRoute from '../components/ProtectedRoute';
-
+import ProfesorGrading from '../pages/User/Profesor/ProfesorGrading/ProfesorGrading';
 export default function AppRoutes() {
   return (
     <Routes>
@@ -47,7 +49,11 @@ export default function AppRoutes() {
       <Route path="/courses/:courseId" element={<EstudianteCourseDetail />} />
       <Route path="/payment/:courseId" element={<PaymentPage />} />
       <Route path="/contact" element={<Contact />} />
-
+      <Route path="/profesor/grading/:taskId" element={
+        <ProtectedRoute>
+          <ProfesorGrading />
+        </ProtectedRoute>
+      } />
       {/* Admin protected */}
       <Route path="/admin/panel" element={
         <ProtectedRoute requireAdmin={true}>
@@ -118,6 +124,11 @@ export default function AppRoutes() {
           <EstudianteCourseDetail />
         </ProtectedRoute>
       } />
+      <Route path="/user/taking-exam/:examId" element={
+        <ProtectedRoute>
+          <TakingExam />
+        </ProtectedRoute>
+      } />
       <Route path="/user/solicitud-soporte" element={
         <ProtectedRoute>
           <SolicitudSoporte />
@@ -150,6 +161,11 @@ export default function AppRoutes() {
       <Route path="/profesor/course/:courseId" element={
         <ProtectedRoute>
           <ProfesorCourseDetail />
+        </ProtectedRoute>
+      } />
+      <Route path="/profesor/exam-editor/:examId" element={
+        <ProtectedRoute>
+          <ExamEditor />
         </ProtectedRoute>
       } />
 

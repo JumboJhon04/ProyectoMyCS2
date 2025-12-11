@@ -22,9 +22,11 @@ export default function CoursesFilters() {
   const [disponibilidad, setDisponibilidad] = useState('todos'); // 'todos' | 'aptos' | 'noaptos'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   const { user } = useUser();
   const inputRef = useRef(null);
+
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState([]);
 
   // Carreras del usuario (si existen)
   const userCareerIds = useMemo(() => {
@@ -36,36 +38,59 @@ export default function CoursesFilters() {
       .map(Number);
   }, [user]);
 
+  // Fetch enrolled courses
+  useEffect(() => {
+    const fetchEnrollments = async () => {
+      if (!user || !user.id && !user.SECUENCIAL) return; // Support both id formats
+      const userId = user.id || user.SECUENCIAL;
+      try {
+        const response = await fetch(`${API_URL}/api/estudiantes/${userId}/eventos`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data) {
+            // Extract event IDs from enrollments
+            const ids = data.data.map(e => e.eventoId || e.SECUENCIALEVENTO || e.evento?.SECUENCIAL || e.evento?.id).filter(Boolean);
+            console.log('✅ User enrolled in:', ids);
+            setEnrolledCourseIds(ids.map(Number));
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching enrollments:", err);
+      }
+    };
+    fetchEnrollments();
+  }, [user]);
+
   // 2. Carga de datos desde la API real
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         // Construir URL con parámetros de filtro
         let url = `${API_URL}/api/eventos/`;
         const params = [];
-        
+
         if (tipo) params.push(`tipo=${tipo}`);
         if (costo === 'pagado') params.push('pagado=1');
         if (costo === 'gratis') params.push('pagado=0');
-        
+
         if (params.length > 0) {
           url = `${API_URL}/api/eventos/filtrar?` + params.join('&');
         }
-        
+
         console.log('📡 Fetching from:', url);
         const response = await fetch(url);
-        
+
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         console.log('✅ Data received:', data);
-        
-        setCourses(data.data || []); 
+
+        setCourses(data.data || []);
         setLoading(false);
       } catch (err) {
         console.error('❌ Fetch error:', err);
@@ -81,7 +106,7 @@ export default function CoursesFilters() {
   const filtered = useMemo(() => {
     return courses.filter(c => {
       // Filtro por Buscador (Query)
-      const matchesQuery = query === '' || 
+      const matchesQuery = query === '' ||
         c.TITULO.toLowerCase().includes(query.toLowerCase()) ||
         (c.DESCRIPCION && c.DESCRIPCION.toLowerCase().includes(query.toLowerCase()));
 
@@ -118,17 +143,17 @@ export default function CoursesFilters() {
       <PublicHeader />
       <div style={{ padding: '18px 0' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 16px' }}>
-          
+
           {/* Cabecera y Buscador */}
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-            <h2 style={{ margin:0 }}>{sectionName}</h2>
-            <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h2 style={{ margin: 0 }}>{sectionName}</h2>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <input
                 ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Buscar cursos..."
-                style={{ padding:'8px 10px', borderRadius:6, border:'1px solid #dfe6ea' }}
+                style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #dfe6ea' }}
               />
               <button
                 type="button"
@@ -213,7 +238,7 @@ export default function CoursesFilters() {
                     <div className="course-meta">
                       <div className="course-meta-top">
                         <div className="course-type">
-                            {tipoOptions.find(t => t.value === c.CODIGOTIPOEVENTO)?.label || 'Evento'}
+                          {tipoOptions.find(t => t.value === c.CODIGOTIPOEVENTO)?.label || 'Evento'}
                         </div>
                         {tieneCarrerasAsociadas && (
                           <span className={`course-apt-badge${esApto ? '' : ' not-eligible'}`}>
@@ -223,15 +248,18 @@ export default function CoursesFilters() {
                       </div>
                       <div className="course-meta-bottom">
                         <div className="course-price">
-                            {c.ES_PAGADO ? `$${parseFloat(c.COSTO || 0).toFixed(2)}` : 'Gratis'}
+                          {c.ES_PAGADO ? `$${parseFloat(c.COSTO || 0).toFixed(2)}` : 'Gratis'}
                         </div>
                         <div className="course-actions">
                           <Link to={`/courses/${c.SECUENCIAL}`} className="btn small">Leer más</Link>
-                          {esApto && (
-                            <Link to={`/payment/${c.SECUENCIAL}`} className="btn small primary">Entrar ahora</Link>
-                          )}
-                          {!esApto && (
-                            <span className="not-apt-note">Solo para carreras habilitadas</span>
+                          {enrolledCourseIds.includes(c.SECUENCIAL) ? (
+                            <span className="enrolled-badge">Ya estás inscrito</span>
+                          ) : (
+                            esApto ? (
+                              <Link to={`/payment/${c.SECUENCIAL}`} className="btn small primary">Entrar ahora</Link>
+                            ) : (
+                              <span className="not-apt-note">Solo para carreras habilitadas</span>
+                            )
                           )}
                         </div>
                       </div>

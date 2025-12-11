@@ -2,7 +2,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useUser } from '../../context/UserContext';
-import { FaBars, FaSignOutAlt, FaBell, FaEnvelope } from 'react-icons/fa';
+import { FaBars, FaSignOutAlt } from 'react-icons/fa';
 import './EstudianteHeader.css'; // Usar CSS compartido
 
 // Reutilizamos la lógica de iniciales de UserHeader.js
@@ -49,35 +49,22 @@ const ProfesorHeader = ({ onToggleSidebar, onLogout }) => {
                 <NavLink to="/profesor/test" className={({ isActive }) => isActive ? "active" : ""}>Test</NavLink>
             </nav>
 
-            <div className="header-right">
-                {/* Notification Icon */}
-                <div className="icon-btn notification" title="Notificaciones">
-                    <FaBell style={{ fontSize: '1.2rem' }} />
-                    <span className="badge new">5</span>
+            <div className="header-right">                <div style={{ position: 'relative' }}>
+                <div className="user-avatar" title={user?.nombres ? `${user.nombres} ${user.apellidos}` : user?.name} onClick={toggleUserMenu} style={{ cursor: 'pointer' }}>
+                    <span>{userInitials || 'FT'}</span>
                 </div>
-
-                {/* Messages Icon */}
-                <div className="icon-btn notification" title="Mensajes">
-                    <FaEnvelope style={{ fontSize: '1.2rem' }} />
-                    <span className="badge">4</span>
-                </div>
-
-                <div style={{ position: 'relative' }}>
-                    <div className="user-avatar" title={user?.nombres ? `${user.nombres} ${user.apellidos}` : user?.name} onClick={toggleUserMenu} style={{ cursor: 'pointer' }}>
-                        <span>{userInitials || 'FT'}</span>
-                    </div>
-                    {showUserMenu && (
-                        <div className="user-menu-panel" ref={userMenuRef} onClick={(e) => e.stopPropagation()}>
-                            <div className="user-menu-header">
-                                <div className="user-menu-name">{user?.nombres ? `${user.nombres} ${user.apellidos}` : user?.name || 'Usuario'}</div>
-                                <div className="user-menu-email">{user?.correo || user?.email || ''}</div>
-                                <div className="user-menu-role">{user?.rol || user?.displayRole || user?.role || 'Docente'}</div>
-                            </div>
-                            <div className="user-menu-divider" />
-                            <button className="user-menu-item logout" onClick={handleLogout}><FaSignOutAlt /><span>Cerrar Sesión</span></button>
+                {showUserMenu && (
+                    <div className="user-menu-panel" ref={userMenuRef} onClick={(e) => e.stopPropagation()}>
+                        <div className="user-menu-header">
+                            <div className="user-menu-name">{user?.nombres ? `${user.nombres} ${user.apellidos}` : user?.name || 'Usuario'}</div>
+                            <div className="user-menu-email">{user?.correo || user?.email || ''}</div>
+                            <div className="user-menu-role">{user?.rol || user?.displayRole || user?.role || 'Docente'}</div>
                         </div>
-                    )}
-                </div>
+                        <div className="user-menu-divider" />
+                        <button className="user-menu-item logout" onClick={handleLogout}><FaSignOutAlt /><span>Cerrar Sesión</span></button>
+                    </div>
+                )}
+            </div>
             </div>
         </header>
     );
