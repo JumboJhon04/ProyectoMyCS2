@@ -13,8 +13,9 @@ const crearEvento = async (req, res) => {
     const {
       title, type, attendanceRequired, passingGrade,
       capacity, hours, modality, cost, description,
-      docente, objective, topics, startDate, endDate, carreras,
-      responsableId
+      docente, objective, topics, modules, startDate, endDate, carreras,
+
+      responsableId, categoriaId, requirements, codigoTipoEvento // NEW
     } = req.body;
 
     // Log request body and file for debugging
@@ -34,13 +35,16 @@ const crearEvento = async (req, res) => {
       });
     }
 
+    // Try to derive generic type code for legacy compatibility
     const tipoEventoMap = {
       'Curso': 'CUR',
       'Taller': 'TALL',
       'Seminario': 'SEM',
       'Conferencia': 'CONF'
     };
-    const codigoTipo = tipoEventoMap[type] || 'CUR';
+    // Default to CUR if not found or if type is just descriptive ID
+    // If specific code is provided, use it (e.g. from dropdown with DB codes)
+    const codigoTipo = codigoTipoEvento || tipoEventoMap[type] || 'CUR';
 
     const modalidadMap = {
       'Presencial': 'PRES',
@@ -65,7 +69,8 @@ const crearEvento = async (req, res) => {
     }
 
     const contenidoObject = {
-      topics: topicsArray
+      topics: topicsArray,
+      modules: modules ? (typeof modules === 'string' ? JSON.parse(modules) : modules) : []
     };
 
     const contenidoJSON = JSON.stringify(contenidoObject);
@@ -87,8 +92,9 @@ const crearEvento = async (req, res) => {
         ES_SOLO_INTERNOS, 
         ESTADO,
         ASISTENCIAMINIMA,
-        Docente
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'CREADO', ?, ?)`,
+        Docente,
+        SECUENCIALCATEGORIA
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'CREADO', ?, ?, ?)`,
       [
         title,
         objective || description || '',
@@ -103,12 +109,41 @@ const crearEvento = async (req, res) => {
         parseFloat(cost || 0) > 0 ? 1 : 0,
         cost || 0,
         attendanceRequired || null,
-        docente ? parseInt(docente) : null
+        docente ? parseInt(docente) : null,
+        categoriaId || null
       ]
     );
 
     const eventoId = eventoResult.insertId;
     console.log('✅ Evento creado con ID:', eventoId);
+
+    // Guardar requirements en tabla requisito_evento
+    if (requirements) {
+      let requirementsArray = [];
+      if (typeof requirements === 'string') {
+        try {
+          requirementsArray = JSON.parse(requirements);
+        } catch (e) {
+          requirementsArray = [requirements]; // fallback
+        }
+      } else if (Array.isArray(requirements)) {
+        requirementsArray = requirements;
+      }
+
+      for (const reqItem of requirementsArray) {
+        // reqItem puede ser string ("Cédula") u objeto ({description: "Cédula", required: true})
+        const desc = typeof reqItem === 'object' ? (reqItem.description || reqItem.nombre) : reqItem;
+        const oblig = typeof reqItem === 'object' ? (reqItem.required !== false ? 1 : 0) : 1; // Default true
+
+        if (desc) {
+          await connection.execute(
+            'INSERT INTO requisito_evento (SECUENCIALEVENTO, DESCRIPCION, ES_OBLIGATORIO) VALUES (?, ?, ?)',
+            [eventoId, desc, oblig]
+          );
+        }
+      }
+      console.log(`✅ ${requirementsArray.length} requisitos asociados`);
+    }
 
     // Guardar carreras
     if (carreras) {
@@ -277,6 +312,9 @@ const actualizarEvento = async (req, res) => {
     const startDate = source.startDate;
     const endDate = source.endDate;
     const carreras = source.carreras;
+    const categoriaId = source.categoriaId; // NEW
+    const requirements = source.requirements; // NEW
+    const modules = source.modules; // NEW: Modules support
 
     console.log('📝 Actualizando evento ID:', eventoId);
     console.log('👨‍🏫 Docente:', docente);
@@ -293,7 +331,9 @@ const actualizarEvento = async (req, res) => {
       'Seminario': 'SEM',
       'Conferencia': 'CONF'
     };
-    const codigoTipo = tipoEventoMap[type] || 'CUR';
+
+    // Use explicit code if provided (e.g. from frontend edit), else map from description
+    const codigoTipo = source.codigoTipoEvento || tipoEventoMap[type] || 'CUR';
 
     const modalidadMap = {
       'Presencial': 'PRES',
@@ -317,48 +357,58 @@ const actualizarEvento = async (req, res) => {
       }
     }
 
-    // ✅ CONTENIDO SOLO CON TOPICS (sin teacher)
+    // ✅ CONTENIDO: Priorizar Módulos. Solo guardar topics legacy si existen.
     const contenidoObject = {
-      topics: topicsArray
+      modules: modules ? (typeof modules === 'string' ? JSON.parse(modules) : modules) : []
     };
+
+    if (topicsArray && topicsArray.length > 0) {
+      contenidoObject.topics = topicsArray;
+    }
 
     const contenidoJSON = JSON.stringify(contenidoObject);
 
-    // ✅ ACTUALIZAR EVENTO CON CAMPO DOCENTE
+    // ✅ ACTUALIZAR EVENTO CON CAMPO DOCENTE Y CATEGORIA
+    const updateValues = [
+      title,
+      objective || description || '',
+      contenidoJSON,
+      codigoTipo,
+      startDate || new Date().toISOString().split('T')[0],
+      endDate || new Date().toISOString().split('T')[0],
+      codigoModalidad,
+      hours || 0,
+      capacity || null,
+      passingGrade || null,
+      parseFloat(cost || 0) > 0 ? 1 : 0,
+      cost || 0,
+      attendanceRequired || null,
+      docente || null,
+      categoriaId || null,
+      eventoId
+    ];
+
+    console.log('📝 Update Values:', updateValues);
+
     const [result] = await connection.execute(
       `UPDATE evento SET
         TITULO = ?,
         DESCRIPCION = ?,
         CONTENIDO = ?,
         CODIGOTIPOEVENTO = ?,
-        CODIGOMODALIDAD = ?,
         FECHAINICIO = ?,
         FECHAFIN = ?,
+        CODIGOMODALIDAD = ?,
         HORAS = ?,
-        NOTAAPROBACION = ?,
         CAPACIDAD = ?,
-        COSTO = ?,
+        NOTAAPROBACION = ?,
         ES_PAGADO = ?,
+        COSTO = ?,
         ASISTENCIAMINIMA = ?,
-        Docente = ?
+        Docente = ?,
+        SECUENCIALCATEGORIA = COALESCE(?, SECUENCIALCATEGORIA)
       WHERE SECUENCIAL = ?`,
-      [
-        title,
-        objective || description || '',
-        contenidoJSON,
-        codigoTipo,
-        codigoModalidad,
-        startDate || null,
-        endDate || null,
-        hours || 0,
-        passingGrade || null,
-        capacity || null,
-        cost || 0,
-        parseFloat(cost || 0) > 0 ? 1 : 0,
-        attendanceRequired || null,
-        docente || '', // ✅ AGREGAR DOCENTE (guardar cadena vacía si no viene)
-        eventoId
-      ]
+      updateValues
     );
 
     if (result.affectedRows === 0) {
@@ -384,12 +434,8 @@ const actualizarEvento = async (req, res) => {
       console.log('✅ Responsable actualizado en organizador_evento:', responsableId);
     }
 
-    // Actualizar carreras
-    console.log('🎓 Procesando carreras...');
-    await connection.execute(
-      'DELETE FROM evento_carrera WHERE SECUENCIALEVENTO = ?',
-      [eventoId]
-    );
+    // Actualizar carreras (borrar y crear)
+    await connection.execute('DELETE FROM evento_carrera WHERE SECUENCIALEVENTO = ?', [eventoId]);
 
     if (carreras) {
       let carrerasArray = [];
@@ -398,21 +444,48 @@ const actualizarEvento = async (req, res) => {
         try {
           carrerasArray = JSON.parse(carreras);
         } catch (e) {
-          carrerasArray = [];
+          carrerasArray = [carreras];
         }
       } else if (Array.isArray(carreras)) {
         carrerasArray = carreras;
       }
 
-      if (carrerasArray.length > 0) {
-        for (const carreraId of carrerasArray) {
+      for (const carreraId of carrerasArray) {
+        await connection.execute(
+          'INSERT INTO evento_carrera (SECUENCIALEVENTO, SECUENCIALCARRERA) VALUES (?, ?)',
+          [eventoId, carreraId]
+        );
+      }
+    }
+
+    // Actualizar requisitos (borrar y crear)
+    if (requirements) {
+      // Borrar anteriores
+      await connection.execute('DELETE FROM requisito_evento WHERE SECUENCIALEVENTO = ?', [eventoId]);
+
+      let requirementsArray = [];
+      if (typeof requirements === 'string') {
+        try {
+          requirementsArray = JSON.parse(requirements);
+        } catch (e) {
+          requirementsArray = [requirements];
+        }
+      } else if (Array.isArray(requirements)) {
+        requirementsArray = requirements;
+      }
+
+      for (const reqItem of requirementsArray) {
+        const desc = typeof reqItem === 'object' ? (reqItem.description || reqItem.nombre) : reqItem;
+        const oblig = typeof reqItem === 'object' ? (reqItem.required !== false ? 1 : 0) : 1;
+
+        if (desc) {
           await connection.execute(
-            'INSERT INTO evento_carrera (SECUENCIALEVENTO, SECUENCIALCARRERA) VALUES (?, ?)',
-            [parseInt(eventoId), parseInt(carreraId)]
+            'INSERT INTO requisito_evento (SECUENCIALEVENTO, DESCRIPCION, ES_OBLIGATORIO) VALUES (?, ?, ?)',
+            [eventoId, desc, oblig]
           );
         }
-        console.log(`✅ ${carrerasArray.length} carreras asociadas`);
       }
+      console.log('✅ Requisitos actualizados');
     }
 
     // Actualizar imagen si existe
@@ -520,6 +593,8 @@ const obtenerEventos = async (req, res) => {
         e.DESCRIPCION,
         e.CONTENIDO,
         e.CODIGOTIPOEVENTO,
+        e.SECUENCIALCATEGORIA,
+        ce.NOMBRE as NOMBRE_CATEGORIA,
         e.CODIGOMODALIDAD,
         e.HORAS,
         e.NOTAAPROBACION,
@@ -531,11 +606,14 @@ const obtenerEventos = async (req, res) => {
         e.FECHAFIN,
         e.ESTADO,
         e.Docente,
-        MAX(ie.URL_IMAGEN) as URL_IMAGEN
+        MAX(ie.URL_IMAGEN) as URL_IMAGEN,
+        te.NOMBRE as NOMBRE_TIPO_EVENTO
        FROM evento e
+       LEFT JOIN categoria_evento ce ON e.SECUENCIALCATEGORIA = ce.SECUENCIAL
+       LEFT JOIN tipo_evento te ON e.CODIGOTIPOEVENTO = te.CODIGO
        LEFT JOIN imagen_evento ie ON e.SECUENCIAL = ie.SECUENCIALEVENTO 
        AND ie.TIPO_IMAGEN = 'PORTADA'
-       GROUP BY e.SECUENCIAL
+       GROUP BY e.SECUENCIAL, te.NOMBRE
        ORDER BY e.SECUENCIAL DESC`
     );
 
@@ -581,6 +659,9 @@ const obtenerEventosResponsable = async (req, res) => {
         e.DESCRIPCION,
         e.CONTENIDO,
         e.CODIGOTIPOEVENTO,
+        e.SECUENCIALCATEGORIA,
+         ce.NOMBRE as NOMBRE_CATEGORIA,
+        te.NOMBRE as NOMBRE_TIPO_EVENTO,
         e.CODIGOMODALIDAD,
         e.HORAS,
         e.NOTAAPROBACION,
@@ -591,11 +672,15 @@ const obtenerEventosResponsable = async (req, res) => {
         e.FECHAINICIO,
         e.FECHAFIN,
         e.Docente,
-        ie.URL_IMAGEN
+        e.Docente,
+        MAX(ie.URL_IMAGEN) as URL_IMAGEN
        FROM organizador_evento oe
        INNER JOIN evento e ON oe.SECUENCIALEVENTO = e.SECUENCIAL
+       LEFT JOIN categoria_evento ce ON e.SECUENCIALCATEGORIA = ce.SECUENCIAL
+       LEFT JOIN tipo_evento te ON e.CODIGOTIPOEVENTO = te.CODIGO
        LEFT JOIN imagen_evento ie ON ie.SECUENCIALEVENTO = e.SECUENCIAL AND ie.TIPO_IMAGEN = 'PORTADA'
        WHERE oe.SECUENCIALUSUARIO = ?
+       GROUP BY e.SECUENCIAL, te.NOMBRE
        ORDER BY e.SECUENCIAL DESC`,
       [id]
     );
@@ -611,9 +696,18 @@ const obtenerEventosResponsable = async (req, res) => {
         [evento.SECUENCIAL]
       );
 
+      // Fetch requirements
+      const [requisitos] = await pool.execute(
+        `SELECT SECUENCIAL, DESCRIPCION, ES_OBLIGATORIO
+           FROM requisito_evento
+           WHERE SECUENCIALEVENTO = ?`,
+        [evento.SECUENCIAL]
+      );
+
       eventosConCarreras.push({
         ...evento,
-        CARRERAS: carreras
+        CARRERAS: carreras,
+        REQUISITOS: requisitos
       });
     }
 
@@ -637,9 +731,13 @@ const obtenerEvento = async (req, res) => {
     const [rows] = await pool.execute(
       `SELECT 
         e.*,
+        ce.NOMBRE as NOMBRE_CATEGORIA,
+        te.NOMBRE as NOMBRE_TIPO_EVENTO,
         ie.URL_IMAGEN,
         CONCAT(u.NOMBRES, ' ', u.APELLIDOS) as NOMBRE_DOCENTE
        FROM evento e
+       LEFT JOIN categoria_evento ce ON e.SECUENCIALCATEGORIA = ce.SECUENCIAL
+       LEFT JOIN tipo_evento te ON e.CODIGOTIPOEVENTO = te.CODIGO
        LEFT JOIN imagen_evento ie ON e.SECUENCIAL = ie.SECUENCIALEVENTO 
        AND ie.TIPO_IMAGEN = 'PORTADA'
        LEFT JOIN usuario u ON e.Docente = u.SECUENCIAL
@@ -662,8 +760,17 @@ const obtenerEvento = async (req, res) => {
       [eventoId]
     );
 
+    // ✅ OBTENER REQUISITOS DEL EVENTO (NUEVO)
+    const [requisitos] = await pool.execute(
+      `SELECT SECUENCIAL, DESCRIPCION, ES_OBLIGATORIO
+       FROM requisito_evento
+       WHERE SECUENCIALEVENTO = ?`,
+      [eventoId]
+    );
+
     const evento = rows[0];
     evento.CARRERAS = carreras;
+    evento.REQUISITOS = requisitos; // Enviar al frontend
 
     // Convertir URL_IMAGEN a URL absoluta
     evento.URL_IMAGEN = buildImageUrl(evento.URL_IMAGEN, req);
@@ -797,8 +904,10 @@ const obtenerEventosFiltrados = async (req, res) => {
         e.FECHAFIN,
         e.ESTADO,
         e.Docente,
-        MAX(ie.URL_IMAGEN) as URL_IMAGEN
+        MAX(ie.URL_IMAGEN) as URL_IMAGEN,
+        te.NOMBRE as NOMBRE_TIPO_EVENTO
        FROM evento e
+       LEFT JOIN tipo_evento te ON e.CODIGOTIPOEVENTO = te.CODIGO
        LEFT JOIN imagen_evento ie ON e.SECUENCIAL = ie.SECUENCIALEVENTO 
        AND ie.TIPO_IMAGEN = 'PORTADA'
        ${where}
@@ -806,42 +915,60 @@ const obtenerEventosFiltrados = async (req, res) => {
        ORDER BY e.SECUENCIAL DESC`,
       params
     );
-    for (let evento of eventos) {
-      const [carreras] = await pool.execute(
-        `SELECT c.SECUENCIAL, c.NOMBRE_CARRERA
-         FROM evento_carrera ec
-         INNER JOIN carrera c ON ec.SECUENCIALCARRERA = c.SECUENCIAL
-         WHERE ec.SECUENCIALEVENTO = ?`,
-        [evento.SECUENCIAL]
-      );
-      evento.CARRERAS = carreras;
-    }
+
     const mapped = eventos.map(ev => ({
       ...ev,
       URL_IMAGEN: buildImageUrl(ev.URL_IMAGEN, req)
     }));
+
     res.json({
       success: true,
       data: mapped
     });
   } catch (error) {
     console.error('❌ Error al filtrar eventos:', error);
-    res.status(500).json({
-      error: 'Error al filtrar eventos',
-      details: error.message
-    });
+    res.status(500).json({ error: 'Error al filtrar eventos', details: error.message });
+  }
+};
+
+// Obtener categorías de evento
+const obtenerCategoriasEvento = async (req, res) => {
+  try {
+    const [categorias] = await pool.execute(
+      'SELECT SECUENCIAL, NOMBRE, DESCRIPCION FROM categoria_evento ORDER BY NOMBRE ASC'
+    );
+    res.json({ success: true, data: categorias });
+  } catch (error) {
+    console.error('Error al obtener categorías:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+// Obtener tipos de evento
+const obtenerTiposEvento = async (req, res) => {
+  try {
+    const [tipos] = await pool.execute(
+      'SELECT CODIGO, NOMBRE, DESCRIPCION FROM tipo_evento ORDER BY NOMBRE ASC'
+    );
+    res.json({ success: true, data: tipos });
+  } catch (error) {
+    console.error('Error al obtener tipos de evento:', error);
+    res.status(500).json({ error: error.message });
   }
 };
 
 module.exports = {
   crearEvento,
-  obtenerImagenes,
   obtenerEventos,
   obtenerEvento,
   obtenerEventosResponsable,
   actualizarEvento,
   actualizarResponsableEvento,
   eliminarEvento,
+  obtenerImagenes,
   actualizarImagenEvento,
-  obtenerEventosFiltrados
+  obtenerEventosFiltrados,
+  obtenerCategoriasEvento,
+  obtenerTiposEvento
 };

@@ -16,6 +16,7 @@ const NewEventModal = ({ isOpen, onClose }) => {
   // Estados para responsables
   const [responsables, setResponsables] = useState([]);
   const [loadingResponsables, setLoadingResponsables] = useState(false);
+  const [tiposEvento, setTiposEvento] = useState([]); // Types for dropdown
 
   // Cargar responsables cuando se abre el modal
   useEffect(() => {
@@ -38,6 +39,15 @@ const NewEventModal = ({ isOpen, onClose }) => {
       setLoadingResponsables(false);
     }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+        fetch(`${API_URL}/api/eventos/tipos`)
+            .then(res => res.json())
+            .then(data => { if(data.success) setTiposEvento(data.data); })
+            .catch(err => console.error('Error loading types', err));
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -64,7 +74,7 @@ const NewEventModal = ({ isOpen, onClose }) => {
 
     const newCourse = {
       title: title.trim(),
-      type,
+      type, // This now holds the CODIGO (e.g. 'CUR')
       responsableId: responsableId || null,
       imageFile // Pasar el archivo real, NO el base64
     };
@@ -76,7 +86,9 @@ const NewEventModal = ({ isOpen, onClose }) => {
       
       // Limpiar formulario y cerrar
       setTitle('');
-      setType('Curso');
+      setTitle('');
+      setType('CUR'); // Default match
+      setResponsableId('');
       setResponsableId('');
       setImageFile(null);
       setImagePreview(null);
@@ -111,15 +123,22 @@ const NewEventModal = ({ isOpen, onClose }) => {
                 />
               </label>
 
-              <label>
-                Tipo de evento
-                <select value={type} onChange={(e) => setType(e.target.value)}>
-                  <option>Curso</option>
-                  <option>Taller</option>
-                  <option>Seminario</option>
-                  <option>Conferencia</option>
-                </select>
-              </label>
+                   <label>
+                    Tipo de evento
+                    <select value={type} onChange={(e) => setType(e.target.value)}>
+                      {tiposEvento.length > 0 ? (
+                        tiposEvento.map(t => <option key={t.CODIGO} value={t.CODIGO}>{t.NOMBRE}</option>)
+                      ) : (
+                        <>
+                          {/* Fallback if DB types fail to load */}
+                          <option value="CUR">Curso</option>
+                          <option value="TALL">Taller</option>
+                          <option value="SEM">Seminario</option>
+                          <option value="CONF">Conferencia</option>
+                        </>
+                      )}
+                    </select>
+                  </label>
             </div>
 
             <label>
