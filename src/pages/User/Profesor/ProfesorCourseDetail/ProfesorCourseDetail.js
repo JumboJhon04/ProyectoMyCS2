@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   FaBook, FaUsers, FaChartBar, FaPlus, FaTimes, FaFileAlt,
   FaUserGraduate, FaCheckCircle, FaExclamationCircle,
-  FaClipboardCheck, FaFilePdf, FaFileUpload, FaEdit
+  FaClipboardCheck, FaFilePdf, FaFileUpload, FaEdit, FaClipboardList, FaClock
 } from 'react-icons/fa';
+import FilePreview from '../../../../components/FilePreview/FilePreview';
 import './ProfesorCourseDetail.css';
 import API_URL from '../../../../config/api';
 
@@ -17,9 +18,10 @@ const ProfesorCourseDetail = () => {
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Tareas y Recursos por Módulo
+  // Tareas, Recursos y EXÁMENES por Módulo
   const [tasksByModule, setTasksByModule] = useState({});
   const [resourcesByModule, setResourcesByModule] = useState({});
+  const [examsByModule, setExamsByModule] = useState({}); // <--- NUEVO ESTADO
 
   // --- ESTADOS PARA MODALES ---
   const [showModal, setShowModal] = useState(false);
@@ -33,15 +35,24 @@ const ProfesorCourseDetail = () => {
   const [showResourceModal, setShowResourceModal] = useState(false);
   const [newResourceData, setNewResourceData] = useState({ titulo: '', descripcion: '', archivo: null });
 
+  const [showExamModal, setShowExamModal] = useState(false);
+  const [newExamData, setNewExamData] = useState({
+    titulo: '', duracion: 60, fechaInicio: '', fechaFin: ''
+  });
+
   // Estados de control UI
   const [creating, setCreating] = useState(false);
   const [selectedModuleId, setSelectedModuleId] = useState(null);
-  const [selectedModuleForView, setSelectedModuleForView] = useState(null); // Para el overlay del módulo
+  const [selectedModuleForView, setSelectedModuleForView] = useState(null);
 
   // Estados para Notificaciones
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState('success');
+
+  // Estados para Preview de Archivos
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewFile, setPreviewFile] = useState({ url: '', name: '' });
 
   // --- LÓGICA DE NEGOCIO: TIPOS DE EVENTO ---
   const isEvaluative = course && (course.CODIGOTIPOEVENTO === 'CUR' || course.CODIGOTIPOEVENTO === 'TALL');
@@ -56,7 +67,6 @@ const ProfesorCourseDetail = () => {
       const dataEvento = await resEvento.json();
 
       if (dataEvento.success && dataEvento.data) {
-        // Manejo robusto si devuelve array o objeto
         const cursoData = Array.isArray(dataEvento.data) ? dataEvento.data[0] : dataEvento.data;
         setCourse(cursoData);
       }
@@ -72,6 +82,7 @@ const ProfesorCourseDetail = () => {
         dataModules.data.forEach(mod => {
           fetchResources(mod.SECUENCIAL);
           fetchTasks(mod.SECUENCIAL);
+          fetchExams(mod.SECUENCIAL); // <--- NUEVO: Cargar exámenes
         });
       }
     } catch (error) {
@@ -103,27 +114,32 @@ const ProfesorCourseDetail = () => {
     } catch (error) { console.error(error); }
   };
 
+  // Helper: Cargar Exámenes (NUEVO)
+  const fetchExams = async (moduloId) => {
+    try {
+      const res = await fetch(`${API_URL}/api/evaluaciones/modulo/${moduloId}`);
+      const data = await res.json();
+      if (data.success) {
+        setExamsByModule(prev => ({ ...prev, [moduloId]: data.data }));
+      }
+    } catch (error) { console.error(error); }
+  };
+
   useEffect(() => {
     fetchData();
   }, [courseId]);
 
   // --- HANDLERS (CREAR) ---
 
-  // 1. Crear Módulo
   const handleCreateModule = async (e) => {
     e.preventDefault();
     if (!newModuleData.titulo) return alert("El título es obligatorio");
-
     try {
       setCreating(true);
       const res = await fetch(`${API_URL}/api/modulos/crear`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventoId: courseId,
-          titulo: newModuleData.titulo,
-          descripcion: newModuleData.descripcion
-        })
+        body: JSON.stringify({ eventoId: courseId, ...newModuleData })
       });
       const data = await res.json();
       if (data.success) {
@@ -132,42 +148,35 @@ const ProfesorCourseDetail = () => {
         setNewModuleData({ titulo: '', descripcion: '' });
         fetchData();
       }
-    } catch (error) {
-      triggerNotification('Error al crear módulo', 'error');
-    } finally { setCreating(false); }
+    } catch (error) { triggerNotification('Error al crear módulo', 'error'); } finally { setCreating(false); }
   };
 
-  // 2. Crear Tarea
   const handleCreateTask = async (e) => {
     e.preventDefault();
     const formData = new FormData();
     formData.append('moduloId', selectedModuleId);
-    formData.append('titulo', newTaskData.titulo);
-    formData.append('descripcion', newTaskData.descripcion);
-    formData.append('fechaApertura', newTaskData.fechaApertura);
-    formData.append('fechaLimite', newTaskData.fechaLimite);
-    formData.append('puntos', newTaskData.puntos);
-    if (newTaskData.archivo) formData.append('archivoAdjunto', newTaskData.archivo);
+    // ... agregar campos al formData ...
+    for (const key in newTaskData) {
+        if (key === 'archivo') {
+            if (newTaskData.archivo) formData.append('archivoAdjunto', newTaskData.archivo);
+        } else {
+            formData.append(key, newTaskData[key]);
+        }
+    }
 
     try {
       setCreating(true);
       const res = await fetch(`${API_URL}/api/tareas/crear`, { method: 'POST', body: formData });
       const data = await res.json();
-
       if (data.success) {
         triggerNotification('Tarea creada exitosamente', 'success');
         setShowTaskModal(false);
         fetchTasks(selectedModuleId);
         setNewTaskData({ titulo: '', descripcion: '', fechaApertura: '', fechaLimite: '', puntos: 10, archivo: null });
-      } else {
-        triggerNotification('Error: ' + data.message, 'error');
-      }
-    } catch (error) {
-      triggerNotification('Error al subir la tarea', 'error');
-    } finally { setCreating(false); }
+      } else { triggerNotification('Error: ' + data.message, 'error'); }
+    } catch (error) { triggerNotification('Error al subir la tarea', 'error'); } finally { setCreating(false); }
   };
 
-  // 3. Crear Recurso
   const handleCreateResource = async (e) => {
     e.preventDefault();
     const formData = new FormData();
@@ -189,12 +198,38 @@ const ProfesorCourseDetail = () => {
     } catch (error) { triggerNotification("Error al subir recurso", 'error'); } finally { setCreating(false); }
   };
 
+  const handleCreateExam = async (e) => {
+    e.preventDefault();
+    try {
+      setCreating(true);
+      const res = await fetch(`${API_URL}/api/evaluaciones/crear`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ moduloId: selectedModuleId, ...newExamData })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Evaluación creada. Redirigiendo al editor...");
+        setShowExamModal(false);
+        fetchExams(selectedModuleId); // Actualizar lista por si regresa
+        // Redirigir al editor de preguntas
+        navigate(`/profesor/exam-editor/${data.id}`);
+      } else {
+        alert("Error: " + data.message);
+      }
+    } catch (error) { console.error(error); } finally { setCreating(false); }
+  };
+
   const triggerNotification = (msg, type) => {
     setNotificationMessage(msg);
     setNotificationType(type);
     setShowNotification(true);
   };
 
+  const handleOpenPreview = (url, name) => {
+    setPreviewFile({ url, name });
+    setShowPreview(true);
+  };
 
   if (loading) return <div className="loading-state">Cargando contenido...</div>;
   if (!course) return <div className="error-state">No se encontró información del curso.</div>;
@@ -224,7 +259,6 @@ const ProfesorCourseDetail = () => {
       </div>
 
       <div className="course-detail-content-profesor">
-
         {/* Estadísticas */}
         <div className="course-summary-stats-profesor">
           <div className="stat-item-profesor">
@@ -243,12 +277,13 @@ const ProfesorCourseDetail = () => {
           <FaBook /> Módulos del Curso
         </div>
 
-        {/* LISTA DE MÓDULOS (TARJETAS) */}
+        {/* LISTA DE MÓDULOS */}
         <div className="course-modules-list-profesor">
           {modules.length === 0 ? <p className="no-modules">No hay módulos definidos.</p> :
             modules.map((module) => {
               const taskCount = tasksByModule[module.SECUENCIAL]?.length || 0;
               const resourceCount = resourcesByModule[module.SECUENCIAL]?.length || 0;
+              const examCount = examsByModule[module.SECUENCIAL]?.length || 0; // Contar exámenes
               const isSelected = selectedModuleForView?.SECUENCIAL === module.SECUENCIAL;
 
               return (
@@ -260,7 +295,7 @@ const ProfesorCourseDetail = () => {
                   <div className="module-card-icon"><FaBook /></div>
                   <h4 className="module-card-title-centered">{module.TITULO}</h4>
                   <span className="module-task-count-centered">
-                    {resourceCount} Materiales • {isEvaluative ? `${taskCount} Tareas` : 'Informativo'}
+                    {resourceCount} Mat. • {isEvaluative ? `${taskCount} Tareas • ${examCount} Tests` : 'Informativo'}
                   </span>
                 </div>
               );
@@ -274,7 +309,6 @@ const ProfesorCourseDetail = () => {
 
         {selectedModuleForView && (
           <div className="module-expanded-content">
-            {/* CABECERA DEL MÓDULO EXPANDIDO */}
             <div className="expanded-content-header">
               <div className="expanded-header-left">
                 <div className="module-modal-icon"><FaBook /></div>
@@ -283,10 +317,8 @@ const ProfesorCourseDetail = () => {
                   <p className="module-modal-description">{selectedModuleForView.DESCRIPCION}</p>
                 </div>
               </div>
-
-              {/* ACCIONES DEL MÓDULO */}
+              
               <div className="expanded-actions" style={{ display: 'flex', gap: '10px' }}>
-                {/* 1. Botón MATERIAL (Siempre visible) */}
                 <button
                   className="add-task-btn-expanded"
                   style={{ backgroundColor: '#17a2b8' }}
@@ -299,31 +331,41 @@ const ProfesorCourseDetail = () => {
                   <FaFileUpload /> Subir Material
                 </button>
 
-                {/* 2. Botón TAREA (Solo si es Evaluativo) */}
                 {isEvaluative && (
-                  <button
-                    className="add-task-btn-expanded"
-                    style={{ backgroundColor: '#28a745' }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedModuleId(selectedModuleForView.SECUENCIAL);
-                      setShowTaskModal(true);
-                    }}
-                  >
-                    <FaPlus /> Agregar Tarea
-                  </button>
+                  <>
+                    <button
+                      className="add-task-btn-expanded"
+                      style={{ backgroundColor: '#28a745' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedModuleId(selectedModuleForView.SECUENCIAL);
+                        setShowTaskModal(true);
+                      }}
+                    >
+                      <FaPlus /> Agregar Tarea
+                    </button>
+                    <button
+                      className="add-task-btn-expanded"
+                      style={{ backgroundColor: '#ffc107', color: '#000' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedModuleId(selectedModuleForView.SECUENCIAL);
+                        setShowExamModal(true);
+                      }}
+                    >
+                      <FaClipboardList /> Crear Prueba
+                    </button>
+                  </>
                 )}
               </div>
             </div>
 
             <div className="expanded-content-body">
-
-              {/* A. SECCIÓN DE MATERIALES (RECURSOS) */}
+              {/* A. MATERIALES */}
               <h3 className="tasks-title" style={{ color: '#17a2b8', marginTop: '0' }}>
                 <FaFilePdf /> Material de Apoyo ({resourcesByModule[selectedModuleForView.SECUENCIAL]?.length || 0})
               </h3>
-
-              {resourcesByModule[selectedModuleForView.SECUENCIAL] && resourcesByModule[selectedModuleForView.SECUENCIAL].length > 0 ? (
+              {resourcesByModule[selectedModuleForView.SECUENCIAL]?.length > 0 ? (
                 <div className="tasks-list-modal">
                   {resourcesByModule[selectedModuleForView.SECUENCIAL].map(res => (
                     <div key={res.SECUENCIAL} className="task-item-modal" style={{ borderLeft: '4px solid #17a2b8' }}>
@@ -331,29 +373,22 @@ const ProfesorCourseDetail = () => {
                         <FaFilePdf className="task-modal-icon" style={{ color: '#17a2b8' }} />
                         <div>
                           <h4>{res.TITULO}</h4>
-                          <p className="task-modal-date">{res.DESCRIPCION || 'Documento informativo'}</p>
+                          <p className="task-modal-date">{res.DESCRIPCION}</p>
                         </div>
                       </div>
-                      <a href={res.URL_RECURSO} target="_blank" rel="noreferrer" className="task-modal-action-btn" style={{ textDecoration: 'none', background: '#e0f7fa', color: '#006064' }}>
-                        Ver Archivo
-                      </a>
+                      <button onClick={() => handleOpenPreview(res.URL_RECURSO, res.TITULO)} className="task-modal-action-btn" style={{ background: '#e0f7fa', color: '#006064', border: 'none' }}>Ver</button>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <p className="no-tasks-modal">No hay material subido en este módulo.</p>
-              )}
+              ) : <p className="no-tasks-modal">No hay material.</p>}
 
-
-              {/* B. SECCIÓN DE TAREAS (Solo Evaluativo) */}
               {isEvaluative && (
                 <>
-                  <hr style={{ margin: '20px 0', border: '0', borderTop: '1px solid #eee' }} />
-                  <h3 className="tasks-title">
-                    <FaFileAlt /> Tareas Asignadas ({tasksByModule[selectedModuleForView.SECUENCIAL]?.length || 0})
-                  </h3>
-
-                  {tasksByModule[selectedModuleForView.SECUENCIAL] && tasksByModule[selectedModuleForView.SECUENCIAL].length > 0 ? (
+                  <hr style={{ margin: '20px 0', borderTop: '1px solid #eee' }} />
+                  
+                  {/* B. TAREAS */}
+                  <h3 className="tasks-title"><FaFileAlt /> Tareas ({tasksByModule[selectedModuleForView.SECUENCIAL]?.length || 0})</h3>
+                  {tasksByModule[selectedModuleForView.SECUENCIAL]?.length > 0 ? (
                     <div className="tasks-list-modal">
                       {tasksByModule[selectedModuleForView.SECUENCIAL].map(task => (
                         <div key={task.SECUENCIAL} className="task-item-modal">
@@ -361,23 +396,46 @@ const ProfesorCourseDetail = () => {
                             <FaFileAlt className="task-modal-icon" />
                             <div>
                               <h4>{task.TITULO}</h4>
+                              <p className="task-modal-date">Vence: {new Date(task.FECHA_LIMITE).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                          <button className="task-modal-action-btn" onClick={() => navigate(`/profesor/grading/${task.SECUENCIAL}`)}><FaClipboardCheck /> Calificar</button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : <p className="no-tasks-modal">No hay tareas.</p>}
+
+                  <hr style={{ margin: '20px 0', borderTop: '1px solid #eee' }} />
+
+                  {/* C. EVALUACIONES (NUEVO) */}
+                  <h3 className="tasks-title" style={{color: '#d97706'}}>
+                    <FaClipboardList /> Exámenes ({examsByModule[selectedModuleForView.SECUENCIAL]?.length || 0})
+                  </h3>
+                  {examsByModule[selectedModuleForView.SECUENCIAL]?.length > 0 ? (
+                    <div className="tasks-list-modal">
+                      {examsByModule[selectedModuleForView.SECUENCIAL].map(exam => (
+                        <div key={exam.SECUENCIAL} className="task-item-modal" style={{borderLeft: '4px solid #d97706'}}>
+                          <div className="task-modal-info">
+                            <FaClipboardList className="task-modal-icon" style={{color: '#d97706'}} />
+                            <div>
+                              <h4>{exam.TITULO}</h4>
                               <p className="task-modal-date">
-                                Vence: {task.FECHA_LIMITE ? new Date(task.FECHA_LIMITE).toLocaleDateString() : 'Sin fecha'}
+                                <FaClock style={{marginRight:'5px'}}/> 
+                                {exam.DURACION_MINUTOS} mins • Inicio: {new Date(exam.FECHA_INICIO).toLocaleDateString()}
                               </p>
                             </div>
                           </div>
-                          <button
-                            className="task-modal-action-btn"
-                            onClick={() => navigate(`/profesor/grading/${task.SECUENCIAL}`)}
+                          <button 
+                            className="task-modal-action-btn" 
+                            style={{background: '#fef3c7', color: '#92400e'}}
+                            onClick={() => navigate(`/profesor/exam-editor/${exam.SECUENCIAL}`)}
                           >
-                            <FaClipboardCheck /> Calificar
+                            <FaEdit /> Editar
                           </button>
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    <p className="no-tasks-modal">No hay tareas en este módulo.</p>
-                  )}
+                  ) : <p className="no-tasks-modal">No hay exámenes creados.</p>}
                 </>
               )}
             </div>
@@ -386,8 +444,6 @@ const ProfesorCourseDetail = () => {
       </div>
 
       {/* --- MODALES --- */}
-
-      {/* 1. CREAR MÓDULO */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -396,16 +452,61 @@ const ProfesorCourseDetail = () => {
               <button onClick={() => setShowModal(false)} className="close-modal-btn"><FaTimes /></button>
             </div>
             <form onSubmit={handleCreateModule}>
-              <div className="form-group">
-                <label>Título</label>
-                <input type="text" value={newModuleData.titulo} onChange={(e) => setNewModuleData({ ...newModuleData, titulo: e.target.value })} required />
-              </div>
-              <div className="form-group">
-                <label>Descripción</label>
-                <textarea value={newModuleData.descripcion} onChange={(e) => setNewModuleData({ ...newModuleData, descripcion: e.target.value })} />
+                <div className="form-group"><label>Título</label><input type="text" value={newModuleData.titulo} onChange={(e) => setNewModuleData({ ...newModuleData, titulo: e.target.value })} required /></div>
+                <div className="form-group"><label>Descripción</label><textarea value={newModuleData.descripcion} onChange={(e) => setNewModuleData({ ...newModuleData, descripcion: e.target.value })} /></div>
+                <div className="modal-actions"><button type="button" onClick={() => setShowModal(false)} className="cancel-btn">Cancelar</button><button type="submit" className="confirm-btn" disabled={creating}>Crear</button></div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showTaskModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '600px' }}>
+            <div className="modal-header"><h3>Nueva Tarea</h3><button onClick={() => setShowTaskModal(false)} className="close-modal-btn"><FaTimes /></button></div>
+            <form onSubmit={handleCreateTask}>
+                <div className="form-group"><label>Título</label><input type="text" required onChange={e => setNewTaskData({ ...newTaskData, titulo: e.target.value })} /></div>
+                <div className="form-group"><label>Instrucciones</label><textarea rows="3" onChange={e => setNewTaskData({ ...newTaskData, descripcion: e.target.value })} /></div>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div className="form-group" style={{ flex: 1 }}><label>Apertura</label><input type="datetime-local" required onChange={e => setNewTaskData({ ...newTaskData, fechaApertura: e.target.value })} /></div>
+                    <div className="form-group" style={{ flex: 1 }}><label>Límite</label><input type="datetime-local" required onChange={e => setNewTaskData({ ...newTaskData, fechaLimite: e.target.value })} /></div>
+                </div>
+                <div className="form-group"><label>Puntaje</label><input type="number" defaultValue="10" onChange={e => setNewTaskData({ ...newTaskData, puntos: e.target.value })} /></div>
+                <div className="form-group"><label>Archivo Guía</label><input type="file" onChange={e => setNewTaskData({ ...newTaskData, archivo: e.target.files[0] })} /></div>
+                <div className="modal-actions"><button type="button" onClick={() => setShowTaskModal(false)} className="cancel-btn">Cancelar</button><button type="submit" className="confirm-btn" disabled={creating}>Guardar</button></div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showResourceModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header"><h3>Subir Material</h3><button onClick={() => setShowResourceModal(false)} className="close-modal-btn"><FaTimes /></button></div>
+            <form onSubmit={handleCreateResource}>
+                <div className="form-group"><label>Título</label><input type="text" required onChange={e => setNewResourceData({ ...newResourceData, titulo: e.target.value })} /></div>
+                <div className="form-group"><label>Descripción</label><textarea rows="2" onChange={e => setNewResourceData({ ...newResourceData, descripcion: e.target.value })} /></div>
+                <div className="form-group"><label>Archivo</label><input type="file" required onChange={e => setNewResourceData({ ...newResourceData, archivo: e.target.files[0] })} /></div>
+                <div className="modal-actions"><button type="button" onClick={() => setShowResourceModal(false)} className="cancel-btn">Cancelar</button><button type="submit" className="confirm-btn" disabled={creating}>Subir</button></div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CREAR EXAMEN (YA IMPLEMENTADO) */}
+      {showExamModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header"><h3>Nueva Evaluación</h3><button onClick={() => setShowExamModal(false)} className="close-modal-btn"><FaTimes /></button></div>
+            <form onSubmit={handleCreateExam}>
+              <div className="form-group"><label>Título</label><input type="text" required onChange={e => setNewExamData({ ...newExamData, titulo: e.target.value })} /></div>
+              <div className="form-group"><label>Duración (mins)</label><input type="number" defaultValue="60" onChange={e => setNewExamData({ ...newExamData, duracion: e.target.value })} /></div>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="form-group" style={{ flex: 1 }}><label>Inicio</label><input type="datetime-local" required onChange={e => setNewExamData({ ...newExamData, fechaInicio: e.target.value })} /></div>
+                <div className="form-group" style={{ flex: 1 }}><label>Fin</label><input type="datetime-local" required onChange={e => setNewExamData({ ...newExamData, fechaFin: e.target.value })} /></div>
               </div>
               <div className="modal-actions">
-                <button type="button" onClick={() => setShowModal(false)} className="cancel-btn">Cancelar</button>
+                <button type="button" onClick={() => setShowExamModal(false)} className="cancel-btn">Cancelar</button>
                 <button type="submit" className="confirm-btn" disabled={creating}>Crear</button>
               </div>
             </form>
@@ -413,127 +514,20 @@ const ProfesorCourseDetail = () => {
         </div>
       )}
 
-      {/* 2. CREAR TAREA */}
-      {showTaskModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '600px' }}>
-            <div className="modal-header">
-              <h3>Nueva Tarea</h3>
-              <button onClick={() => setShowTaskModal(false)} className="close-modal-btn"><FaTimes /></button>
-            </div>
-            <form onSubmit={handleCreateTask}>
-              <div className="form-group">
-                <label>Título</label>
-                <input type="text" required onChange={e => setNewTaskData({ ...newTaskData, titulo: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label>Instrucciones</label>
-                <textarea rows="3" onChange={e => setNewTaskData({ ...newTaskData, descripcion: e.target.value })} />
-              </div>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label>Apertura</label>
-                  <input type="datetime-local" required onChange={e => setNewTaskData({ ...newTaskData, fechaApertura: e.target.value })} />
-                </div>
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label>Límite</label>
-                  <input type="datetime-local" required onChange={e => setNewTaskData({ ...newTaskData, fechaLimite: e.target.value })} />
-                </div>
-              </div>
-              <div className="form-group">
-                <label>Puntaje</label>
-                <input type="number" defaultValue="10" onChange={e => setNewTaskData({ ...newTaskData, puntos: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label>Archivo Guía (Opcional)</label>
-                <input
-                  type="file"
-                  onChange={e => setNewTaskData({ ...newTaskData, archivo: e.target.files[0] })}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px dashed #cbd5e1',
-                    borderRadius: '8px',
-                    background: '#f8fafc',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    display: 'block'
-                  }}
-                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.jpg,.png"
-                />
-              </div>
-              <div className="modal-actions">
-                <button type="button" onClick={() => setShowTaskModal(false)} className="cancel-btn">Cancelar</button>
-                <button type="submit" className="confirm-btn" disabled={creating}>Guardar</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 3. CREAR RECURSO */}
-      {showResourceModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>Subir Material de Apoyo</h3>
-              <button onClick={() => setShowResourceModal(false)} className="close-modal-btn"><FaTimes /></button>
-            </div>
-            <form onSubmit={handleCreateResource}>
-              <div className="form-group">
-                <label>Título</label>
-                <input type="text" placeholder="Ej: Diapositivas 1" onChange={e => setNewResourceData({ ...newResourceData, titulo: e.target.value })} required />
-              </div>
-              <div className="form-group">
-                <label>Descripción</label>
-                <textarea rows="2" onChange={e => setNewResourceData({ ...newResourceData, descripcion: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label>Archivo</label>
-                <input
-                  type="file"
-                  required
-                  onChange={e => setNewResourceData({ ...newResourceData, archivo: e.target.files[0] })}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px dashed #cbd5e1',
-                    borderRadius: '8px',
-                    background: '#f8fafc',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    display: 'block'
-                  }}
-                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.jpg,.png,.txt"
-                />
-              </div>
-              <div className="modal-actions">
-                <button type="button" onClick={() => setShowResourceModal(false)} className="cancel-btn">Cancelar</button>
-                <button type="submit" className="confirm-btn" disabled={creating}>Subir</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* NOTIFICACIÓN */}
+      {/* NOTIFICACIÓN & PREVIEW */}
       {showNotification && (
         <div className="modal-overlay" onClick={() => setShowNotification(false)}>
-          <div className="notification-modal" onClick={(e) => e.stopPropagation()}
-            style={{ background: 'white', padding: '2rem', borderRadius: '12px', textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>
-              {notificationType === 'success' ? <FaCheckCircle color="#10b981" /> : <FaExclamationCircle color="#ef4444" />}
-            </div>
+          <div className="notification-modal" onClick={(e) => e.stopPropagation()} style={{ background: 'white', padding: '2rem', borderRadius: '12px', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>{notificationType === 'success' ? <FaCheckCircle color="#10b981" /> : <FaExclamationCircle color="#ef4444" />}</div>
             <h3>{notificationType === 'success' ? '¡Éxito!' : 'Error'}</h3>
             <p>{notificationMessage}</p>
             <button onClick={() => setShowNotification(false)} className="confirm-btn" style={{ width: '100%', marginTop: '1rem' }}>Aceptar</button>
           </div>
         </div>
       )}
-
-      {/* FAB */}
+      {showPreview && <FilePreview fileUrl={previewFile.url} fileName={previewFile.name} onClose={() => setShowPreview(false)} />}
+      
       <button className="fab-profesor" onClick={() => setShowModal(true)}><FaPlus /></button>
-
     </div>
   );
 };
