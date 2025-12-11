@@ -16,7 +16,11 @@ const getInitials = (name) => {
 
 const ProfesorHeader = ({ onToggleSidebar, onLogout }) => {
     const { user } = useUser();
-    const userInitials = getInitials(user?.name || `${user?.nombres || ''}`);
+    const storedUser = React.useMemo(() => {
+        try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; }
+    }, []);
+    const effectiveUser = user || storedUser || {};
+    const userInitials = getInitials(effectiveUser?.name || `${effectiveUser?.nombres || ''}`);
 
     const [showUserMenu, setShowUserMenu] = React.useState(false);
     const userMenuRef = React.useRef(null);
@@ -49,22 +53,27 @@ const ProfesorHeader = ({ onToggleSidebar, onLogout }) => {
                 <NavLink to="/profesor/test" className={({ isActive }) => isActive ? "active" : ""}>Test</NavLink>
             </nav>
 
-            <div className="header-right">                <div style={{ position: 'relative' }}>
-                <div className="user-avatar" title={user?.nombres ? `${user.nombres} ${user.apellidos}` : user?.name} onClick={toggleUserMenu} style={{ cursor: 'pointer' }}>
-                    <span>{userInitials || 'FT'}</span>
+            <div className="header-right">
+                <div style={{ position: 'relative' }}>
+                <div className="user-avatar" title={effectiveUser?.nombres ? `${effectiveUser.nombres} ${effectiveUser.apellidos}` : effectiveUser?.name} onClick={toggleUserMenu} style={{ cursor: 'pointer', overflow: 'hidden', background: '#333' }}>
+                    {effectiveUser?.fotoPerfil || effectiveUser?.FOTO_PERFIL || effectiveUser?.foto ? (
+                        <img src={effectiveUser.fotoPerfil || effectiveUser.FOTO_PERFIL || effectiveUser.foto} alt="Foto de perfil" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                        <span>{userInitials || 'FT'}</span>
+                    )}
                 </div>
                 {showUserMenu && (
                     <div className="user-menu-panel" ref={userMenuRef} onClick={(e) => e.stopPropagation()}>
                         <div className="user-menu-header">
-                            <div className="user-menu-name">{user?.nombres ? `${user.nombres} ${user.apellidos}` : user?.name || 'Usuario'}</div>
-                            <div className="user-menu-email">{user?.correo || user?.email || ''}</div>
-                            <div className="user-menu-role">{user?.rol || user?.displayRole || user?.role || 'Docente'}</div>
+                            <div className="user-menu-name">{effectiveUser?.nombres ? `${effectiveUser.nombres} ${effectiveUser.apellidos}` : effectiveUser?.name || 'Usuario'}</div>
+                            <div className="user-menu-email">{effectiveUser?.correo || effectiveUser?.email || ''}</div>
+                            <div className="user-menu-role">{effectiveUser?.rol || effectiveUser?.displayRole || effectiveUser?.role || 'Docente'}</div>
                         </div>
                         <div className="user-menu-divider" />
                         <button className="user-menu-item logout" onClick={handleLogout}><FaSignOutAlt /><span>Cerrar Sesión</span></button>
                     </div>
                 )}
-            </div>
+                </div>
             </div>
         </header>
     );
