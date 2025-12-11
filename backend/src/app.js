@@ -17,7 +17,9 @@ const peticionCambioRoutes = require('./routes/peticionCambioRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const facultadCarreraRoutes = require('./routes/facultadCarrera'); // NUEVA IMPORTACIÓN
 const requisitoRoutes = require('./routes/requisitoRoutes');
-
+const modulosRoutes = require('./routes/modulosRoutes');
+const tareasRoutes = require('./routes/tareasRoutes');
+//const evaluacionesRoutes = require('./routes/evaluacionesRoutes');
 
 const app = express();
 
@@ -71,6 +73,9 @@ app.use('/api', facultadCarreraRoutes); // NUEVA RUTA
 app.use('/api', requisitoRoutes);
 app.use(cors());
 app.use(express.json());
+app.use('/api/modulos', modulosRoutes);
+app.use('/api/tareas', tareasRoutes);
+//app.use('/api/evaluaciones', evaluacionesRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {

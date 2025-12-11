@@ -73,10 +73,45 @@ const uploadHome = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 });
 
+// --- NUEVO: Configuración para TAREAS (Archivos que sube el profesor) ---
+const tareasStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'material_clase', // Nombre de la carpeta en Cloudinary
+    allowed_formats: ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'zip', 'rar', 'jpg', 'png'],
+    resource_type: 'auto' // 'auto' permite detectar si es imagen o archivo raw (pdf/doc)
+  }
+});
+
+// --- NUEVO: Configuración para ENTREGAS (Archivos que sube el estudiante) ---
+const entregasStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'deberes_estudiantes',
+    allowed_formats: ['pdf', 'doc', 'docx', 'zip', 'rar', 'jpg', 'png', 'txt'],
+    resource_type: 'auto'
+  }
+});
+
+// ... (MANTÉN TUS UPLOADS EXISTENTES) ...
+
+// --- NUEVO: Multer instances ---
+const uploadTareas = multer({ 
+  storage: tareasStorage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB límite
+});
+
+const uploadEntregas = multer({ 
+  storage: entregasStorage,
+  limits: { fileSize: 20 * 1024 * 1024 } // 20MB límite (los deberes pueden ser pesados)
+});
+
 module.exports = {
   cloudinary,
   uploadEventos,
   uploadPagos,
   uploadSolicitudes,
-  uploadHome
+  uploadHome,
+  uploadTareas,
+  uploadEntregas
 };

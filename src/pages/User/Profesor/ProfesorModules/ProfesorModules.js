@@ -25,7 +25,7 @@ const ProfesorModules = () => {
             }
             try {
                 setLoading(true);
-                const res = await fetch(`${API_URL}/api/docentes/${user.id}/eventos`);
+                const res = await fetch(`${API_URL}/api/docentes/${user.id}/mis-cursos`);
                 if (!res.ok) {
                     console.warn('No se pudieron cargar los eventos del docente');
                     setProfessorEvents([]);
@@ -45,13 +45,15 @@ const ProfesorModules = () => {
 
     // Mapear eventos del backend al formato de módulos
     const modules = professorEvents.map(ev => ({
-        id: ev.eventoId || ev.SECUENCIAL,
+        // INTENTA OBTENER EL ID DE VARIAS FORMAS PARA QUE NO FALLE
+        id: ev.eventoId || ev.SECUENCIAL || ev.id, 
+        
         title: ev.TITULO || ev.title || 'Sin título',
-        type: ev.CODIGOTIPOEVENTO === 'CUR' ? 'Curso' : ev.CODIGOTIPOEVENTO === 'TALL' ? 'Taller' : ev.CODIGOTIPOEVENTO === 'SEM' ? 'Seminario' : 'Evento',
-        level: 'Intermedio', // Podría venir del backend si está disponible
+        type: ev.CODIGOTIPOEVENTO === 'CUR' ? 'Curso' : 'Taller',
+        level: 'Intermedio', 
         lessons: ev.HORAS || 0,
-        students: ev.TOTAL_INSCRITOS || 0, // Si el backend lo provee
-        imageUrl: ev.URL_IMAGEN || 'https://via.placeholder.com/150/007bff/FFFFFF?text=Curso',
+        students: ev.CAPACIDAD || 0,
+        imageUrl: ev.URL_IMAGEN || 'https://via.placeholder.com/150',
         description: ev.DESCRIPCION || ''
     }));
 
@@ -60,6 +62,13 @@ const ProfesorModules = () => {
     // Adaptamos el CourseCard del estudiante para el profesor (usamos un componente sencillo por ahora)
     const ModuleCard = ({ module }) => {
         const handleViewCourse = () => {
+            // Imprime esto en la consola para verificar antes de navegar
+            console.log("Navegando al curso con ID:", module.id); 
+            
+            if (!module.id) {
+                alert("Error: El ID del curso no se encontró. Revisa la consola.");
+                return;
+            }
             navigate(`/profesor/course/${module.id}`);
         };
 

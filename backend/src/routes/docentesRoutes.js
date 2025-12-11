@@ -6,5 +6,5 @@ router.get('/', docentesController.obtenerDocentes);
 router.get('/:id', docentesController.obtenerDocente);
 router.put('/:id', docentesController.actualizarDocente);
 router.get('/:id/eventos', docentesController.obtenerEventosDictados);
-
+router.get('/:id/mis-cursos', docentesController.obtenerCursosAsignados);
 module.exports = router;
