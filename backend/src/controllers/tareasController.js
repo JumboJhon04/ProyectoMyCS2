@@ -4,7 +4,7 @@ const { pool } = require('../config/database');
 exports.crearTarea = async (req, res) => {
     try {
         const { moduloId, titulo, descripcion, fechaApertura, fechaLimite, puntos } = req.body;
-        
+
         // Si Cloudinary subió el archivo, req.file tendrá la info
         let urlAdjunto = null;
         if (req.file) {
@@ -28,7 +28,7 @@ exports.crearTarea = async (req, res) => {
 exports.subirEntrega = async (req, res) => {
     try {
         const { tareaId, estudianteId, comentario } = req.body;
-        
+
         // Validar que se haya subido un archivo (obligatorio para la entrega)
         if (!req.file) {
             return res.status(400).json({ success: false, message: 'Debes subir un archivo para entregar la tarea' });
@@ -78,11 +78,11 @@ exports.calificarEntrega = async (req, res) => {
 };
 
 
-// 5. Listar entregas de una tarea específica (Para que el profe califique)
+// 5. Listar entregas de una tarea específica (Para calificar)
 exports.listarEntregasPorTarea = async (req, res) => {
     const { tareaId } = req.params;
     try {
-        // Hacemos JOIN con la tabla usuario para saber quién es el estudiante
+        // Hacemos JOIN con usuario para mostrar Nombres y Apellidos del alumno
         const [entregas] = await pool.execute(
             `SELECT 
                 et.SECUENCIAL as entregaId,
@@ -97,12 +97,61 @@ exports.listarEntregasPorTarea = async (req, res) => {
              FROM entrega_tarea et
              INNER JOIN usuario u ON et.SECUENCIALESTUDIANTE = u.SECUENCIAL
              WHERE et.SECUENCIALTAREA = ?
-             ORDER BY et.FECHA_ENTREGA DESC`, 
+             ORDER BY et.FECHA_ENTREGA DESC`,
             [tareaId]
         );
         res.json({ success: true, data: entregas });
     } catch (error) {
         console.error("❌ Error listando entregas:", error);
+        res.status(500).json({ success: false, message: 'Error al listar entregas' });
+    }
+};
+
+// 6. Guardar Calificación
+exports.calificarEntrega = async (req, res) => {
+    const { entregaId } = req.params;
+    const { calificacion, retroalimentacion } = req.body;
+
+    try {
+        await pool.execute(
+            `UPDATE entrega_tarea 
+             SET CALIFICACION = ?, RETROALIMENTACION = ?, ESTADO = 'CALIFICADO' 
+             WHERE SECUENCIAL = ?`,
+            [calificacion, retroalimentacion, entregaId]
+        );
+        res.json({ success: true, message: 'Calificación guardada correctamente' });
+    } catch (error) {
+        console.error("❌ Error calificando:", error);
+        res.status(500).json({ success: false, message: 'Error al calificar' });
+    }
+};
+
+// 7. Listar entregas de un estudiante en un evento específico
+exports.listarEntregasPorEstudiante = async (req, res) => {
+    const { estudianteId, eventoId } = req.params;
+    try {
+        // Obtener todas las entregas del estudiante para tareas de módulos del evento
+        const [entregas] = await pool.execute(
+            `SELECT 
+                et.SECUENCIAL as entregaId,
+                et.SECUENCIALTAREA as tareaId,
+                et.URL_ARCHIVO,
+                et.COMENTARIO_ESTUDIANTE,
+                et.FECHA_ENTREGA,
+                et.CALIFICACION,
+                et.RETROALIMENTACION,
+                et.ESTADO,
+                t.TITULO as tituloTarea,
+                t.PUNTOS_MAXIMOS
+             FROM entrega_tarea et
+             INNER JOIN tarea t ON et.SECUENCIALTAREA = t.SECUENCIAL
+             INNER JOIN modulo m ON t.SECUENCIALMODULO = m.SECUENCIAL
+             WHERE et.SECUENCIALESTUDIANTE = ? AND m.SECUENCIALEVENTO = ?`,
+            [estudianteId, eventoId]
+        );
+        res.json({ success: true, data: entregas });
+    } catch (error) {
+        console.error("❌ Error listando entregas del estudiante:", error);
         res.status(500).json({ success: false, message: 'Error al listar entregas' });
     }
 };

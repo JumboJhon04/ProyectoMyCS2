@@ -418,6 +418,7 @@ const EstudianteCourseDetail = () => {
               <MaterialTab
                 topics={topics}
                 eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
+                courseData={courseData}
               />
             )}
             {activeTab === 'participantes' && (
