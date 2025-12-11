@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  FaBook, FaUsers, FaChartBar, FaPlus, FaTimes, FaFileAlt, 
-  FaUserGraduate, FaCheckCircle, FaExclamationCircle, 
-  FaClipboardCheck, FaFilePdf, FaFileUpload, FaEdit 
+import {
+  FaBook, FaUsers, FaChartBar, FaPlus, FaTimes, FaFileAlt,
+  FaUserGraduate, FaCheckCircle, FaExclamationCircle,
+  FaClipboardCheck, FaFilePdf, FaFileUpload, FaEdit
 } from 'react-icons/fa';
 import './ProfesorCourseDetail.css';
 import API_URL from '../../../../config/api';
@@ -16,9 +16,9 @@ const ProfesorCourseDetail = () => {
   const [course, setCourse] = useState(null);
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Tareas y Recursos por Módulo
-  const [tasksByModule, setTasksByModule] = useState({}); 
+  const [tasksByModule, setTasksByModule] = useState({});
   const [resourcesByModule, setResourcesByModule] = useState({});
 
   // --- ESTADOS PARA MODALES ---
@@ -59,7 +59,7 @@ const ProfesorCourseDetail = () => {
         // Manejo robusto si devuelve array o objeto
         const cursoData = Array.isArray(dataEvento.data) ? dataEvento.data[0] : dataEvento.data;
         setCourse(cursoData);
-      } 
+      }
 
       // 2. Módulos
       const resModules = await fetch(`${API_URL}/api/modulos/evento/${courseId}`);
@@ -67,11 +67,11 @@ const ProfesorCourseDetail = () => {
 
       if (dataModules.success) {
         setModules(dataModules.data);
-        
+
         // 3. Cargar contenido interno de cada módulo
         dataModules.data.forEach(mod => {
-            fetchResources(mod.SECUENCIAL); 
-            fetchTasks(mod.SECUENCIAL);     
+          fetchResources(mod.SECUENCIAL);
+          fetchTasks(mod.SECUENCIAL);
         });
       }
     } catch (error) {
@@ -95,11 +95,11 @@ const ProfesorCourseDetail = () => {
   // Helper: Cargar Recursos
   const fetchResources = async (moduloId) => {
     try {
-        const res = await fetch(`${API_URL}/api/recursos/modulo/${moduloId}`);
-        const data = await res.json();
-        if (data.success) {
-            setResourcesByModule(prev => ({ ...prev, [moduloId]: data.data }));
-        }
+      const res = await fetch(`${API_URL}/api/recursos/modulo/${moduloId}`);
+      const data = await res.json();
+      if (data.success) {
+        setResourcesByModule(prev => ({ ...prev, [moduloId]: data.data }));
+      }
     } catch (error) { console.error(error); }
   };
 
@@ -177,15 +177,15 @@ const ProfesorCourseDetail = () => {
     if (newResourceData.archivo) formData.append('archivoRecurso', newResourceData.archivo);
 
     try {
-        setCreating(true);
-        const res = await fetch(`${API_URL}/api/recursos/crear`, { method: 'POST', body: formData });
-        const data = await res.json();
-        if (data.success) {
-            triggerNotification("Material subido correctamente", 'success');
-            setShowResourceModal(false);
-            fetchResources(selectedModuleId);
-            setNewResourceData({ titulo: '', descripcion: '', archivo: null });
-        } else { triggerNotification("Error: " + data.message, 'error'); }
+      setCreating(true);
+      const res = await fetch(`${API_URL}/api/recursos/crear`, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.success) {
+        triggerNotification("Material subido correctamente", 'success');
+        setShowResourceModal(false);
+        fetchResources(selectedModuleId);
+        setNewResourceData({ titulo: '', descripcion: '', archivo: null });
+      } else { triggerNotification("Error: " + data.message, 'error'); }
     } catch (error) { triggerNotification("Error al subir recurso", 'error'); } finally { setCreating(false); }
   };
 
@@ -283,72 +283,72 @@ const ProfesorCourseDetail = () => {
                   <p className="module-modal-description">{selectedModuleForView.DESCRIPCION}</p>
                 </div>
               </div>
-              
+
               {/* ACCIONES DEL MÓDULO */}
-              <div className="expanded-actions" style={{display: 'flex', gap: '10px'}}>
-                  {/* 1. Botón MATERIAL (Siempre visible) */}
+              <div className="expanded-actions" style={{ display: 'flex', gap: '10px' }}>
+                {/* 1. Botón MATERIAL (Siempre visible) */}
+                <button
+                  className="add-task-btn-expanded"
+                  style={{ backgroundColor: '#17a2b8' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedModuleId(selectedModuleForView.SECUENCIAL);
+                    setShowResourceModal(true);
+                  }}
+                >
+                  <FaFileUpload /> Subir Material
+                </button>
+
+                {/* 2. Botón TAREA (Solo si es Evaluativo) */}
+                {isEvaluative && (
                   <button
                     className="add-task-btn-expanded"
-                    style={{backgroundColor: '#17a2b8'}}
+                    style={{ backgroundColor: '#28a745' }}
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedModuleId(selectedModuleForView.SECUENCIAL);
-                      setShowResourceModal(true);
+                      setShowTaskModal(true);
                     }}
                   >
-                    <FaFileUpload /> Subir Material
+                    <FaPlus /> Agregar Tarea
                   </button>
-
-                  {/* 2. Botón TAREA (Solo si es Evaluativo) */}
-                  {isEvaluative && (
-                      <button
-                        className="add-task-btn-expanded"
-                        style={{backgroundColor: '#28a745'}}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedModuleId(selectedModuleForView.SECUENCIAL);
-                          setShowTaskModal(true);
-                        }}
-                      >
-                        <FaPlus /> Agregar Tarea
-                      </button>
-                  )}
+                )}
               </div>
             </div>
 
             <div className="expanded-content-body">
-              
+
               {/* A. SECCIÓN DE MATERIALES (RECURSOS) */}
-              <h3 className="tasks-title" style={{color: '#17a2b8', marginTop: '0'}}>
+              <h3 className="tasks-title" style={{ color: '#17a2b8', marginTop: '0' }}>
                 <FaFilePdf /> Material de Apoyo ({resourcesByModule[selectedModuleForView.SECUENCIAL]?.length || 0})
               </h3>
-              
+
               {resourcesByModule[selectedModuleForView.SECUENCIAL] && resourcesByModule[selectedModuleForView.SECUENCIAL].length > 0 ? (
-                  <div className="tasks-list-modal">
-                      {resourcesByModule[selectedModuleForView.SECUENCIAL].map(res => (
-                          <div key={res.SECUENCIAL} className="task-item-modal" style={{borderLeft: '4px solid #17a2b8'}}>
-                              <div className="task-modal-info">
-                                  <FaFilePdf className="task-modal-icon" style={{color: '#17a2b8'}} />
-                                  <div>
-                                      <h4>{res.TITULO}</h4>
-                                      <p className="task-modal-date">{res.DESCRIPCION || 'Documento informativo'}</p>
-                                  </div>
-                              </div>
-                              <a href={res.URL_RECURSO} target="_blank" rel="noreferrer" className="task-modal-action-btn" style={{textDecoration: 'none', background: '#e0f7fa', color: '#006064'}}>
-                                  Ver Archivo
-                              </a>
-                          </div>
-                      ))}
-                  </div>
+                <div className="tasks-list-modal">
+                  {resourcesByModule[selectedModuleForView.SECUENCIAL].map(res => (
+                    <div key={res.SECUENCIAL} className="task-item-modal" style={{ borderLeft: '4px solid #17a2b8' }}>
+                      <div className="task-modal-info">
+                        <FaFilePdf className="task-modal-icon" style={{ color: '#17a2b8' }} />
+                        <div>
+                          <h4>{res.TITULO}</h4>
+                          <p className="task-modal-date">{res.DESCRIPCION || 'Documento informativo'}</p>
+                        </div>
+                      </div>
+                      <a href={res.URL_RECURSO} target="_blank" rel="noreferrer" className="task-modal-action-btn" style={{ textDecoration: 'none', background: '#e0f7fa', color: '#006064' }}>
+                        Ver Archivo
+                      </a>
+                    </div>
+                  ))}
+                </div>
               ) : (
-                  <p className="no-tasks-modal">No hay material subido en este módulo.</p>
+                <p className="no-tasks-modal">No hay material subido en este módulo.</p>
               )}
 
 
               {/* B. SECCIÓN DE TAREAS (Solo Evaluativo) */}
               {isEvaluative && (
                 <>
-                  <hr style={{margin: '20px 0', border: '0', borderTop: '1px solid #eee'}}/>
+                  <hr style={{ margin: '20px 0', border: '0', borderTop: '1px solid #eee' }} />
                   <h3 className="tasks-title">
                     <FaFileAlt /> Tareas Asignadas ({tasksByModule[selectedModuleForView.SECUENCIAL]?.length || 0})
                   </h3>
@@ -446,7 +446,21 @@ const ProfesorCourseDetail = () => {
               </div>
               <div className="form-group">
                 <label>Archivo Guía (Opcional)</label>
-                <input type="file" onChange={e => setNewTaskData({ ...newTaskData, archivo: e.target.files[0] })} />
+                <input
+                  type="file"
+                  onChange={e => setNewTaskData({ ...newTaskData, archivo: e.target.files[0] })}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px dashed #cbd5e1',
+                    borderRadius: '8px',
+                    background: '#f8fafc',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    display: 'block'
+                  }}
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.jpg,.png"
+                />
               </div>
               <div className="modal-actions">
                 <button type="button" onClick={() => setShowTaskModal(false)} className="cancel-btn">Cancelar</button>
@@ -468,15 +482,30 @@ const ProfesorCourseDetail = () => {
             <form onSubmit={handleCreateResource}>
               <div className="form-group">
                 <label>Título</label>
-                <input type="text" placeholder="Ej: Diapositivas 1" onChange={e => setNewResourceData({...newResourceData, titulo: e.target.value})} required />
+                <input type="text" placeholder="Ej: Diapositivas 1" onChange={e => setNewResourceData({ ...newResourceData, titulo: e.target.value })} required />
               </div>
               <div className="form-group">
                 <label>Descripción</label>
-                <textarea rows="2" onChange={e => setNewResourceData({...newResourceData, descripcion: e.target.value})} />
+                <textarea rows="2" onChange={e => setNewResourceData({ ...newResourceData, descripcion: e.target.value })} />
               </div>
               <div className="form-group">
                 <label>Archivo</label>
-                <input type="file" required onChange={e => setNewResourceData({...newResourceData, archivo: e.target.files[0]})} />
+                <input
+                  type="file"
+                  required
+                  onChange={e => setNewResourceData({ ...newResourceData, archivo: e.target.files[0] })}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px dashed #cbd5e1',
+                    borderRadius: '8px',
+                    background: '#f8fafc',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    display: 'block'
+                  }}
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.jpg,.png,.txt"
+                />
               </div>
               <div className="modal-actions">
                 <button type="button" onClick={() => setShowResourceModal(false)} className="cancel-btn">Cancelar</button>

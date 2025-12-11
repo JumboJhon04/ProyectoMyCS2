@@ -319,6 +319,17 @@ const MaterialTab = ({ topics, eventType, courseData }) => {
                                     onChange={(e) => setUploadFile(e.target.files[0])}
                                     disabled={uploading}
                                     accept=".pdf,.doc,.docx,.txt,.zip,.rar"
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.75rem',
+                                        border: '2px dashed #cbd5e1',
+                                        borderRadius: '8px',
+                                        background: '#f8fafc',
+                                        cursor: 'pointer',
+                                        fontSize: '0.9rem',
+                                        display: 'block',
+                                        marginBottom: '0.5rem'
+                                    }}
                                 />
                                 {uploadFile && (
                                     <span className="file-name">{uploadFile.name}</span>
