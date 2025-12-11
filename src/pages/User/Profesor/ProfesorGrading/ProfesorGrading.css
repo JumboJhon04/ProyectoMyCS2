@@ -1,0 +1,98 @@
+.grading-container {
+    padding: 2rem;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+.grading-header {
+    margin-bottom: 2rem;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    color: #666;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.grading-table {
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    border-collapse: collapse;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.grading-table th, .grading-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.grading-table th {
+    background-color: #f1f1f1;
+    font-weight: 600;
+    color: #333;
+}
+
+.student-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.student-info span {
+    font-size: 0.85rem;
+    color: #777;
+}
+
+.download-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #007bff;
+    text-decoration: none;
+    font-size: 0.9rem;
+    background: #e7f1ff;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+}
+
+.grade-input {
+    width: 70px;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.feedback-input {
+    width: 100%;
+    min-width: 150px;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    resize: vertical;
+}
+
+.save-grade-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.save-grade-btn:hover {
+    background-color: #218838;
+}

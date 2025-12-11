@@ -35,7 +35,7 @@ import SolicitudSoporte from '../pages/User/SolicitudSoporte/SolicitudSoporte';
 
 import Perfil from '../pages/Perfil/Perfil';
 import ProtectedRoute from '../components/ProtectedRoute';
-
+import ProfesorGrading from '../pages/User/Profesor/ProfesorGrading/ProfesorGrading';
 export default function AppRoutes() {
   return (
     <Routes>
@@ -47,7 +47,7 @@ export default function AppRoutes() {
       <Route path="/courses/:courseId" element={<EstudianteCourseDetail />} />
       <Route path="/payment/:courseId" element={<PaymentPage />} />
       <Route path="/contact" element={<Contact />} />
-
+      <Route path="/profesor/grading/:taskId" element={<ProfesorGrading />} />
       {/* Admin protected */}
       <Route path="/admin/panel" element={
         <ProtectedRoute requireAdmin={true}>
