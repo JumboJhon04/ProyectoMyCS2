@@ -32,8 +32,8 @@ const ProfesorCourseDetail = () => {
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState('success'); // 'success' o 'error'
 
-  // Estado para módulos expandidos
-  const [expandedModules, setExpandedModules] = useState({});
+  // Estado para modal de visualización de módulo
+  const [selectedModuleForView, setSelectedModuleForView] = useState(null);
 
   // --- CARGA DE DATOS ---
   const fetchData = async () => {
@@ -185,14 +185,6 @@ const ProfesorCourseDetail = () => {
 
   const tipoEvento = tipoEventoMap[course.CODIGOTIPOEVENTO] || { nombre: 'Evento', color: '#6b7280' };
 
-  // Función para toggle de módulo expandido
-  const toggleModule = (moduleId) => {
-    setExpandedModules(prev => ({
-      ...prev,
-      [moduleId]: !prev[moduleId]
-    }));
-  };
-
   return (
     <div className="professor-course-detail-page">
       {/* HEADER */}
@@ -249,81 +241,102 @@ const ProfesorCourseDetail = () => {
         {/* LISTA DE MÓDULOS Y SUS TAREAS */}
         <div className="course-modules-list-profesor">
           {modules.length === 0 ? <p className="no-modules">No hay módulos definidos.</p> :
-            modules.map((module) => {
-              const isExpanded = expandedModules[module.SECUENCIAL];
+            modules.map((module, index) => {
               const taskCount = tasksByModule[module.SECUENCIAL]?.length || 0;
+              const isSelected = selectedModuleForView?.SECUENCIAL === module.SECUENCIAL;
 
               return (
-                <div key={module.SECUENCIAL} className="module-card-profesor">
-                  {/* Card Header - Clickeable para expandir/colapsar */}
-                  <div
-                    className="module-card-header"
-                    onClick={() => toggleModule(module.SECUENCIAL)}
-                  >
-                    <div className="module-header-left">
-                      <span className="module-expand-icon">
-                        {isExpanded ? <FaChevronDown /> : <FaChevronRight />}
-                      </span>
-                      <div className="module-header-content">
-                        <h4 className="module-card-title">{module.TITULO}</h4>
-                        <span className="module-task-count">
-                          {taskCount} {taskCount === 1 ? 'tarea' : 'tareas'}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      className="icon-btn-profesor"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedModuleId(module.SECUENCIAL);
-                        setShowTaskModal(true);
-                      }}
-                      title="Agregar nueva tarea"
-                    >
-                      <FaPlus />
-                    </button>
+                <div
+                  key={module.SECUENCIAL}
+                  className={`module-card-profesor ${isSelected ? 'selected' : ''} ${selectedModuleForView && !isSelected ? 'dimmed' : ''}`}
+                  onClick={() => setSelectedModuleForView(isSelected ? null : module)}
+                  style={{ position: 'relative', zIndex: isSelected ? 10 : selectedModuleForView ? 1 : 2 }}
+                >
+                  {/* Ícono del módulo */}
+                  <div className="module-card-icon">
+                    <FaBook />
                   </div>
 
-                  {/* Descripción del módulo - Solo se muestra si está expandido */}
-                  {isExpanded && module.DESCRIPCION && (
-                    <div className="module-description">
-                      {module.DESCRIPCION}
-                    </div>
-                  )}
+                  {/* Título del módulo */}
+                  <h4 className="module-card-title-centered">{module.TITULO}</h4>
 
-                  {/* Lista de Tareas - Solo se muestra si está expandido */}
-                  {isExpanded && (
-                    <div className="tasks-container-collapsible">
-                      {tasksByModule[module.SECUENCIAL] && tasksByModule[module.SECUENCIAL].length > 0 ? (
-                        tasksByModule[module.SECUENCIAL].map(task => (
-                          <div key={task.SECUENCIAL} className="task-item-profesor">
-                            <div className="task-item-content">
-                              <FaFileAlt className="task-icon" />
-                              <div className="task-info">
-                                <strong className="task-title">{task.TITULO}</strong>
-                                <div className="task-date">
-                                  Vence: {task.FECHA_LIMITE ? new Date(task.FECHA_LIMITE).toLocaleDateString() : 'Sin fecha'}
-                                </div>
-                              </div>
-                            </div>
-                            <button
-                              className="task-action-btn"
-                              onClick={() => navigate(`/profesor/grading/${task.SECUENCIAL}`)}
-                              title="Calificar entregas"
-                            >
-                              <FaClipboardCheck />
-                            </button>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="no-tasks-message">No hay tareas en este módulo.</p>
-                      )}
-                    </div>
-                  )}
+                  {/* Contador de tareas */}
+                  <span className="module-task-count-centered">
+                    {taskCount} {taskCount === 1 ? 'tarea' : 'tareas'}
+                  </span>
                 </div>
               );
             })}
         </div>
+
+        {/* --- OVERLAY OSCURO --- */}
+        {selectedModuleForView && (
+          <div
+            className="dark-overlay"
+            onClick={() => setSelectedModuleForView(null)}
+          />
+        )}
+
+        {/* --- CONTENIDO EXPANDIDO INLINE --- */}
+        {selectedModuleForView && (
+          <div className="module-expanded-content">
+            <div className="expanded-content-header">
+              <div className="expanded-header-left">
+                <div className="module-modal-icon">
+                  <FaBook />
+                </div>
+                <div>
+                  <h2>{selectedModuleForView.TITULO}</h2>
+                  {selectedModuleForView.DESCRIPCION && (
+                    <p className="module-modal-description">{selectedModuleForView.DESCRIPCION}</p>
+                  )}
+                </div>
+              </div>
+              <button
+                className="add-task-btn-expanded"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedModuleId(selectedModuleForView.SECUENCIAL);
+                  setShowTaskModal(true);
+                }}
+              >
+                <FaPlus /> Agregar Tarea
+              </button>
+            </div>
+
+            <div className="expanded-content-body">
+              <h3 className="tasks-title">
+                <FaFileAlt /> Tareas del Módulo ({tasksByModule[selectedModuleForView.SECUENCIAL]?.length || 0})
+              </h3>
+
+              {tasksByModule[selectedModuleForView.SECUENCIAL] && tasksByModule[selectedModuleForView.SECUENCIAL].length > 0 ? (
+                <div className="tasks-list-modal">
+                  {tasksByModule[selectedModuleForView.SECUENCIAL].map(task => (
+                    <div key={task.SECUENCIAL} className="task-item-modal">
+                      <div className="task-modal-info">
+                        <FaFileAlt className="task-modal-icon" />
+                        <div>
+                          <h4>{task.TITULO}</h4>
+                          <p className="task-modal-date">
+                            Vence: {task.FECHA_LIMITE ? new Date(task.FECHA_LIMITE).toLocaleDateString() : 'Sin fecha'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        className="task-modal-action-btn"
+                        onClick={() => navigate(`/profesor/grading/${task.SECUENCIAL}`)}
+                      >
+                        <FaClipboardCheck /> Calificar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="no-tasks-modal">No hay tareas en este módulo.</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* --- MODAL CREAR MÓDULO --- */}
