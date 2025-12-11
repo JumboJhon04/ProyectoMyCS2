@@ -446,7 +446,21 @@ const ProfesorCourseDetail = () => {
               </div>
               <div className="form-group">
                 <label>Archivo Guía (Opcional)</label>
-                <input type="file" onChange={e => setNewTaskData({ ...newTaskData, archivo: e.target.files[0] })} />
+                <input
+                  type="file"
+                  onChange={e => setNewTaskData({ ...newTaskData, archivo: e.target.files[0] })}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px dashed #cbd5e1',
+                    borderRadius: '8px',
+                    background: '#f8fafc',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    display: 'block'
+                  }}
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.jpg,.png"
+                />
               </div>
               <div className="modal-actions">
                 <button type="button" onClick={() => setShowTaskModal(false)} className="cancel-btn">Cancelar</button>
@@ -476,7 +490,22 @@ const ProfesorCourseDetail = () => {
               </div>
               <div className="form-group">
                 <label>Archivo</label>
-                <input type="file" required onChange={e => setNewResourceData({ ...newResourceData, archivo: e.target.files[0] })} />
+                <input
+                  type="file"
+                  required
+                  onChange={e => setNewResourceData({ ...newResourceData, archivo: e.target.files[0] })}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px dashed #cbd5e1',
+                    borderRadius: '8px',
+                    background: '#f8fafc',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    display: 'block'
+                  }}
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.jpg,.png,.txt"
+                />
               </div>
               <div className="modal-actions">
                 <button type="button" onClick={() => setShowResourceModal(false)} className="cancel-btn">Cancelar</button>
