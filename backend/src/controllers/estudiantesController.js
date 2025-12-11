@@ -117,9 +117,9 @@ const obtenerEventosDeUsuario = async (req, res) => {
   try {
     const [rows] = await pool.execute(
       `SELECT 
-        i.SECUENCIAL as inscripcionId,
-        i.FECHAINSCRIPCION,
-        i.CODIGOESTADOINSCRIPCION,
+        MAX(i.SECUENCIAL) as inscripcionId,
+        MAX(i.FECHAINSCRIPCION) as FECHAINSCRIPCION,
+        MAX(i.CODIGOESTADOINSCRIPCION) as CODIGOESTADOINSCRIPCION,
         e.SECUENCIAL as eventoId,
         e.TITULO,
         e.DESCRIPCION,
@@ -127,12 +127,13 @@ const obtenerEventosDeUsuario = async (req, res) => {
         e.FECHAFIN,
         e.COSTO,
         e.ESTADO,
-        ie.URL_IMAGEN
+        MAX(ie.URL_IMAGEN) as URL_IMAGEN
        FROM inscripcion i
        INNER JOIN evento e ON i.SECUENCIALEVENTO = e.SECUENCIAL
        LEFT JOIN imagen_evento ie ON e.SECUENCIAL = ie.SECUENCIALEVENTO AND ie.TIPO_IMAGEN = 'PORTADA'
        WHERE i.SECUENCIALUSUARIO = ? AND i.CODIGOESTADOINSCRIPCION = 'ACE'
-       ORDER BY i.FECHAINSCRIPCION DESC`,
+       GROUP BY e.SECUENCIAL
+       ORDER BY FECHAINSCRIPCION DESC`,
       [id]
     );
 
@@ -147,16 +148,16 @@ const obtenerEventosDeUsuario = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener eventos del usuario', details: error.message });
   }
 };
- 
+
 // Obtener inscripción de un usuario para un evento específico (incluye pendientes)
 const obtenerInscripcionPorEvento = async (req, res) => {
   const usuarioId = req.params.id;
   const { eventoId } = req.query;
-  
+
   if (!eventoId) {
     return res.status(400).json({ error: 'Se requiere eventoId como query parameter' });
   }
-  
+
   try {
     const [rows] = await pool.execute(
       `SELECT 
@@ -234,7 +235,7 @@ const crearInscripcion = async (req, res) => {
 
     // Crear inscripción con estado PENDIENTE si es pagado, ACEPTADO si es gratis
     const estadoInscripcion = esPagado ? 'PEN' : 'ACE';
-    
+
     const [result] = await connection.execute(
       `INSERT INTO inscripcion (SECUENCIALEVENTO, SECUENCIALUSUARIO, FECHAINSCRIPCION, CODIGOESTADOINSCRIPCION, MOTIVACION)
        VALUES (?, ?, NOW(), ?, ?)`,
@@ -249,8 +250,8 @@ const crearInscripcion = async (req, res) => {
 
     await connection.commit();
 
-    res.status(201).json({ 
-      success: true, 
+    res.status(201).json({
+      success: true,
       message: esPagado ? 'Inscripción creada. Debes realizar el pago para completar tu inscripción.' : 'Inscripción creada',
       inscripcionId,
       requierePago: esPagado,

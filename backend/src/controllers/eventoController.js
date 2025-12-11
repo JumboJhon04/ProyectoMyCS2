@@ -103,7 +103,7 @@ const crearEvento = async (req, res) => {
         parseFloat(cost || 0) > 0 ? 1 : 0,
         cost || 0,
         attendanceRequired || null,
-        docente || ''
+        docente ? parseInt(docente) : null
       ]
     );
 

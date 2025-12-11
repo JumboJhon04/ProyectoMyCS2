@@ -47,7 +47,11 @@ export default function AppRoutes() {
       <Route path="/courses/:courseId" element={<EstudianteCourseDetail />} />
       <Route path="/payment/:courseId" element={<PaymentPage />} />
       <Route path="/contact" element={<Contact />} />
-      <Route path="/profesor/grading/:taskId" element={<ProfesorGrading />} />
+      <Route path="/profesor/grading/:taskId" element={
+        <ProtectedRoute>
+          <ProfesorGrading />
+        </ProtectedRoute>
+      } />
       {/* Admin protected */}
       <Route path="/admin/panel" element={
         <ProtectedRoute requireAdmin={true}>

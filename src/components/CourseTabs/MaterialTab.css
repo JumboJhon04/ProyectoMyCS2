@@ -307,3 +307,182 @@
         font-size: 0.95rem;
     }
 }
+
+/* ==========================================
+   MODULES & TASKS
+   ========================================== */
+
+.modules-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.module-section {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.module-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 0.5rem 0;
+    border-bottom: 2px solid var(--event-light-bg, #eff6ff);
+    padding-bottom: 0.75rem;
+}
+
+.module-desc {
+    color: #64748b;
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+}
+
+.module-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.no-tasks-msg {
+    color: #94a3b8;
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+/* Task Card */
+.task-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    padding: 1.25rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.task-card:hover {
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-color: #cbd5e1;
+}
+
+.task-icon-col {
+    flex-shrink: 0;
+    padding-top: 0.25rem;
+}
+
+.task-icon-type {
+    font-size: 1.5rem;
+    color: var(--event-secondary-color, #3b82f6);
+}
+
+.task-info {
+    flex: 1;
+}
+
+.task-info h5 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #334155;
+    margin: 0 0 0.5rem 0;
+}
+
+.task-info p {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin: 0 0 0.75rem 0;
+    line-height: 1.4;
+}
+
+.task-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin-bottom: 0.75rem;
+}
+
+.task-pts {
+    font-weight: 600;
+    color: #64748b;
+}
+
+/* Status Badges */
+.task-status-row {
+    display: flex;
+    align-items: center;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-pending {
+    background: #fff7ed;
+    color: #ea580c;
+    border: 1px solid #fed7aa;
+}
+
+.status-enviado {
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+}
+
+.status-calificado {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+}
+
+.status-atrasado {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+/* Actions */
+.btn-view-task {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-view-task:hover {
+    background: var(--event-primary-color, #0ea5e9);
+    border-color: var(--event-primary-color, #0ea5e9);
+    color: #ffffff;
+}
+
+@media (max-width: 640px) {
+    .task-card {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .task-actions {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+    }
+}

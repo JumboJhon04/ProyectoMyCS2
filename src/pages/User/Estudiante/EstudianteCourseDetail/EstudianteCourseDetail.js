@@ -9,9 +9,9 @@ import ParticipantesTab from '../../../../components/CourseTabs/ParticipantesTab
 import CalificacionesTab from '../../../../components/CourseTabs/CalificacionesTab';
 import { getEventTheme } from '../../../../config/eventThemes';
 import {
-  FaClock, FaUsers, FaCalendarAlt, FaMoneyBillWave,
-  FaClipboardCheck, FaCheckCircle, FaChartBar, FaGraduationCap,
-  FaBook, FaCheck, FaSync, FaLock, FaEye
+  FaClock, FaMoneyBillWave,
+  FaClipboardCheck, FaCheckCircle, FaChartBar,
+  FaBook, FaCheck
 } from 'react-icons/fa';
 import './EstudianteCourseDetail.css';
 
@@ -28,7 +28,7 @@ const EstudianteCourseDetail = () => {
   const [error, setError] = useState(null);
   const [isInscrito, setIsInscrito] = useState(false);
   const [pagoAprobado, setPagoAprobado] = useState(false);
-  const [inscripcionId, setInscripcionId] = useState(null);
+  // const [inscripcionId, setInscripcionId] = useState(null);
   const [activeTab, setActiveTab] = useState('material');
 
   const userCareerIds = useMemo(() => {
@@ -69,7 +69,7 @@ const EstudianteCourseDetail = () => {
     return modalidades[codigo] || 'Presencial';
   };
 
-  const mapEstado = (estado) => {
+  /* const mapEstado = (estado) => {
     const estados = {
       'DISPONIBLE': 'Disponible',
       'CERRADO': 'Cerrado',
@@ -79,7 +79,7 @@ const EstudianteCourseDetail = () => {
       'CREADO': 'Creado'
     };
     return estados[estado] || estado;
-  };
+  }; */
 
   const eventCareerIds = useMemo(() => {
     const raw = courseData?.CARRERAS || courseFromContext?.CARRERAS || [];
@@ -117,7 +117,7 @@ const EstudianteCourseDetail = () => {
               if (inscripcionData.data) {
                 setIsInscrito(true);
                 const idInscripcion = inscripcionData.data.inscripcionId || inscripcionData.data.SECUENCIAL;
-                setInscripcionId(idInscripcion);
+                // setInscripcionId(idInscripcion); // Removed unused state update
 
                 // Verificar estado del pago si el curso es pagado (usar data.data que es la respuesta del fetch)
                 const cursoEsPagado = data.data?.ES_PAGADO === 1;
@@ -163,6 +163,52 @@ const EstudianteCourseDetail = () => {
     }
   }, [courseId, user]);
 
+  // Fetch Modulos y Tareas
+  // Fetch Modulos y Tareas
+  const [modules, setModules] = useState([]);
+  const [modulesLoading, setModulesLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchModulesAndTasks = async () => {
+      const userId = user?.id || user?.SECUENCIAL;
+      if (!courseId || !userId) return;
+
+      try {
+        setModulesLoading(true);
+        // 1. Obtener módulos
+        const modRes = await fetch(`${API_URL}/api/modulos/evento/${courseId}`);
+        const modJson = await modRes.json();
+
+        if (!modRes.ok) throw new Error(modJson.message || 'Error fetching modules');
+
+        const mods = modJson.data || [];
+        console.log('Modules fetched:', mods);
+
+        // 2. Para cada módulo, obtener tareas con status de estudiante
+        const modulesWithTasks = await Promise.all(mods.map(async (mod) => {
+          try {
+            const taskRes = await fetch(`${API_URL}/api/tareas/modulo/${mod.SECUENCIAL}/estudiante/${userId}`);
+            const taskJson = await taskRes.json();
+            return { ...mod, tasks: taskJson.data || [] };
+          } catch (err) {
+            console.warn(`Error cargando tareas para modulo ${mod.SECUENCIAL}`, err);
+            return { ...mod, tasks: [] };
+          }
+        }));
+
+        setModules(modulesWithTasks);
+      } catch (e) {
+        console.error('Error cargando módulos:', e);
+      } finally {
+        setModulesLoading(false);
+      }
+    };
+
+    if (courseId && (user?.id || user?.SECUENCIAL)) {
+      fetchModulesAndTasks();
+    }
+  }, [courseId, user]);
+
   // Aplicar tema dinámico con CSS variables
   useEffect(() => {
     if (courseData?.CODIGOTIPOEVENTO) {
@@ -194,16 +240,7 @@ const EstudianteCourseDetail = () => {
     return [];
   };
 
-  // Formatear fecha
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+  // Formatear fecha (Removed unused formatDate function)
 
   // Obtener iniciales del docente (con manejo robusto de nulos e int)
   const getDocenteInitials = (docente) => {
@@ -268,14 +305,14 @@ const EstudianteCourseDetail = () => {
   // Ahora Docente puede ser int (SECUENCIAL) o string (nombre completo). Usar NOMBRE_DOCENTE si existe
   const docente = courseData?.NOMBRE_DOCENTE || courseData?.Docente || course?.meta?.docente || 'Por asignar';
   const costo = courseData?.COSTO || course?.price || 0;
-  const capacidad = courseData?.CAPACIDAD || course?.meta?.capacity || 'No especificada';
-  const notaAprobacion = courseData?.NOTAAPROBACION || course?.meta?.passingGrade;
-  const asistenciaMinima = courseData?.ASISTENCIAMINIMA || course?.meta?.attendanceRequired;
-  const fechaInicio = courseData?.FECHAINICIO || course?.meta?.startDate;
-  const fechaFin = courseData?.FECHAFIN || course?.meta?.endDate;
-  const estado = mapEstado(courseData?.ESTADO || 'DISPONIBLE');
+  // const capacidad = courseData?.CAPACIDAD || course?.meta?.capacity || 'No especificada';
+  // const notaAprobacion = courseData?.NOTAAPROBACION || course?.meta?.passingGrade;
+  // const asistenciaMinima = courseData?.ASISTENCIAMINIMA || course?.meta?.attendanceRequired;
+  // const fechaInicio = courseData?.FECHAINICIO || course?.meta?.startDate;
+  // const fechaFin = courseData?.FECHAFIN || course?.meta?.endDate;
+  // const estado = mapEstado(courseData?.ESTADO || 'DISPONIBLE');
   const esPagado = courseData?.ES_PAGADO === 1 || course?.meta?.isPaid;
-  const carreras = courseData?.CARRERAS || [];
+  // const carreras = courseData?.CARRERAS || [];
   const topics = parseTopics(courseData?.CONTENIDO || '');
 
   // Obtener tema del evento
@@ -417,6 +454,8 @@ const EstudianteCourseDetail = () => {
             {activeTab === 'material' && (
               <MaterialTab
                 topics={topics}
+                modules={modules} // Pasamos los módulos reales
+                loading={modulesLoading}
                 eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
               />
             )}

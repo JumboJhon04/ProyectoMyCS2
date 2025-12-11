@@ -1,8 +1,8 @@
 import React from 'react';
-import { FaBook, FaCheck, FaSync, FaLock, FaEye, FaFilePdf, FaVideo, FaLink } from 'react-icons/fa';
+import { FaBook, FaCheck, FaSync, FaLock, FaEye, FaFilePdf, FaVideo, FaLink, FaClipboardCheck } from 'react-icons/fa';
 import './MaterialTab.css';
 
-const MaterialTab = ({ topics, eventType }) => {
+const MaterialTab = ({ topics, eventType, modules, loading }) => {
     // Convertir topics a lecciones con estado mock
     const lessons = topics && topics.length > 0
         ? topics.map((topic, index) => ({
@@ -44,6 +44,106 @@ const MaterialTab = ({ topics, eventType }) => {
         }
     };
 
+    if (lessons.length === 0) {
+        return (
+            <div className="material-tab-container">
+                <div className="empty-state">
+                    <FaBook className="empty-icon" />
+                    <p>Este curso no tiene material definido aún.</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (loading) {
+        return (
+            <div className="material-tab-container">
+                <div className="empty-state">
+                    <FaSync className="status-progress spinning" style={{ fontSize: '2rem', marginBottom: '1rem' }} />
+                    <p>Cargando contenido del curso...</p>
+                </div>
+            </div>
+        );
+    }
+    // Si tenemos módulos reales (Estructura nueva con tareas)
+    if (modules && modules.length > 0) {
+        return (
+            <div className="material-tab-container">
+                <div className="material-header">
+                    <h3>Contenido del Curso</h3>
+                </div>
+                <div className="modules-list">
+                    {modules.map((mod) => (
+                        <div key={mod.SECUENCIAL} className="module-section">
+                            <h4 className="module-title">{mod.TITULO}</h4>
+                            {mod.DESCRIPCION && <p className="module-desc">{mod.DESCRIPCION}</p>}
+
+                            <div className="module-tasks">
+                                {mod.tasks && mod.tasks.length > 0 ? (
+                                    mod.tasks.map(task => (
+                                        <div key={task.SECUENCIAL} className="task-card">
+                                            <div className="task-icon-col">
+                                                <FaClipboardCheck className="task-icon-type" />
+                                            </div>
+                                            <div className="task-info">
+                                                <h5>{task.TITULO}</h5>
+                                                <p>{task.DESCRIPCION}</p>
+                                                <div className="task-meta">
+                                                    <span className="task-date">
+                                                        Vence: {new Date(task.FECHA_LIMITE).toLocaleDateString()}
+                                                    </span>
+                                                    {task.PUNTOS_MAXIMOS &&
+                                                        <span className="task-pts">({task.PUNTOS_MAXIMOS} pts)</span>
+                                                    }
+                                                </div>
+                                                {/* Estado de entrega */}
+                                                <div className="task-status-row">
+                                                    {task.ESTADO_ENTREGA ? (
+                                                        <span className={`status-badge status-${task.ESTADO_ENTREGA.toLowerCase()}`}>
+                                                            {task.ESTADO_ENTREGA === 'ENVIADO' ? 'Enviado' : task.ESTADO_ENTREGA}
+                                                            {task.CALIFICACION && ` - Nota: ${task.CALIFICACION}`}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="status-badge status-pending">Pendiente</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="task-actions">
+                                                <button className="btn-view-task">
+                                                    {task.ESTADO_ENTREGA ? <FaEye /> : <FaCheck />}
+                                                    {task.ESTADO_ENTREGA ? ' Ver Entrega' : ' Entregar'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="no-tasks-msg">No hay tareas en este módulo.</p>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                {/* Sección Legacy de Topics (si existen) */}
+                {topics && topics.length > 0 && (
+                    <div className="legacy-topics">
+                        <h4>Temario Adicional</h4>
+                        {/* Reutilizar lógica anterior si se desea, o simplificar */}
+                        <div className="lessons-list">
+                            {lessons.map((lesson) => (
+                                <div key={lesson.id} className={`lesson-card ${lesson.status}`}>
+                                    <div className="lesson-content">
+                                        <h4>{lesson.title}</h4>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    // Fallback: Lógica anterior (Solo Topics)
     if (lessons.length === 0) {
         return (
             <div className="material-tab-container">

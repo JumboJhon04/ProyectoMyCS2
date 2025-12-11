@@ -79,7 +79,13 @@ const EstudianteEvents = () => {
           };
         });
 
-        setCourses(mapped);
+        const uniqueMapped = mapped.filter((item, index, self) =>
+          index === self.findIndex((t) => (
+            t.id === item.id
+          ))
+        );
+
+        setCourses(uniqueMapped);
       } catch (e) {
         console.error('Error cargando eventos del estudiante:', e.message);
         setCourses([]);
