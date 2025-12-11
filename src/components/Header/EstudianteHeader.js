@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
-import { FaBars, FaSignOutAlt, FaBell, FaEnvelope } from 'react-icons/fa';
+import { FaBars, FaSignOutAlt } from 'react-icons/fa';
 import './EstudianteHeader.css';
 
 const getInitials = (name) => {
@@ -57,40 +57,27 @@ const UserHeader = ({ onToggleSidebar, onLogout }) => {
             </nav>
 
             <div className="header-right">
-                {/* Notification Icon */}
-                <div className="icon-btn notification" title="Notificaciones">
-                    <FaBell style={{ fontSize: '1.2rem' }} />
-                    <span className="badge new">3</span>
-                </div>
-
-                {/* Messages Icon */}
-                <div className="icon-btn notification" title="Mensajes">
-                    <FaEnvelope style={{ fontSize: '1.2rem' }} />
-                    <span className="badge">2</span>
-                </div>
-
-
-                                <div style={{ position: 'relative' }}>
-                                        <div className="user-avatar" title={user?.nombres ? `${user.nombres} ${user.apellidos}` : user?.name} onClick={toggleUserMenu} style={{ cursor: 'pointer', overflow: 'hidden', background: '#333' }}>
-                                                {user?.foto ? (
-                                                    <img src={user.foto} alt="Foto de perfil" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
-                                                ) : (
-                                                    <span>{userInitials || 'FT'}</span>
-                                                )}
-                                        </div>
+                <div style={{ position: 'relative' }}>
+                    <div className="user-avatar" title={user?.nombres ? `${user.nombres} ${user.apellidos}` : user?.name} onClick={toggleUserMenu} style={{ cursor: 'pointer', overflow: 'hidden', background: '#333' }}>
+                        {user?.foto ? (
+                            <img src={user.foto} alt="Foto de perfil" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
+                        ) : (
+                            <span>{userInitials || 'FT'}</span>
+                        )}
+                    </div>
 
                     {showUserMenu && (
                         <div className="user-menu-panel" ref={userMenuRef} onClick={(e) => e.stopPropagation()}>
-                                                        <div className="user-menu-header">
-                                                                <div className="user-menu-name">{user?.nombres ? `${user.nombres} ${user.apellidos}` : user?.name || 'Usuario'}</div>
-                                                                <div className="user-menu-email">{user?.correo || user?.email || ''}</div>
-                                                                <div className="user-menu-role">{user?.rol || user?.displayRole || user?.role || 'Estudiante'}</div>
-                                                        </div>
-                                                        <div className="user-menu-divider" />
-                                                        <NavLink to="/perfil" className="user-menu-item" style={{ textDecoration: 'none', color: 'inherit' }} onClick={() => setShowUserMenu(false)}>
-                                                            Perfil
-                                                        </NavLink>
-                                                        <button className="user-menu-item logout" onClick={handleLogout}><FaSignOutAlt /><span>Cerrar Sesión</span></button>
+                            <div className="user-menu-header">
+                                <div className="user-menu-name">{user?.nombres ? `${user.nombres} ${user.apellidos}` : user?.name || 'Usuario'}</div>
+                                <div className="user-menu-email">{user?.correo || user?.email || ''}</div>
+                                <div className="user-menu-role">{user?.rol || user?.displayRole || user?.role || 'Estudiante'}</div>
+                            </div>
+                            <div className="user-menu-divider" />
+                            <NavLink to="/perfil" className="user-menu-item" style={{ textDecoration: 'none', color: 'inherit' }} onClick={() => setShowUserMenu(false)}>
+                                Perfil
+                            </NavLink>
+                            <button className="user-menu-item logout" onClick={handleLogout}><FaSignOutAlt /><span>Cerrar Sesión</span></button>
                         </div>
                     )}
                 </div>

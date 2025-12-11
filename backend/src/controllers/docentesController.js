@@ -1,7 +1,7 @@
 const { pool } = require('../config/database');
 const { buildImageUrl } = require('../utils/imageUrlHelper');
 
-// Obtener todos los docentes
+// 1. Obtener todos los docentes
 const obtenerDocentes = async (req, res) => {
   try {
     const [rows] = await pool.execute(
@@ -33,7 +33,7 @@ const obtenerDocentes = async (req, res) => {
   }
 };
 
-// Obtener docente por id
+// 2. Obtener docente por id
 const obtenerDocente = async (req, res) => {
   const id = req.params.id;
   try {
@@ -68,7 +68,7 @@ const obtenerDocente = async (req, res) => {
   }
 };
 
-// Actualizar docente (datos básicos)
+// 3. Actualizar docente (datos básicos)
 const actualizarDocente = async (req, res) => {
   const id = req.params.id;
   const { nombres, apellidos, telefono, direccion, correo } = req.body;
@@ -95,7 +95,7 @@ const actualizarDocente = async (req, res) => {
   }
 };
 
-// Obtener eventos donde el usuario figura como organizador (puede representar dictado/participación)
+// 4. Obtener eventos (Función antigua, NO TOCAR, usa organizador_evento)
 const obtenerEventosDictados = async (req, res) => {
   const id = req.params.id;
   try {
@@ -129,9 +129,47 @@ const obtenerEventosDictados = async (req, res) => {
   }
 };
 
+// 5. NUEVA FUNCIÓN: Obtener Cursos Asignados (Usa la columna Docente en la tabla evento)
+// Esta es la que usará tu panel de profesor nuevo.
+const obtenerCursosAsignados = async (req, res) => {
+  const id = req.params.id;
+  try {
+    const [rows] = await pool.execute(
+      `SELECT 
+        e.SECUENCIAL as eventoId,
+        e.TITULO,
+        e.DESCRIPCION,
+        e.FECHAINICIO,
+        e.FECHAFIN,
+        e.COSTO,
+        e.ESTADO,
+        e.CODIGOTIPOEVENTO, 
+        e.HORAS,            
+        e.CAPACIDAD,        
+        ie.URL_IMAGEN
+       FROM evento e
+       LEFT JOIN imagen_evento ie ON e.SECUENCIAL = ie.SECUENCIALEVENTO AND ie.TIPO_IMAGEN = 'PORTADA'
+       WHERE e.Docente = ?
+       ORDER BY e.SECUENCIAL DESC`,
+      [id]
+    );
+
+    const data = rows.map(r => ({
+      ...r,
+      URL_IMAGEN: buildImageUrl(r.URL_IMAGEN, req)
+    }));
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('❌ Error al obtener cursos asignados:', error);
+    res.status(500).json({ error: 'Error al obtener cursos asignados', details: error.message });
+  }
+};
+
 module.exports = {
   obtenerDocentes,
   obtenerDocente,
   actualizarDocente,
-  obtenerEventosDictados
+  obtenerEventosDictados,
+  obtenerCursosAsignados // <--- No olvides exportar la nueva función
 };

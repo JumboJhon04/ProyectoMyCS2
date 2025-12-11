@@ -3,10 +3,15 @@ import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useCourses } from '../../../../context/CoursesContext';
 import { useUser } from '../../../../context/UserContext';
 import PublicHeader from '../../../../components/PublicHeader/PublicHeader';
+import CourseNavigationTabs from '../../../../components/CourseNavigationTabs/CourseNavigationTabs';
+import MaterialTab from '../../../../components/CourseTabs/MaterialTab';
+import ParticipantesTab from '../../../../components/CourseTabs/ParticipantesTab';
+import CalificacionesTab from '../../../../components/CourseTabs/CalificacionesTab';
+import { getEventTheme } from '../../../../config/eventThemes';
 import {
-  FaClock, FaUsers, FaCalendarAlt, FaMoneyBillWave,
-  FaClipboardCheck, FaCheckCircle, FaChartBar, FaGraduationCap,
-  FaBook, FaCheck, FaSync, FaLock, FaEye
+  FaClock, FaMoneyBill,
+  FaClipboardCheck, FaCheckCircle, FaChartBar,
+  FaBook, FaCheck
 } from 'react-icons/fa';
 import './EstudianteCourseDetail.css';
 
@@ -23,7 +28,10 @@ const EstudianteCourseDetail = () => {
   const [error, setError] = useState(null);
   const [isInscrito, setIsInscrito] = useState(false);
   const [pagoAprobado, setPagoAprobado] = useState(false);
-  const [inscripcionId, setInscripcionId] = useState(null);
+  // const [inscripcionId, setInscripcionId] = useState(null);
+  const [activeTab, setActiveTab] = useState('material');
+  const [entregas, setEntregas] = useState([]); // Estado para entregas del estudiante
+  const [intentos, setIntentos] = useState([]); // Estado para intentos de exámenes
 
   const userCareerIds = useMemo(() => {
     if (!user) return [];
@@ -63,7 +71,7 @@ const EstudianteCourseDetail = () => {
     return modalidades[codigo] || 'Presencial';
   };
 
-  const mapEstado = (estado) => {
+  /* const mapEstado = (estado) => {
     const estados = {
       'DISPONIBLE': 'Disponible',
       'CERRADO': 'Cerrado',
@@ -73,7 +81,7 @@ const EstudianteCourseDetail = () => {
       'CREADO': 'Creado'
     };
     return estados[estado] || estado;
-  };
+  }; */
 
   const eventCareerIds = useMemo(() => {
     const raw = courseData?.CARRERAS || courseFromContext?.CARRERAS || [];
@@ -111,7 +119,7 @@ const EstudianteCourseDetail = () => {
               if (inscripcionData.data) {
                 setIsInscrito(true);
                 const idInscripcion = inscripcionData.data.inscripcionId || inscripcionData.data.SECUENCIAL;
-                setInscripcionId(idInscripcion);
+                // setInscripcionId(idInscripcion); // Removed unused state update
 
                 // Verificar estado del pago si el curso es pagado (usar data.data que es la respuesta del fetch)
                 const cursoEsPagado = data.data?.ES_PAGADO === 1;
@@ -157,6 +165,139 @@ const EstudianteCourseDetail = () => {
     }
   }, [courseId, user]);
 
+  // Fetch Modulos y Tareas
+  // Fetch Modulos y Tareas
+  const [modules, setModules] = useState([]);
+  const [modulesLoading, setModulesLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchModulesAndTasks = async () => {
+      const userId = user?.id || user?.ID || user?.SECUENCIAL || user?.secuencial || user?.usuarioId;
+      if (!courseId || !userId) return;
+
+      try {
+        setModulesLoading(true);
+        // 1. Obtener módulos
+        const modRes = await fetch(`${API_URL}/api/modulos/evento/${courseId}`);
+        const modJson = await modRes.json();
+
+        if (!modRes.ok) throw new Error(modJson.message || 'Error fetching modules');
+
+        const mods = modJson.data || [];
+        console.log('Modules fetched:', mods);
+
+        // 2. Para cada módulo, obtener tareas y recursos
+        const modulesWithContent = await Promise.all(mods.map(async (mod) => {
+          let tareas = [];
+          let recursos = [];
+
+          // Fetch Tareas con status
+          try {
+            const taskRes = await fetch(`${API_URL}/api/tareas/modulo/${mod.SECUENCIAL}/estudiante/${userId}`);
+            const taskJson = await taskRes.json();
+            tareas = taskJson.data || [];
+          } catch (err) {
+            console.warn(`Error cargando tareas para modulo ${mod.SECUENCIAL}`, err);
+          }
+
+          // Fetch Recursos
+          try {
+            // Reutilizamos el endpoint de recursos por módulo
+            const resRes = await fetch(`${API_URL}/api/recursos/modulo/${mod.SECUENCIAL}`);
+            const resJson = await resRes.json();
+            recursos = resJson.data || [];
+          } catch (err) {
+            console.warn(`Error cargando recursos para modulo ${mod.SECUENCIAL}`, err);
+          }
+
+          return { ...mod, tareas, recursos };
+        }));
+
+        setModules(modulesWithContent);
+      } catch (e) {
+        console.error('Error cargando módulos:', e);
+      } finally {
+        setModulesLoading(false);
+      }
+    };
+
+    if (courseId && (user?.id || user?.SECUENCIAL)) {
+      fetchModulesAndTasks();
+    }
+  }, [courseId, user]);
+
+  // Cargar entregas del estudiante
+  useEffect(() => {
+    const fetchEntregas = async () => {
+      if (!user?.id || !courseId) return;
+      try {
+        const response = await fetch(`${API_URL}/api/tareas/estudiante/${user.id}/evento/${courseId}`);
+        const data = await response.json();
+        if (data.success) {
+          setEntregas(data.data || []);
+        }
+      } catch (error) {
+        console.error('Error al cargar entregas:', error);
+      }
+    };
+
+    // Cargar intentos de exámenes
+    const fetchIntentos = async () => {
+      if (!user?.id) return;
+      try {
+        const res = await fetch(`${API_URL}/api/evaluaciones/intentos/${user.id}`);
+        const data = await res.json();
+        if (data.success) {
+          setIntentos(data.data || []);
+        }
+      } catch (error) {
+        console.error('Error al cargar intentos:', error);
+      }
+    };
+
+    if (courseId && user?.id) {
+      fetchEntregas();
+      fetchIntentos();
+    }
+  }, [courseId, user]);
+
+  // Calcular actividades totales y completadas dinámicamente (después de declarar modules y entregas)
+  const totalActivities = useMemo(() => {
+    if (!modules || modules.length === 0) return 0;
+    let total = 0;
+    modules.forEach(modulo => {
+      // Contar tareas
+      total += modulo.tareas?.length || 0;
+    });
+    return total;
+  }, [modules]);
+
+  const completedActivities = useMemo(() => {
+    if (!modules || modules.length === 0) return 0;
+    let completed = 0;
+    modules.forEach(modulo => {
+      // Contar tareas entregadas
+      modulo.tareas?.forEach(tarea => {
+        const entrega = entregas.find(e => e.tareaId === tarea.SECUENCIAL);
+        if (entrega) completed++;
+      });
+    });
+    return completed;
+  }, [modules, entregas]);
+
+  // Aplicar tema dinámico con CSS variables
+  useEffect(() => {
+    if (courseData?.CODIGOTIPOEVENTO) {
+      const eventTheme = getEventTheme(courseData.CODIGOTIPOEVENTO);
+      if (eventTheme) {
+        document.documentElement.style.setProperty('--event-primary-color', eventTheme.primaryColor);
+        document.documentElement.style.setProperty('--event-secondary-color', eventTheme.secondaryColor);
+        document.documentElement.style.setProperty('--event-accent-color', eventTheme.accentColor);
+        document.documentElement.style.setProperty('--event-light-bg', eventTheme.lightBg);
+      }
+    }
+  }, [courseData]);
+
   // Parsear topics del contenido
   const parseTopics = (contenido) => {
     if (!contenido) return [];
@@ -175,16 +316,7 @@ const EstudianteCourseDetail = () => {
     return [];
   };
 
-  // Formatear fecha
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+  // Formatear fecha (Removed unused formatDate function)
 
   // Obtener iniciales del docente (con manejo robusto de nulos e int)
   const getDocenteInitials = (docente) => {
@@ -249,30 +381,21 @@ const EstudianteCourseDetail = () => {
   // Ahora Docente puede ser int (SECUENCIAL) o string (nombre completo). Usar NOMBRE_DOCENTE si existe
   const docente = courseData?.NOMBRE_DOCENTE || courseData?.Docente || course?.meta?.docente || 'Por asignar';
   const costo = courseData?.COSTO || course?.price || 0;
-  const capacidad = courseData?.CAPACIDAD || course?.meta?.capacity || 'No especificada';
-  const notaAprobacion = courseData?.NOTAAPROBACION || course?.meta?.passingGrade;
-  const asistenciaMinima = courseData?.ASISTENCIAMINIMA || course?.meta?.attendanceRequired;
-  const fechaInicio = courseData?.FECHAINICIO || course?.meta?.startDate;
-  const fechaFin = courseData?.FECHAFIN || course?.meta?.endDate;
-  const estado = mapEstado(courseData?.ESTADO || 'DISPONIBLE');
+  // const capacidad = courseData?.CAPACIDAD || course?.meta?.capacity || 'No especificada';
+  // const notaAprobacion = courseData?.NOTAAPROBACION || course?.meta?.passingGrade;
+  // const asistenciaMinima = courseData?.ASISTENCIAMINIMA || course?.meta?.attendanceRequired;
+  // const fechaInicio = courseData?.FECHAINICIO || course?.meta?.startDate;
+  // const fechaFin = courseData?.FECHAFIN || course?.meta?.endDate;
+  // const estado = mapEstado(courseData?.ESTADO || 'DISPONIBLE');
   const esPagado = courseData?.ES_PAGADO === 1 || course?.meta?.isPaid;
-  const carreras = courseData?.CARRERAS || [];
+  // const carreras = courseData?.CARRERAS || [];
   const topics = parseTopics(courseData?.CONTENIDO || '');
 
-  // Crear "lecciones" basadas en los topics
-  const lessons = topics.length > 0
-    ? topics.map((topic, index) => ({
-      id: index + 1,
-      title: typeof topic === 'string' ? topic : topic.title || `Tema ${index + 1}`,
-      description: typeof topic === 'string' ? '' : topic.description || '',
-      status: 'locked', // Por defecto bloqueadas
-      type: 'lesson'
-    }))
-    : [];
+  // Obtener tema del evento
+  const eventTheme = getEventTheme(courseData?.CODIGOTIPOEVENTO || 'CUR');
+  const showGrades = eventTheme.showGrades;
 
-  const totalLessons = lessons.length || topics.length || 0;
-  const completedLessons = 0; // Esto se podría obtener de la inscripción del estudiante
-  const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  const progressPercentage = totalActivities > 0 ? Math.round((completedActivities / totalActivities) * 100) : 0;
 
   return (
     <div className="course-detail-container">
@@ -288,26 +411,36 @@ const EstudianteCourseDetail = () => {
         }}
       >
         <div className="header-overlay">
-          <div className="course-tags">
-            <span className="tag">{tipo}</span>
-            <span className="tag">{modalidad}</span>
-            {esPagado && <span className="tag tag-paid">Pago</span>}
-            {!esPagado && <span className="tag tag-free">Gratis</span>}
-            {hasCareerRestriction && (
-              <span className={`tag ${esAptoCarrera ? 'apt-tag' : 'not-apt-tag'}`}>
-                {esAptoCarrera ? 'Apto para tu carrera' : 'No apto'}
-              </span>
-            )}
-          </div>
+          {/* Layout de dos columnas */}
+          <div className="header-content-grid">
+            {/* Columna izquierda: Tags, Título y Docente */}
+            <div className="header-left">
+              <div className="course-tags">
+                <span className="tag">{tipo}</span>
+                <span className="tag">{modalidad}</span>
+                {esPagado && <span className="tag tag-paid">Pago</span>}
+                {!esPagado && <span className="tag tag-free">Gratis</span>}
+                {hasCareerRestriction && (
+                  <span className={`tag ${esAptoCarrera ? 'apt-tag' : 'not-apt-tag'}`}>
+                    {esAptoCarrera ? 'Apto para tu carrera' : 'No apto'}
+                  </span>
+                )}
+              </div>
 
-          <h1 className="course-detail-title">{title}</h1>
-          <p className="course-detail-description">
-            {description.length > 200 ? description.substring(0, 200) + '...' : description}
-          </p>
+              <h1 className="course-detail-title">{title}</h1>
 
-          <div className="teacher-info">
-            <span className="teacher-initials">{getDocenteInitials(docente)}</span>
-            <span className="teacher-name">{docente === 'Por asignar' ? 'Por asignar' : `Ing. ${docente}`}</span>
+              <div className="teacher-info">
+                <span className="teacher-initials">{getDocenteInitials(docente)}</span>
+                <span className="teacher-name">{docente === 'Por asignar' ? 'Por asignar' : `Ing. ${docente}`}</span>
+              </div>
+            </div>
+
+            {/* Columna derecha: Descripción */}
+            <div className="header-right">
+              <p className="course-detail-description">
+                {description}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -317,8 +450,8 @@ const EstudianteCourseDetail = () => {
         <div className="course-summary-stats">
           <div className="stat-item">
             <FaBook className="stat-icon" />
-            <span>Total de temas</span>
-            <strong>{totalLessons}</strong>
+            <span>Total de actividades</span>
+            <strong>{totalActivities}</strong>
           </div>
           <div className="stat-item">
             <FaClock className="stat-icon" />
@@ -327,12 +460,12 @@ const EstudianteCourseDetail = () => {
           </div>
           {esPagado && (
             <div className="stat-item">
-              <FaMoneyBillWave className="stat-icon" />
+              <FaMoneyBill className="stat-icon" />
               <span>Costo</span>
               <strong>${parseFloat(costo).toFixed(2)}</strong>
             </div>
           )}
-          {isInscrito && totalLessons > 0 && (
+          {isInscrito && totalActivities > 0 && (
             <div className="stat-item">
               <FaChartBar className="stat-icon" />
               <span>Progreso</span>
@@ -370,7 +503,8 @@ const EstudianteCourseDetail = () => {
                 </Link>
               )
             )}
-            {!isPublicRoute && isInscrito && (!esPagado || pagoAprobado) && (
+            {/* Mensaje de inscripción eliminado - el estudiante inscrito simplemente accede al material */}
+            {false && !isPublicRoute && isInscrito && (!esPagado || pagoAprobado) && (
               <div className="enrolled-message">
                 <FaCheckCircle /> Ya estás inscrito en este curso
               </div>
@@ -379,67 +513,41 @@ const EstudianteCourseDetail = () => {
         )}
       </div>
 
-      {/* Sección de Temas/Lecciones */}
-      {totalLessons > 0 && (
-        <div className="course-lessons-section">
-          <div className="lessons-header">
-            <div className="lessons-count-box">
-              <span className="lessons-icon"><FaBook /></span>
-              <div>
-                <div className="lessons-count-label">Total de temas</div>
-                <div className="lessons-count-number">{totalLessons}</div>
-              </div>
-            </div>
+      {/* Navegación por Tabs - Solo visible para estudiantes inscritos */}
+      {!isPublicRoute && isInscrito && pagoAprobado && (
+        <>
+          <CourseNavigationTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
+            showGrades={showGrades}
+          />
+
+          {/* Contenido de los Tabs */}
+          <div className="tab-content-container">
+            {activeTab === 'material' && (
+              <MaterialTab
+                topics={topics}
+                modules={modules} // Pasamos los módulos reales
+                loading={modulesLoading}
+                eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
+                courseData={courseData}
+              />
+            )}
+            {activeTab === 'participantes' && (
+              <ParticipantesTab
+                courseData={courseData}
+                eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
+              />
+            )}
+            {activeTab === 'calificaciones' && showGrades && (
+              <CalificacionesTab
+                courseData={courseData}
+                eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
+              />
+            )}
           </div>
-
-          {/* Lista de Temas */}
-          <div className="lessons-list">
-            {lessons.map((lesson) => (
-              <div
-                key={lesson.id}
-                className={`lesson-item ${lesson.status}`}
-              >
-                <div className="lesson-status-icon">
-                  {lesson.status === 'completed' && <FaCheck className="status-check" />}
-                  {lesson.status === 'in-progress' && <FaSync className="status-progress spinning" />}
-                  {lesson.status === 'locked' && <FaLock className="status-lock" />}
-                </div>
-
-                <div className="lesson-content">
-                  <div className="lesson-header-row">
-                    <h4 className="lesson-title">{lesson.title}</h4>
-                    {lesson.status === 'completed' && (
-                      <span className="lesson-badge completed-badge">Completa</span>
-                    )}
-                    {lesson.status === 'in-progress' && (
-                      <span className="lesson-badge progress-badge">Iniciar</span>
-                    )}
-                  </div>
-                  {lesson.description && (
-                    <p className="lesson-description">{lesson.description}</p>
-                  )}
-                </div>
-
-                <button
-                  className="lesson-action-btn"
-                  disabled={lesson.status === 'locked'}
-                >
-                  <span className="action-icon"><FaEye /></span>
-                  Ver
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Si no hay temas, mostrar mensaje */}
-      {totalLessons === 0 && (
-        <div className="course-lessons-section">
-          <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
-            <p>Este curso no tiene temas definidos aún.</p>
-          </div>
-        </div>
+        </>
       )}
     </div>
   );
