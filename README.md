@@ -131,15 +131,6 @@ curl -X POST http://localhost:5000/api/estudiantes/3/inscribir -H "Content-Type:
 - El flujo de inscripciones crea una fila en `inscripcion`. Actualmente el estado inicial se marca como `ACE` por simplicidad; ajusta según reglas del proyecto.
 - Para desarrollo es útil tener la base de datos cargada con los datos del dump para ver el comportamiento real.
 
----
-
-Si quieres, puedo:
-
-- Añadir una plantilla de Pull Request en `.github/PULL_REQUEST_TEMPLATE.md`.
-- Crear un ejemplo básico de workflow de GitHub Actions para ejecutar linter/tests antes del merge.
-- Ejecutar comprobaciones y pruebas si inicias el servidor local y me das permiso para ejecutar comandos.
-
-
 - Frontend: crea un `.env` en la raíz del frontend si lo necesitas:
 
 ```
