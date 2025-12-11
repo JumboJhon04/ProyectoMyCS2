@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
 import PublicHeader from '../../components/PublicHeader/PublicHeader';
 import { useUser } from '../../context/UserContext'; // IMPORTAR
+import API_URL from '../../config/api';
 
 import './login.css';
 
@@ -41,7 +42,7 @@ export default function AuthLogin() {
     try {
       setLoading(true);
 
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -74,9 +75,9 @@ export default function AuthLogin() {
         } else if (data.data.codigoRol === 'RES') {
           navigate('/responsable/profile');
         } else if (data.data.codigoRol === 'DOC') {
-          navigate('/profesor/panel');
+          navigate('/'); // Docente se queda en la página principal
         } else if (data.data.codigoRol === 'EST') {
-          navigate('/user/panel');
+          navigate('/'); // Estudiante se queda en la página principal
         } else {
           navigate('/');
         }

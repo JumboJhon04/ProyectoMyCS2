@@ -1,17 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCourses } from '../../../context/CoursesContext';
+import API_URL from '../../../config/api';
 import './EventoAdmin.css';
 
 const NewEventModal = ({ isOpen, onClose }) => {
   const { addCourse } = useCourses();
   const [title, setTitle] = useState('');
   const [type, setType] = useState('Curso');
-  const [attendanceRequired, setAttendanceRequired] = useState('');
-  const [passingGrade, setPassingGrade] = useState('');
+  const [responsableId, setResponsableId] = useState('');
   const [imageFile, setImageFile] = useState(null); // Archivo real
   const [imagePreview, setImagePreview] = useState(null); // Solo preview
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Estados para responsables
+  const [responsables, setResponsables] = useState([]);
+  const [loadingResponsables, setLoadingResponsables] = useState(false);
+  const [tiposEvento, setTiposEvento] = useState([]); // Types for dropdown
+
+  // Cargar responsables cuando se abre el modal
+  useEffect(() => {
+    if (isOpen) {
+      cargarResponsables();
+    }
+  }, [isOpen]);
+
+  const cargarResponsables = async () => {
+    setLoadingResponsables(true);
+    try {
+      const response = await fetch(`${API_URL}/api/auth/responsables`);
+      const data = await response.json();
+      if (data.success) {
+        setResponsables(data.data);
+      }
+    } catch (err) {
+      console.error('Error cargando responsables:', err);
+    } finally {
+      setLoadingResponsables(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+        fetch(`${API_URL}/api/eventos/tipos`)
+            .then(res => res.json())
+            .then(data => { if(data.success) setTiposEvento(data.data); })
+            .catch(err => console.error('Error loading types', err));
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -35,15 +71,11 @@ const NewEventModal = ({ isOpen, onClose }) => {
     if (!title.trim()) return setError('El nombre del evento es obligatorio');
     if (!type) return setError('Seleccione un tipo de evento');
     if (!imageFile) return setError('Debe seleccionar una imagen');
-    if (passingGrade && isNaN(Number(passingGrade))) {
-      return setError('La nota de aprobación debe ser un número');
-    }
 
     const newCourse = {
       title: title.trim(),
-      type,
-      attendanceRequired,
-      passingGrade: passingGrade ? Number(passingGrade) : null,
+      type, // This now holds the CODIGO (e.g. 'CUR')
+      responsableId: responsableId || null,
       imageFile // Pasar el archivo real, NO el base64
     };
 
@@ -54,9 +86,10 @@ const NewEventModal = ({ isOpen, onClose }) => {
       
       // Limpiar formulario y cerrar
       setTitle('');
-      setType('Curso');
-      setAttendanceRequired('');
-      setPassingGrade('');
+      setTitle('');
+      setType('CUR'); // Default match
+      setResponsableId('');
+      setResponsableId('');
       setImageFile(null);
       setImagePreview(null);
       
@@ -90,36 +123,43 @@ const NewEventModal = ({ isOpen, onClose }) => {
                 />
               </label>
 
-              <label>
-                Tipo de evento
-                <select value={type} onChange={(e) => setType(e.target.value)}>
-                  <option>Curso</option>
-                  <option>Taller</option>
-                  <option>Seminario</option>
-                  <option>Conferencia</option>
-                </select>
-              </label>
+                   <label>
+                    Tipo de evento
+                    <select value={type} onChange={(e) => setType(e.target.value)}>
+                      {tiposEvento.length > 0 ? (
+                        tiposEvento.map(t => <option key={t.CODIGO} value={t.CODIGO}>{t.NOMBRE}</option>)
+                      ) : (
+                        <>
+                          {/* Fallback if DB types fail to load */}
+                          <option value="CUR">Curso</option>
+                          <option value="TALL">Taller</option>
+                          <option value="SEM">Seminario</option>
+                          <option value="CONF">Conferencia</option>
+                        </>
+                      )}
+                    </select>
+                  </label>
             </div>
 
-            <div className="two-col-grid">
-              <label>
-                Asistencia de aprobación
-                <input 
-                  value={attendanceRequired} 
-                  onChange={(e) => setAttendanceRequired(e.target.value)} 
-                  placeholder="% o condiciones" 
-                />
-              </label>
-
-              <label>
-                Nota de aprobación
-                <input 
-                  value={passingGrade} 
-                  onChange={(e) => setPassingGrade(e.target.value)} 
-                  placeholder="Ej. 60" 
-                />
-              </label>
-            </div>
+            <label>
+              Responsable del curso
+              <select 
+                value={responsableId} 
+                onChange={(e) => setResponsableId(e.target.value)}
+                style={{ padding: '0.5rem', borderRadius: '6px', width: '100%' }}
+              >
+                <option value="">-- Seleccione un responsable --</option>
+                {loadingResponsables ? (
+                  <option disabled>Cargando responsables...</option>
+                ) : (
+                  responsables.map(resp => (
+                    <option key={resp.id} value={resp.id}>
+                      {resp.NOMBRES} {resp.APELLIDOS} ({resp.CORREO})
+                    </option>
+                  ))
+                )}
+              </select>
+            </label>
 
             {error && <div className="form-error" style={{color: 'red', marginTop: '10px'}}>{error}</div>}
           </div>

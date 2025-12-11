@@ -5,6 +5,7 @@ import { useCourses } from '../../context/CoursesContext';
 import PublicHeader from '../../components/PublicHeader/PublicHeader';
 import PayPalButton from '../../components/PayPalButton/PayPalButton';
 import './PaymentPage.css';
+import API_URL from '../../config/api';
 
 const PaymentPage = () => {
   const { courseId } = useParams();
@@ -22,7 +23,7 @@ const PaymentPage = () => {
     if (rol === 'EST') return '/user/panel';
     return '/user/panel'; // Default para estudiantes
   };
-  
+
   const [courseData, setCourseData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [formasPago, setFormasPago] = useState([]);
@@ -38,6 +39,23 @@ const PaymentPage = () => {
   const [pagoAprobado, setPagoAprobado] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('manual'); // 'manual' o 'paypal'
   const [paypalSuccess, setPaypalSuccess] = useState(false);
+  // Estado para descripción expandible
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  // Requisitos dinámicos
+  const [requisitos, setRequisitos] = useState([]);
+  const [archivosRequisitos, setArchivosRequisitos] = useState({});
+  // Obtener requisitos del curso
+  useEffect(() => {
+    const fetchRequisitos = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/eventos/${courseId}/requisitos`);
+        const data = await res.json();
+        if (res.ok && data.success) setRequisitos(data.data);
+        else setRequisitos([]);
+      } catch (e) { setRequisitos([]); }
+    };
+    if (courseId) fetchRequisitos();
+  }, [courseId]);
 
   useEffect(() => {
     if (courseId) {
@@ -49,9 +67,9 @@ const PaymentPage = () => {
   const fetchCourseDetails = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/eventos/${courseId}`);
+      const response = await fetch(`${API_URL}/api/eventos/${courseId}`);
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Error al cargar el curso');
       }
@@ -72,22 +90,22 @@ const PaymentPage = () => {
     if (user && user.id && courseId) {
       try {
         // Usar el nuevo endpoint que incluye inscripciones pendientes
-        const inscripcionRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/inscripcion?eventoId=${courseId}`);
+        const inscripcionRes = await fetch(`${API_URL}/api/estudiantes/${user.id}/inscripcion?eventoId=${courseId}`);
         if (inscripcionRes.ok) {
           const inscripcionData = await inscripcionRes.json();
           console.log('📋 Inscripción encontrada:', inscripcionData.data);
-          
+
           if (inscripcionData.data) {
             console.log('✅ Usuario ya está inscrito, actualizando estado', inscripcionData.data);
             setYaInscrito(true);
             const idInscripcion = inscripcionData.data.inscripcionId || inscripcionData.data.SECUENCIAL;
             setInscripcionId(idInscripcion);
-            
+
             // Verificar estado del pago si existe inscripción y el curso es pagado
             const cursoEsPagado = inscripcionData.data.ES_PAGADO === 1 || courseData?.ES_PAGADO === 1;
             if (idInscripcion && cursoEsPagado) {
               try {
-                const pagoRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${idInscripcion}`);
+                const pagoRes = await fetch(`${API_URL}/api/pagos/inscripcion/${idInscripcion}`);
                 if (pagoRes.ok) {
                   const pagoData = await pagoRes.json();
                   const pagoAprobado = pagoData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
@@ -104,7 +122,7 @@ const PaymentPage = () => {
             } else {
               setPagoAprobado(!cursoEsPagado); // Si no es pagado, considerar como "aprobado"
             }
-            
+
             return true;
           } else {
             console.log('ℹ️ Usuario NO está inscrito en este curso');
@@ -144,7 +162,7 @@ const PaymentPage = () => {
 
   const fetchFormasPago = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/pagos/formas-pago');
+      const response = await fetch(`${API_URL}/api/pagos/formas-pago`);
       const data = await response.json();
       if (data.success) {
         setFormasPago(data.data);
@@ -169,6 +187,16 @@ const PaymentPage = () => {
     }
   };
 
+  // Manejar archivos de requisitos dinámicos
+  const handleRequisitoFileChange = (secuencial, file) => {
+    if (file && file.size > 10 * 1024 * 1024) {
+      setError('El archivo de requisito es demasiado grande. Máximo 10MB');
+      return;
+    }
+    setArchivosRequisitos(prev => ({ ...prev, [secuencial]: file }));
+    setError('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -187,52 +215,19 @@ const PaymentPage = () => {
 
       // Si no está inscrito, crear la inscripción
       if (!yaInscrito) {
-        const inscripcionRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/inscribir`, {
+        const inscripcionRes = await fetch(`${API_URL}/api/estudiantes/${user.id}/inscribir`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             eventoId: parseInt(courseId),
             motivacion: motivacion || null
           })
         });
 
         const inscripcionData = await inscripcionRes.json();
-        
+
         if (!inscripcionRes.ok) {
-          // Si ya está inscrito, obtener la inscripción existente
-          if (inscripcionData.error && inscripcionData.error.includes('ya inscrito')) {
-            try {
-              const eventosRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/eventos`);
-              if (eventosRes.ok) {
-                const eventosData = await eventosRes.json();
-                const inscripcionExistente = eventosData.data?.find(
-                  item => (item.eventoId || item.SECUENCIALEVENTO) === parseInt(courseId)
-                );
-                if (inscripcionExistente && inscripcionExistente.inscripcionId) {
-                  nuevaInscripcionId = inscripcionExistente.inscripcionId;
-                  setYaInscrito(true);
-                  setInscripcionId(nuevaInscripcionId);
-                  // Si el curso es gratis, mostrar error
-                  if (!esPagado) {
-                    throw new Error('Ya estás inscrito en este curso');
-                  }
-                  // Si es pagado, continuar con el flujo de pago
-                } else {
-                  throw new Error(inscripcionData.error || 'Error al crear la inscripción');
-                }
-              } else {
-                throw new Error(inscripcionData.error || 'Error al crear la inscripción');
-              }
-            } catch (e) {
-              if (!esPagado) {
-                throw new Error(e.message || 'Ya estás inscrito en este curso');
-              }
-              // Si es pagado, intentar continuar
-              throw new Error('Ya estás inscrito. Si necesitas realizar el pago, completa el formulario.');
-            }
-          } else {
-            throw new Error(inscripcionData.error || 'Error al crear la inscripción');
-          }
+          // ...existing code...
         } else {
           nuevaInscripcionId = inscripcionData.inscripcionId;
           setInscripcionId(nuevaInscripcionId);
@@ -240,6 +235,37 @@ const PaymentPage = () => {
         }
       }
 
+      // Enviar requisitos dinámicos si existen
+      if (requisitos.length > 0) {
+        // Validar obligatorios
+        const faltantes = requisitos.filter(r => r.ES_OBLIGATORIO && !archivosRequisitos[r.SECUENCIAL]);
+        if (faltantes.length) {
+          setError('Faltan requisitos obligatorios: ' + faltantes.map(f => f.DESCRIPCION).join(', '));
+          setSubmitting(false);
+          return;
+        }
+        // Enviar archivos de requisitos
+        const formDataReq = new FormData();
+        formDataReq.append('inscripcionId', nuevaInscripcionId);
+        requisitos.forEach(r => {
+          if (archivosRequisitos[r.SECUENCIAL]) {
+            formDataReq.append(`requisito_${r.SECUENCIAL}`, archivosRequisitos[r.SECUENCIAL]);
+          }
+        });
+        // Enviar al backend
+        const reqRes = await fetch(`${API_URL}/api/inscripciones/requisitos`, {
+          method: 'POST',
+          body: formDataReq
+        });
+        const reqData = await reqRes.json();
+        if (!reqRes.ok) {
+          setError(reqData.error || 'Error al subir requisitos');
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      // ...existing code para pago...
       // Si el curso es pagado, crear el pago
       if (courseData?.ES_PAGADO === 1 && parseFloat(montoInput) > 0) {
         if (!selectedFormaPago) {
@@ -254,7 +280,7 @@ const PaymentPage = () => {
           formData.append('comprobante', comprobante);
         }
 
-        const pagoRes = await fetch('http://localhost:5000/api/pagos', {
+        const pagoRes = await fetch(`${API_URL}/api/pagos`, {
           method: 'POST',
           body: formData
         });
@@ -268,31 +294,13 @@ const PaymentPage = () => {
 
       setInscripcionId(nuevaInscripcionId);
       setYaInscrito(true);
-      
+      // ...existing code...
       // Si es pagado, verificar el estado del pago directamente
       if (courseData?.ES_PAGADO === 1 && parseFloat(montoInput) > 0) {
-        try {
-          // Esperar un momento para que el pago se registre en la BD
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          const pagoRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${nuevaInscripcionId}`);
-          if (pagoRes.ok) {
-            const pagoData = await pagoRes.json();
-            const pagoAprobado = pagoData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
-            setPagoAprobado(pagoAprobado || false);
-            console.log('💳 Estado del pago después de crear:', pagoAprobado ? 'Aprobado' : 'Pendiente');
-          } else {
-            setPagoAprobado(false);
-          }
-        } catch (e) {
-          console.warn('Error verificando pago después de crear:', e);
-          setPagoAprobado(false);
-        }
+        // ...existing code...
       } else {
-        // Si no es pagado, el pago está "aprobado" automáticamente
         setPagoAprobado(true);
       }
-      
       setSuccess(true);
     } catch (err) {
       console.error('Error al procesar inscripción/pago:', err);
@@ -362,7 +370,7 @@ const PaymentPage = () => {
             <div className="success-icon">✓</div>
             <h2>¡Inscripción Exitosa!</h2>
             <p>
-              {esPagado 
+              {esPagado
                 ? 'Tu inscripción ha sido registrada y el pago ha sido aprobado. Ya puedes acceder al curso.'
                 : 'Tu inscripción ha sido registrada correctamente. Ya puedes acceder al curso.'}
             </p>
@@ -389,7 +397,7 @@ const PaymentPage = () => {
             <div className="pending-icon">⏳</div>
             <h2>Pago Registrado</h2>
             <p>
-              Tu comprobante de pago ha sido registrado y está pendiente de revisión. 
+              Tu comprobante de pago ha sido registrado y está pendiente de revisión.
               Recibirás un correo electrónico cuando tu pago sea aprobado.
             </p>
             <div className="success-actions">
@@ -417,17 +425,60 @@ const PaymentPage = () => {
           {/* Información del curso */}
           <div className="payment-course-info">
             <div className="course-info-header">
-              <img 
-                src={courseData.URL_IMAGEN || 'https://via.placeholder.com/200'} 
+              <img
+                src={courseData.URL_IMAGEN || 'https://via.placeholder.com/200'}
                 alt={courseData.TITULO}
                 className="course-info-image"
               />
               <div className="course-info-details">
                 <h1>{courseData.TITULO}</h1>
-                <p className="course-info-description" dangerouslySetInnerHTML={{ __html: courseData.DESCRIPCION }} />
+                {/* Descripción expandible */}
+                <div className="course-description-container">
+                  {(() => {
+                    const descripcion = courseData.DESCRIPCION || '';
+                    const descripcionTexto = descripcion.replace(/<[^>]*>/g, ''); // Eliminar tags HTML
+                    const shouldTruncate = descripcionTexto.length > 150;
+
+                    if (shouldTruncate && !isDescriptionExpanded) {
+                      return (
+                        <>
+                          <p className="course-info-description">
+                            {descripcionTexto.substring(0, 150)}...
+                          </p>
+                          <button
+                            className="expand-description-btn"
+                            onClick={() => setIsDescriptionExpanded(true)}
+                          >
+                            más...
+                          </button>
+                        </>
+                      );
+                    } else {
+                      return (
+                        <>
+                          <p className="course-info-description" dangerouslySetInnerHTML={{ __html: courseData.DESCRIPCION }} />
+                          {shouldTruncate && (
+                            <button
+                              className="expand-description-btn"
+                              onClick={() => setIsDescriptionExpanded(false)}
+                            >
+                              menos...
+                            </button>
+                          )}
+                        </>
+                      );
+                    }
+                  })()}
+                </div>
+                {/* Precio destacado */}
+                <div className="course-price-highlight">
+                  <div className="price-label">Precio del curso</div>
+                  <div className="price-amount">${costo.toFixed(2)}</div>
+                </div>
+                {/* Información adicional */}
                 <div className="course-info-meta">
-                  <span className="meta-badge">💰 ${costo.toFixed(2)}</span>
-                  {courseData.HORAS && <span className="meta-badge">⏱ {courseData.HORAS} horas</span>}
+                  {courseData.HORAS && <span className="meta-badge">  {courseData.HORAS} horas</span>}
+                  {courseData.ES_PAGADO === 0 ? <span className="meta-badge free-badge">✓ Gratis</span> : null}
                 </div>
               </div>
             </div>
@@ -436,14 +487,14 @@ const PaymentPage = () => {
           {/* Formulario de inscripción y pago */}
           <div className="payment-form-section">
             <h2>Completa tu Inscripción</h2>
-            
+
             {!user ? (
               <div className="login-required-full">
                 <div className="login-required-content">
                   <h3>Inicia sesión para continuar</h3>
                   <p>Necesitas tener una cuenta para inscribirte en este curso</p>
-                  <Link 
-                    to="/login" 
+                  <Link
+                    to="/login"
                     state={{ returnTo: `/payment/${courseId}` }}
                     className="btn btn-primary"
                     style={{ marginTop: '1rem' }}
@@ -457,578 +508,630 @@ const PaymentPage = () => {
               </div>
             ) : (
               <>
-              {/* Debug temporal - remover en producción */}
-              {console.log('🎯 Renderizando PaymentPage - yaInscrito:', yaInscrito, 'pagoAprobado:', pagoAprobado, 'esPagado:', esPagado, 'inscripcionId:', inscripcionId, 'user:', user?.id)}
-              
-              {yaInscrito ? (
-                // Si ya está inscrito, verificar estado del pago
-                <div className="payment-form">
-                  {esPagado && pagoAprobado ? (
-                    // Pago ya aprobado - mostrar mensaje de éxito
-                    <div className="info-message" style={{ 
-                      padding: '1.5rem', 
-                      background: '#d1fae5', 
-                      border: '1px solid #6ee7b7', 
-                      borderRadius: '8px', 
-                      marginBottom: '1.5rem',
-                      color: '#065f46'
-                    }}>
-                      <strong>✅ Ya estás inscrito y tu pago ha sido aprobado.</strong>
-                      <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.95rem' }}>
-                        Tu inscripción está completa. Puedes acceder al curso desde "Mis Cursos".
-                      </p>
-                    </div>
-                  ) : esPagado && !pagoAprobado ? (
-                    // Pago pendiente - mostrar formulario
-                    <>
-                      <div className="info-message" style={{ 
-                        padding: '1.5rem', 
-                        background: '#dbeafe', 
-                        border: '1px solid #93c5fd', 
-                        borderRadius: '8px', 
+                {/* Debug temporal - remover en producción */}
+                {console.log('🎯 Renderizando PaymentPage - yaInscrito:', yaInscrito, 'pagoAprobado:', pagoAprobado, 'esPagado:', esPagado, 'inscripcionId:', inscripcionId, 'user:', user?.id)}
+
+                {yaInscrito ? (
+                  // Si ya está inscrito, verificar estado del pago
+                  <div className="payment-form">
+                    {esPagado && pagoAprobado ? (
+                      // Pago ya aprobado - mostrar mensaje de éxito
+                      <div className="info-message" style={{
+                        padding: '1.5rem',
+                        background: '#d1fae5',
+                        border: '1px solid #6ee7b7',
+                        borderRadius: '8px',
                         marginBottom: '1.5rem',
-                        color: '#1e40af'
+                        color: '#065f46'
                       }}>
-                        <strong>ℹ️ Ya estás inscrito en este curso.</strong>
+                        <strong>✅ Ya estás inscrito y tu pago ha sido aprobado.</strong>
                         <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.95rem' }}>
-                          Completa el pago para finalizar tu inscripción.
+                          Tu inscripción está completa. Puedes acceder al curso desde "Mis Cursos".
                         </p>
                       </div>
-
-                      <div className="payment-divider">
-                        <span>Información de Pago</span>
-                      </div>
-
-                      <div className="form-group">
-                        <label>Método de Pago *</label>
-                        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                          <button
-                            type="button"
-                            onClick={() => setPaymentMethod('manual')}
-                            className={`payment-method-btn ${paymentMethod === 'manual' ? 'active' : ''}`}
-                            style={{
-                              padding: '0.75rem 1.5rem',
-                              border: '2px solid #333',
-                              borderRadius: '8px',
-                              background: paymentMethod === 'manual' ? '#333' : 'transparent',
-                              color: paymentMethod === 'manual' ? '#fff' : '#333',
-                              cursor: 'pointer',
-                              fontWeight: 600,
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            Transferencia/Depósito
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPaymentMethod('paypal')}
-                            className={`payment-method-btn ${paymentMethod === 'paypal' ? 'active' : ''}`}
-                            style={{
-                              padding: '0.75rem 1.5rem',
-                              border: '2px solid #333',
-                              borderRadius: '8px',
-                              background: paymentMethod === 'paypal' ? '#333' : 'transparent',
-                              color: paymentMethod === 'paypal' ? '#fff' : '#333',
-                              cursor: 'pointer',
-                              fontWeight: 600,
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            PayPal
-                          </button>
+                    ) : esPagado && !pagoAprobado ? (
+                      // Pago pendiente - mostrar formulario
+                      <>
+                        <div className="info-message" style={{
+                          padding: '1.5rem',
+                          background: '#dbeafe',
+                          border: '1px solid #93c5fd',
+                          borderRadius: '8px',
+                          marginBottom: '1.5rem',
+                          color: '#1e40af'
+                        }}>
+                          <strong>ℹ️ Ya estás inscrito en este curso.</strong>
+                          <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.95rem' }}>
+                            Completa el pago para finalizar tu inscripción.
+                          </p>
                         </div>
-                      </div>
 
-                      {paymentMethod === 'manual' && (
-                        <>
-                          <div className="form-group">
-                            <label>Método de Pago *</label>
-                            <select
-                              value={selectedFormaPago}
-                              onChange={(e) => setSelectedFormaPago(e.target.value)}
-                              required={esPagado && paymentMethod === 'manual'}
+                        <div className="payment-divider">
+                          <span>Información de Pago</span>
+                        </div>
+
+                        <div className="form-group">
+                          <label>Método de Pago *</label>
+                          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                            <button
+                              type="button"
+                              onClick={() => setPaymentMethod('manual')}
+                              className={`payment-method-btn ${paymentMethod === 'manual' ? 'active' : ''}`}
+                              style={{
+                                padding: '0.75rem 1.5rem',
+                                border: '2px solid #333',
+                                borderRadius: '8px',
+                                background: paymentMethod === 'manual' ? '#333' : 'transparent',
+                                color: paymentMethod === 'manual' ? '#fff' : '#333',
+                                cursor: 'pointer',
+                                fontWeight: 600,
+                                transition: 'all 0.2s'
+                              }}
                             >
-                              <option value="">Selecciona un método</option>
-                              {formasPago.map((fp) => (
-                                <option key={fp.CODIGO} value={fp.CODIGO}>
-                                  {fp.NOMBRE}
-                                </option>
-                              ))}
-                            </select>
+                              Transferencia/Depósito
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPaymentMethod('paypal')}
+                              className={`payment-method-btn ${paymentMethod === 'paypal' ? 'active' : ''}`}
+                              style={{
+                                padding: '0.75rem 1.5rem',
+                                border: '2px solid #333',
+                                borderRadius: '8px',
+                                background: paymentMethod === 'paypal' ? '#333' : 'transparent',
+                                color: paymentMethod === 'paypal' ? '#fff' : '#333',
+                                cursor: 'pointer',
+                                fontWeight: 600,
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              PayPal
+                            </button>
                           </div>
+                        </div>
 
-                          <div className="form-group">
-                            <label>Monto *</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={montoInput}
-                              onChange={(e) => setMontoInput(e.target.value)}
-                              placeholder="0.00"
-                              required={esPagado && paymentMethod === 'manual'}
-                            />
-                            <small>Monto del curso: ${costo.toFixed(2)}</small>
-                          </div>
+                        {paymentMethod === 'manual' && (
+                          <>
+                            <div className="form-group">
+                              <label>Método de Pago *</label>
+                              <select
+                                value={selectedFormaPago}
+                                onChange={(e) => setSelectedFormaPago(e.target.value)}
+                                required={esPagado && paymentMethod === 'manual'}
+                              >
+                                <option value="">Selecciona un método</option>
+                                {formasPago.map((fp) => (
+                                  <option key={fp.CODIGO} value={fp.CODIGO}>
+                                    {fp.NOMBRE}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
 
-                          <div className="form-group">
-                            <label>Comprobante de Pago</label>
-                            <input
-                              type="file"
-                              accept=".pdf,.jpg,.jpeg,.png,.gif,.webp"
-                              onChange={handleFileChange}
-                            />
-                            <small>Formatos permitidos: PDF, JPG, PNG, GIF, WEBP (máx. 10MB)</small>
-                            {comprobante && (
-                              <div className="file-selected">
-                                📄 {comprobante.name}
+                            <div className="form-group">
+                              <label>Monto *</label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={montoInput}
+                                onChange={(e) => setMontoInput(e.target.value)}
+                                placeholder="0.00"
+                                required={esPagado && paymentMethod === 'manual'}
+                              />
+                              <small>Monto del curso: ${costo.toFixed(2)}</small>
+                            </div>
+
+                            <div className="form-group">
+                              <label>Comprobante de Pago</label>
+                              <div className="custom-file-input-wrapper">
+                                <input
+                                  type="file"
+                                  id="comprobante-pago-inscrito"
+                                  className="custom-file-input"
+                                  accept=".pdf,.jpg,.jpeg,.png,.gif,.webp"
+                                  onChange={handleFileChange}
+                                />
+                                <label htmlFor="comprobante-pago-inscrito" className="custom-file-label">
+                                  <span className="file-icon material-icons">attach_file</span>
+                                  <span className="file-text">
+                                    {comprobante ? 'Cambiar comprobante' : 'Elegir comprobante'}
+                                  </span>
+                                </label>
                               </div>
-                            )}
-                          </div>
-                        </>
-                      )}
+                              <small>Formatos permitidos: PDF, JPG, PNG, GIF, WEBP (máx. 10MB)</small>
+                              {comprobante && (
+                                <div className="file-selected">
+                                  {comprobante.name}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
 
-                      {paymentMethod === 'paypal' && (
-                        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-                          <label>Pagar con PayPal</label>
-                          <div style={{ 
-                            padding: '1rem', 
-                            background: '#f8fafc', 
-                            borderRadius: '8px',
-                            border: '1px solid #e2e8f0'
-                          }}>
-                            <PayPalButton
-                              amount={costo}
-                              currency="USD"
-                              onSuccess={async (order) => {
-                                try {
-                                  // Registrar el pago de PayPal en el backend
-                                  const pagoRes = await fetch('http://localhost:5000/api/pagos/paypal', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                      inscripcionId: inscripcionId,
-                                      monto: costo,
-                                      paypalOrderId: order.id,
-                                      paypalDetails: order
-                                    })
-                                  });
+                        {paymentMethod === 'paypal' && (
+                          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                            <label>Pagar con PayPal</label>
+                            <div style={{
+                              padding: '1rem',
+                              background: '#f8fafc',
+                              borderRadius: '8px',
+                              border: '1px solid #e2e8f0'
+                            }}>
+                              <PayPalButton
+                                amount={costo}
+                                currency="USD"
+                                onSuccess={async (order) => {
+                                  try {
+                                    // Registrar el pago de PayPal en el backend
+                                    const pagoRes = await fetch(`${API_URL}/api/pagos/paypal`, {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        inscripcionId: inscripcionId,
+                                        monto: costo,
+                                        paypalOrderId: order.id,
+                                        paypalDetails: order
+                                      })
+                                    });
 
-                                  const pagoData = await pagoRes.json();
+                                    const pagoData = await pagoRes.json();
 
-                                  if (!pagoRes.ok) {
-                                    console.error('Error del backend:', pagoData);
-                                    // Si el error es que ya existe un pago, considerar como éxito
-                                    if (pagoData.error && (pagoData.error.includes('Ya existe un pago') || pagoData.error.includes('ya existe'))) {
-                                      console.log('✅ Pago ya registrado, considerando como éxito');
-                                      setError(''); // Limpiar error PRIMERO
-                                      setPaypalSuccess(true);
-                                      setYaInscrito(true);
-                                      
-                                      // Verificar el estado del pago directamente
-                                      try {
-                                        await new Promise(resolve => setTimeout(resolve, 500));
-                                        const pagoCheckRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${inscripcionId}`);
-                                        if (pagoCheckRes.ok) {
-                                          const pagoCheckData = await pagoCheckRes.json();
-                                          const pagoAprobado = pagoCheckData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
-                                          setPagoAprobado(pagoAprobado || false);
-                                        } else {
+                                    if (!pagoRes.ok) {
+                                      console.error('Error del backend:', pagoData);
+                                      // Si el error es que ya existe un pago, considerar como éxito
+                                      if (pagoData.error && (pagoData.error.includes('Ya existe un pago') || pagoData.error.includes('ya existe'))) {
+                                        console.log('✅ Pago ya registrado, considerando como éxito');
+                                        setError(''); // Limpiar error PRIMERO
+                                        setPaypalSuccess(true);
+                                        setYaInscrito(true);
+
+                                        // Verificar el estado del pago directamente
+                                        try {
+                                          await new Promise(resolve => setTimeout(resolve, 500));
+                                          const pagoCheckRes = await fetch(`${API_URL}/api/pagos/inscripcion/${inscripcionId}`);
+                                          if (pagoCheckRes.ok) {
+                                            const pagoCheckData = await pagoCheckRes.json();
+                                            const pagoAprobado = pagoCheckData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
+                                            setPagoAprobado(pagoAprobado || false);
+                                          } else {
+                                            setPagoAprobado(false);
+                                          }
+                                        } catch (e) {
                                           setPagoAprobado(false);
                                         }
-                                      } catch (e) {
+
+                                        setTimeout(() => {
+                                          setSuccess(true);
+                                        }, 1000);
+                                        return; // Salir sin lanzar error
+                                      }
+                                      // Si es otro error, verificar si el pago realmente se procesó
+                                      console.warn('Error del backend, pero verificando si el pago se procesó:', pagoData);
+                                      throw new Error(pagoData.error || pagoData.details || 'Error al registrar el pago de PayPal');
+                                    }
+
+                                    // Pago exitoso
+                                    console.log('✅ Pago de PayPal registrado exitosamente');
+                                    setError(''); // Limpiar cualquier error previo PRIMERO
+                                    setPaypalSuccess(true);
+                                    setYaInscrito(true);
+
+                                    // Verificar el estado del pago directamente
+                                    try {
+                                      // Esperar un momento para que el pago se registre en la BD
+                                      await new Promise(resolve => setTimeout(resolve, 500));
+
+                                      const pagoCheckRes = await fetch(`${API_URL}/api/pagos/inscripcion/${inscripcionId}`);
+                                      if (pagoCheckRes.ok) {
+                                        const pagoCheckData = await pagoCheckRes.json();
+                                        const pagoAprobado = pagoCheckData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
+                                        setPagoAprobado(pagoAprobado || false);
+                                        console.log('💳 Estado del pago PayPal después de crear:', pagoAprobado ? 'Aprobado' : 'Pendiente');
+                                      } else {
                                         setPagoAprobado(false);
                                       }
-                                      
-                                      setTimeout(() => {
-                                        setSuccess(true);
-                                      }, 1000);
-                                      return; // Salir sin lanzar error
-                                    }
-                                    // Si es otro error, verificar si el pago realmente se procesó
-                                    console.warn('Error del backend, pero verificando si el pago se procesó:', pagoData);
-                                    throw new Error(pagoData.error || pagoData.details || 'Error al registrar el pago de PayPal');
-                                  }
-
-                                  // Pago exitoso
-                                  console.log('✅ Pago de PayPal registrado exitosamente');
-                                  setError(''); // Limpiar cualquier error previo PRIMERO
-                                  setPaypalSuccess(true);
-                                  setYaInscrito(true);
-                                  
-                                  // Verificar el estado del pago directamente
-                                  try {
-                                    // Esperar un momento para que el pago se registre en la BD
-                                    await new Promise(resolve => setTimeout(resolve, 500));
-                                    
-                                    const pagoCheckRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${inscripcionId}`);
-                                    if (pagoCheckRes.ok) {
-                                      const pagoCheckData = await pagoCheckRes.json();
-                                      const pagoAprobado = pagoCheckData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
-                                      setPagoAprobado(pagoAprobado || false);
-                                      console.log('💳 Estado del pago PayPal después de crear:', pagoAprobado ? 'Aprobado' : 'Pendiente');
-                                    } else {
+                                    } catch (e) {
+                                      console.warn('Error verificando pago PayPal después de crear:', e);
                                       setPagoAprobado(false);
                                     }
-                                  } catch (e) {
-                                    console.warn('Error verificando pago PayPal después de crear:', e);
-                                    setPagoAprobado(false);
-                                  }
-                                  
-                                  setTimeout(() => {
-                                    setSuccess(true);
-                                  }, 1000);
-                                } catch (err) {
-                                  console.error('❌ Error procesando pago PayPal:', err);
-                                  // Solo mostrar error si realmente falló y no hay éxito previo
-                                  if (!paypalSuccess && !success) {
-                                    setError(err.message || 'Error al procesar el pago de PayPal');
-                                  } else {
-                                    // Si hay éxito previo, limpiar el error
-                                    setError('');
-                                  }
-                                }
-                              }}
-                              onError={(error) => {
-                                console.error('Error en PayPal:', error);
-                                setError('Error al procesar el pago con PayPal. Por favor, intenta nuevamente.');
-                              }}
-                            />
-                          </div>
-                        </div>
-                      )}
 
-                      {error && (
-                        <div className="form-error">
-                          {error}
-                        </div>
-                      )}
-
-                      <div className="form-actions">
-                        <Link to={`/courses/${courseId}`} className="btn btn-secondary">
-                          Cancelar
-                        </Link>
-                        {esPagado && paymentMethod === 'paypal' && paypalSuccess ? (
-                          <div style={{ 
-                            padding: '1rem', 
-                            background: '#d1fae5', 
-                            border: '1px solid #6ee7b7', 
-                            borderRadius: '8px',
-                            color: '#065f46',
-                            textAlign: 'center'
-                          }}>
-                            ✅ Pago de PayPal completado. Redirigiendo...
-                          </div>
-                        ) : (
-                          <button 
-                            type="button"
-                            onClick={handleSubmit}
-                            disabled={submitting || !user || (esPagado && paymentMethod === 'paypal')} 
-                            className="btn btn-primary"
-                          >
-                            {submitting ? 'Procesando...' : esPagado ? 'Registrar Pago' : 'Completar'}
-                          </button>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    // Curso gratis - mostrar mensaje de inscripción completa
-                    <div className="info-message" style={{ 
-                      padding: '1.5rem', 
-                      background: '#d1fae5', 
-                      border: '1px solid #6ee7b7', 
-                      borderRadius: '8px', 
-                      marginBottom: '1.5rem',
-                      color: '#065f46'
-                    }}>
-                      <strong>✅ Ya estás inscrito en este curso.</strong>
-                      <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.95rem' }}>
-                        Tu inscripción está completa. Puedes acceder al curso desde "Mis Cursos".
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                // Usuario NO inscrito - mostrar formulario completo de inscripción
-                <form onSubmit={handleSubmit} className="payment-form">
-                  <div className="form-group">
-                    <label>Motivación (Opcional)</label>
-                    <textarea
-                      value={motivacion}
-                      onChange={(e) => setMotivacion(e.target.value)}
-                      placeholder="¿Por qué te interesa este curso?"
-                      rows="4"
-                    />
-                  </div>
-
-                  {esPagado && (
-                <>
-                  <div className="payment-divider">
-                    <span>Información de Pago</span>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Método de Pago *</label>
-                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod('manual')}
-                        className={`payment-method-btn ${paymentMethod === 'manual' ? 'active' : ''}`}
-                        style={{
-                          padding: '0.75rem 1.5rem',
-                          border: '2px solid #333',
-                          borderRadius: '8px',
-                          background: paymentMethod === 'manual' ? '#333' : 'transparent',
-                          color: paymentMethod === 'manual' ? '#fff' : '#333',
-                          cursor: 'pointer',
-                          fontWeight: 600,
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        Transferencia/Depósito
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod('paypal')}
-                        className={`payment-method-btn ${paymentMethod === 'paypal' ? 'active' : ''}`}
-                        style={{
-                          padding: '0.75rem 1.5rem',
-                          border: '2px solid #333',
-                          borderRadius: '8px',
-                          background: paymentMethod === 'paypal' ? '#333' : 'transparent',
-                          color: paymentMethod === 'paypal' ? '#fff' : '#333',
-                          cursor: 'pointer',
-                          fontWeight: 600,
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        PayPal
-                      </button>
-                    </div>
-                  </div>
-
-                  {paymentMethod === 'manual' && (
-                    <>
-                      <div className="form-group">
-                        <label>Método de Pago *</label>
-                        <select
-                          value={selectedFormaPago}
-                          onChange={(e) => setSelectedFormaPago(e.target.value)}
-                          required={esPagado && paymentMethod === 'manual'}
-                        >
-                          <option value="">Selecciona un método</option>
-                          {formasPago.map((fp) => (
-                            <option key={fp.CODIGO} value={fp.CODIGO}>
-                              {fp.NOMBRE}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </>
-                  )}
-
-                  {paymentMethod === 'paypal' && (
-                    <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-                      <label>Pagar con PayPal</label>
-                      <div style={{ 
-                        padding: '1rem', 
-                        background: '#f8fafc', 
-                        borderRadius: '8px',
-                        border: '1px solid #e2e8f0'
-                      }}>
-                        <PayPalButton
-                          amount={costo}
-                          currency="USD"
-                          onSuccess={async (order) => {
-                            try {
-                              // Primero crear la inscripción si no existe
-                              let nuevaInscripcionId = inscripcionId;
-                              
-                              if (!yaInscrito && user && user.id) {
-                                const inscripcionRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/inscribir`, {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ 
-                                    eventoId: parseInt(courseId),
-                                    motivacion: motivacion || null
-                                  })
-                                });
-
-                                const inscripcionData = await inscripcionRes.json();
-                                
-                                if (inscripcionRes.ok) {
-                                  nuevaInscripcionId = inscripcionData.inscripcionId;
-                                  setInscripcionId(nuevaInscripcionId);
-                                  setYaInscrito(true); // Actualizar estado
-                                } else if (inscripcionData.error && inscripcionData.error.includes('ya inscrito')) {
-                                  // Si ya está inscrito, necesitamos obtener el ID de inscripción de otra forma
-                                  // Ya que obtenerEventosDeUsuario solo devuelve aprobados, necesitamos buscar directamente
-                                  // Por ahora, usamos el ID que devuelve el error o buscamos en la BD
-                                  console.log('⚠️ Usuario ya inscrito, buscando inscripción...');
-                                  // El backend debería devolver el ID de inscripción existente en el error
-                                  // Si no, necesitamos crear un endpoint para buscar inscripciones pendientes
-                                }
-                              }
-
-                              // Registrar el pago de PayPal en el backend
-                              const pagoRes = await fetch('http://localhost:5000/api/pagos/paypal', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                  inscripcionId: nuevaInscripcionId,
-                                  monto: costo,
-                                  paypalOrderId: order.id,
-                                  paypalDetails: order
-                                })
-                              });
-
-                              const pagoData = await pagoRes.json();
-
-                              if (!pagoRes.ok) {
-                                console.error('Error del backend:', pagoData);
-                                // Si el error es que ya existe un pago, considerar como éxito
-                                if (pagoData.error && (pagoData.error.includes('Ya existe un pago') || pagoData.error.includes('ya existe'))) {
-                                  console.log('Pago ya registrado, considerando como éxito');
-                                  setError(''); // Limpiar error primero
-                                  setPaypalSuccess(true);
-                                  setInscripcionId(nuevaInscripcionId);
-                                  setYaInscrito(true);
-                                  
-                                  // Verificar el estado del pago directamente
-                                  try {
-                                    await new Promise(resolve => setTimeout(resolve, 500));
-                                    const pagoCheckRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${nuevaInscripcionId}`);
-                                    if (pagoCheckRes.ok) {
-                                      const pagoCheckData = await pagoCheckRes.json();
-                                      const pagoAprobado = pagoCheckData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
-                                      setPagoAprobado(pagoAprobado || false);
+                                    setTimeout(() => {
+                                      setSuccess(true);
+                                    }, 1000);
+                                  } catch (err) {
+                                    console.error('❌ Error procesando pago PayPal:', err);
+                                    // Solo mostrar error si realmente falló y no hay éxito previo
+                                    if (!paypalSuccess && !success) {
+                                      setError(err.message || 'Error al procesar el pago de PayPal');
                                     } else {
-                                      setPagoAprobado(false);
+                                      // Si hay éxito previo, limpiar el error
+                                      setError('');
                                     }
-                                  } catch (e) {
-                                    setPagoAprobado(false);
                                   }
-                                  
-                                  setTimeout(() => {
-                                    setSuccess(true);
-                                  }, 1000);
-                                  return; // Salir sin lanzar error
-                                }
-                                throw new Error(pagoData.error || pagoData.details || 'Error al registrar el pago de PayPal');
-                              }
-
-                              // Pago exitoso
-                              setError(''); // Limpiar cualquier error previo PRIMERO
-                              setPaypalSuccess(true);
-                              setInscripcionId(nuevaInscripcionId);
-                              setYaInscrito(true); // Actualizar estado
-                              
-                              // Verificar el estado del pago directamente
-                              try {
-                                await new Promise(resolve => setTimeout(resolve, 500));
-                                const pagoCheckRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${nuevaInscripcionId}`);
-                                if (pagoCheckRes.ok) {
-                                  const pagoCheckData = await pagoCheckRes.json();
-                                  const pagoAprobado = pagoCheckData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
-                                  setPagoAprobado(pagoAprobado || false);
-                                  console.log('💳 Estado del pago PayPal después de crear:', pagoAprobado ? 'Aprobado' : 'Pendiente');
-                                } else {
-                                  setPagoAprobado(false);
-                                }
-                              } catch (e) {
-                                console.warn('Error verificando pago PayPal después de crear:', e);
-                                setPagoAprobado(false);
-                              }
-                              
-                              setTimeout(() => {
-                                setSuccess(true);
-                              }, 1000);
-                            } catch (err) {
-                              console.error('Error procesando pago PayPal:', err);
-                              // Solo mostrar error si realmente falló y no hay éxito previo
-                              if (!paypalSuccess && !success) {
-                                setError(err.message || 'Error al procesar el pago de PayPal');
-                              }
-                            }
-                          }}
-                          onError={(error) => {
-                            console.error('Error en PayPal:', error);
-                            setError('Error al procesar el pago con PayPal. Por favor, intenta nuevamente.');
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {paymentMethod === 'manual' && (
-                    <>
-                      <div className="form-group">
-                        <label>Monto *</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={montoInput}
-                          onChange={(e) => setMontoInput(e.target.value)}
-                          placeholder="0.00"
-                          required={esPagado && paymentMethod === 'manual'}
-                        />
-                        <small>Monto del curso: ${costo.toFixed(2)}</small>
-                      </div>
-
-                      <div className="form-group">
-                        <label>Comprobante de Pago</label>
-                        <input
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png,.gif,.webp"
-                          onChange={handleFileChange}
-                        />
-                        <small>Formatos permitidos: PDF, JPG, PNG, GIF, WEBP (máx. 10MB)</small>
-                        {comprobante && (
-                          <div className="file-selected">
-                            📄 {comprobante.name}
+                                }}
+                                onError={(error) => {
+                                  console.error('Error en PayPal:', error);
+                                  setError('Error al procesar el pago con PayPal. Por favor, intenta nuevamente.');
+                                }}
+                              />
+                            </div>
                           </div>
                         )}
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
 
-              {error && (
-                <div className="form-error">
-                  {error}
-                </div>
-              )}
+                        {error && (
+                          <div className="form-error">
+                            {error}
+                          </div>
+                        )}
 
-                  <div className="form-actions">
-                    <Link to={`/courses/${courseId}`} className="btn btn-secondary">
-                      Cancelar
-                    </Link>
-                    {esPagado && paymentMethod === 'paypal' && paypalSuccess ? (
-                      <div style={{ 
-                        padding: '1rem', 
-                        background: '#d1fae5', 
-                        border: '1px solid #6ee7b7', 
-                        borderRadius: '8px',
-                        color: '#065f46',
-                        textAlign: 'center'
-                      }}>
-                        ✅ Pago de PayPal completado. Redirigiendo...
-                      </div>
+                        <div className="form-actions">
+                          <Link to={`/courses/${courseId}`} className="btn btn-secondary">
+                            Cancelar
+                          </Link>
+                          {esPagado && paymentMethod === 'paypal' && paypalSuccess ? (
+                            <div style={{
+                              padding: '1rem',
+                              background: '#d1fae5',
+                              border: '1px solid #6ee7b7',
+                              borderRadius: '8px',
+                              color: '#065f46',
+                              textAlign: 'center'
+                            }}>
+                              ✅ Pago de PayPal completado. Redirigiendo...
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={handleSubmit}
+                              disabled={submitting || !user || (esPagado && paymentMethod === 'paypal')}
+                              className="btn btn-primary"
+                            >
+                              {submitting ? 'Procesando...' : esPagado ? 'Registrar Pago' : 'Completar'}
+                            </button>
+                          )}
+                        </div>
+                      </>
                     ) : (
-                      <button 
-                        type="submit" 
-                        disabled={submitting || !user || (esPagado && paymentMethod === 'paypal')} 
-                        className="btn btn-primary"
-                      >
-                        {submitting ? 'Procesando...' : esPagado ? 'Inscribirse y Pagar' : 'Inscribirse'}
-                      </button>
+                      // Curso gratis - mostrar mensaje de inscripción completa
+                      <div className="info-message" style={{
+                        padding: '1.5rem',
+                        background: '#d1fae5',
+                        border: '1px solid #6ee7b7',
+                        borderRadius: '8px',
+                        marginBottom: '1.5rem',
+                        color: '#065f46'
+                      }}>
+                        <strong>✅ Ya estás inscrito en este curso.</strong>
+                        <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.95rem' }}>
+                          Tu inscripción está completa. Puedes acceder al curso desde "Mis Cursos".
+                        </p>
+                      </div>
                     )}
                   </div>
-                </form>
-              )}
-            </>
+                ) : (
+                  // Usuario NO inscrito - mostrar formulario completo de inscripción
+                  <form onSubmit={handleSubmit} className="payment-form">
+                    {/* Requisitos dinámicos */}
+                    {requisitos.length > 0 && (
+                      <div className="requisitos-section">
+                        <h3>Requisitos del curso</h3>
+                        {requisitos.map(req => (
+                          <div key={req.SECUENCIAL} className="form-group">
+                            <label>
+                              {req.DESCRIPCION} {req.ES_OBLIGATORIO ? '*' : ''}
+                            </label>
+                            <div className="custom-file-input-wrapper">
+                              <input
+                                type="file"
+                                id={`requisito-${req.SECUENCIAL}`}
+                                className="custom-file-input"
+                                accept=".pdf"
+                                required={!!req.ES_OBLIGATORIO}
+                                onChange={e => handleRequisitoFileChange(req.SECUENCIAL, e.target.files[0])}
+                              />
+                              <label htmlFor={`requisito-${req.SECUENCIAL}`} className="custom-file-label">
+                                <span className="file-icon material-icons">folder_open</span>
+                                <span className="file-text">
+                                  {archivosRequisitos[req.SECUENCIAL] ? 'Cambiar archivo' : 'Elegir archivo'}
+                                </span>
+                              </label>
+                            </div>
+                            {archivosRequisitos[req.SECUENCIAL] && (
+                              <div className="file-selected">{archivosRequisitos[req.SECUENCIAL].name}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="form-group">
+                      <label>Motivación (Opcional)</label>
+                      <textarea
+                        value={motivacion}
+                        onChange={(e) => setMotivacion(e.target.value)}
+                        placeholder="¿Por qué te interesa este curso?"
+                        rows="4"
+                      />
+                    </div>
+
+                    {esPagado && (
+                      <>
+                        <div className="payment-divider">
+                          <span>Información de Pago</span>
+                        </div>
+
+                        <div className="form-group">
+                          <label>Método de Pago *</label>
+                          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                            <button
+                              type="button"
+                              onClick={() => setPaymentMethod('manual')}
+                              className={`payment-method-btn ${paymentMethod === 'manual' ? 'active' : ''}`}
+                              style={{
+                                padding: '0.75rem 1.5rem',
+                                border: '2px solid #333',
+                                borderRadius: '8px',
+                                background: paymentMethod === 'manual' ? '#333' : 'transparent',
+                                color: paymentMethod === 'manual' ? '#fff' : '#333',
+                                cursor: 'pointer',
+                                fontWeight: 600,
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              Transferencia/Depósito
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPaymentMethod('paypal')}
+                              className={`payment-method-btn ${paymentMethod === 'paypal' ? 'active' : ''}`}
+                              style={{
+                                padding: '0.75rem 1.5rem',
+                                border: '2px solid #333',
+                                borderRadius: '8px',
+                                background: paymentMethod === 'paypal' ? '#333' : 'transparent',
+                                color: paymentMethod === 'paypal' ? '#fff' : '#333',
+                                cursor: 'pointer',
+                                fontWeight: 600,
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              PayPal
+                            </button>
+                          </div>
+                        </div>
+
+                        {paymentMethod === 'manual' && (
+                          <>
+                            <div className="form-group">
+                              <label>Método de Pago *</label>
+                              <select
+                                value={selectedFormaPago}
+                                onChange={(e) => setSelectedFormaPago(e.target.value)}
+                                required={esPagado && paymentMethod === 'manual'}
+                              >
+                                <option value="">Selecciona un método</option>
+                                {formasPago.map((fp) => (
+                                  <option key={fp.CODIGO} value={fp.CODIGO}>
+                                    {fp.NOMBRE}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </>
+                        )}
+
+                        {paymentMethod === 'paypal' && (
+                          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                            <label>Pagar con PayPal</label>
+                            <div style={{
+                              padding: '1rem',
+                              background: '#f8fafc',
+                              borderRadius: '8px',
+                              border: '1px solid #e2e8f0'
+                            }}>
+                              <PayPalButton
+                                amount={costo}
+                                currency="USD"
+                                onSuccess={async (order) => {
+                                  try {
+                                    // Primero crear la inscripción si no existe
+                                    let nuevaInscripcionId = inscripcionId;
+
+                                    if (!yaInscrito && user && user.id) {
+                                      const inscripcionRes = await fetch(`${API_URL}/api/estudiantes/${user.id}/inscribir`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                          eventoId: parseInt(courseId),
+                                          motivacion: motivacion || null
+                                        })
+                                      });
+
+                                      const inscripcionData = await inscripcionRes.json();
+
+                                      if (inscripcionRes.ok) {
+                                        nuevaInscripcionId = inscripcionData.inscripcionId;
+                                        setInscripcionId(nuevaInscripcionId);
+                                        setYaInscrito(true); // Actualizar estado
+                                      } else if (inscripcionData.error && inscripcionData.error.includes('ya inscrito')) {
+                                        // Si ya está inscrito, necesitamos obtener el ID de inscripción de otra forma
+                                        // Ya que obtenerEventosDeUsuario solo devuelve aprobados, necesitamos buscar directamente
+                                        // Por ahora, usamos el ID que devuelve el error o buscamos en la BD
+                                        console.log('⚠️ Usuario ya inscrito, buscando inscripción...');
+                                        // El backend debería devolver el ID de inscripción existente en el error
+                                        // Si no, necesitamos crear un endpoint para buscar inscripciones pendientes
+                                      }
+                                    }
+
+                                    // Registrar el pago de PayPal en el backend
+                                    const pagoRes = await fetch(`${API_URL}/api/pagos/paypal`, {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        inscripcionId: nuevaInscripcionId,
+                                        monto: costo,
+                                        paypalOrderId: order.id,
+                                        paypalDetails: order
+                                      })
+                                    });
+
+                                    const pagoData = await pagoRes.json();
+
+                                    if (!pagoRes.ok) {
+                                      console.error('Error del backend:', pagoData);
+                                      // Si el error es que ya existe un pago, considerar como éxito
+                                      if (pagoData.error && (pagoData.error.includes('Ya existe un pago') || pagoData.error.includes('ya existe'))) {
+                                        console.log('Pago ya registrado, considerando como éxito');
+                                        setError(''); // Limpiar error primero
+                                        setPaypalSuccess(true);
+                                        setInscripcionId(nuevaInscripcionId);
+                                        setYaInscrito(true);
+
+                                        // Verificar el estado del pago directamente
+                                        try {
+                                          await new Promise(resolve => setTimeout(resolve, 500));
+                                          const pagoCheckRes = await fetch(`${API_URL}/api/pagos/inscripcion/${nuevaInscripcionId}`);
+                                          if (pagoCheckRes.ok) {
+                                            const pagoCheckData = await pagoCheckRes.json();
+                                            const pagoAprobado = pagoCheckData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
+                                            setPagoAprobado(pagoAprobado || false);
+                                          } else {
+                                            setPagoAprobado(false);
+                                          }
+                                        } catch (e) {
+                                          setPagoAprobado(false);
+                                        }
+
+                                        setTimeout(() => {
+                                          setSuccess(true);
+                                        }, 1000);
+                                        return; // Salir sin lanzar error
+                                      }
+                                      throw new Error(pagoData.error || pagoData.details || 'Error al registrar el pago de PayPal');
+                                    }
+
+                                    // Pago exitoso
+                                    setError(''); // Limpiar cualquier error previo PRIMERO
+                                    setPaypalSuccess(true);
+                                    setInscripcionId(nuevaInscripcionId);
+                                    setYaInscrito(true); // Actualizar estado
+
+                                    // Verificar el estado del pago directamente
+                                    try {
+                                      await new Promise(resolve => setTimeout(resolve, 500));
+                                      const pagoCheckRes = await fetch(`${API_URL}/api/pagos/inscripcion/${nuevaInscripcionId}`);
+                                      if (pagoCheckRes.ok) {
+                                        const pagoCheckData = await pagoCheckRes.json();
+                                        const pagoAprobado = pagoCheckData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
+                                        setPagoAprobado(pagoAprobado || false);
+                                        console.log('💳 Estado del pago PayPal después de crear:', pagoAprobado ? 'Aprobado' : 'Pendiente');
+                                      } else {
+                                        setPagoAprobado(false);
+                                      }
+                                    } catch (e) {
+                                      console.warn('Error verificando pago PayPal después de crear:', e);
+                                      setPagoAprobado(false);
+                                    }
+
+                                    setTimeout(() => {
+                                      setSuccess(true);
+                                    }, 1000);
+                                  } catch (err) {
+                                    console.error('Error procesando pago PayPal:', err);
+                                    // Solo mostrar error si realmente falló y no hay éxito previo
+                                    if (!paypalSuccess && !success) {
+                                      setError(err.message || 'Error al procesar el pago de PayPal');
+                                    }
+                                  }
+                                }}
+                                onError={(error) => {
+                                  console.error('Error en PayPal:', error);
+                                  setError('Error al procesar el pago con PayPal. Por favor, intenta nuevamente.');
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {paymentMethod === 'manual' && (
+                          <>
+                            <div className="form-group">
+                              <label>Monto *</label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={montoInput}
+                                onChange={(e) => setMontoInput(e.target.value)}
+                                placeholder="0.00"
+                                required={esPagado && paymentMethod === 'manual'}
+                              />
+                              <small>Monto del curso: ${costo.toFixed(2)}</small>
+                            </div>
+
+                            <div className="form-group">
+                              <label>Comprobante de Pago</label>
+                              <div className="custom-file-input-wrapper">
+                                <input
+                                  type="file"
+                                  id="comprobante-pago"
+                                  className="custom-file-input"
+                                  accept=".pdf,.jpg,.jpeg,.png,.gif,.webp"
+                                  onChange={handleFileChange}
+                                />
+                                <label htmlFor="comprobante-pago" className="custom-file-label">
+                                  <span className="file-icon material-icons">attach_file</span>
+                                  <span className="file-text">
+                                    {comprobante ? 'Cambiar comprobante' : 'Elegir comprobante'}
+                                  </span>
+                                </label>
+                              </div>
+                              <small>Formatos permitidos: PDF, JPG, PNG, GIF, WEBP (máx. 10MB)</small>
+                              {comprobante && (
+                                <div className="file-selected">
+                                  {comprobante.name}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
+
+                    {error && (
+                      <div className="form-error">
+                        {error}
+                      </div>
+                    )}
+
+                    <div className="form-actions">
+                      <Link to={`/courses/${courseId}`} className="btn btn-secondary">
+                        Cancelar
+                      </Link>
+                      {esPagado && paymentMethod === 'paypal' && paypalSuccess ? (
+                        <div style={{
+                          padding: '1rem',
+                          background: '#d1fae5',
+                          border: '1px solid #6ee7b7',
+                          borderRadius: '8px',
+                          color: '#065f46',
+                          textAlign: 'center'
+                        }}>
+                          ✅ Pago de PayPal completado. Redirigiendo...
+                        </div>
+                      ) : (
+                        <button
+                          type="submit"
+                          disabled={submitting || !user || (esPagado && paymentMethod === 'paypal')}
+                          className="btn btn-primary"
+                        >
+                          {submitting ? 'Procesando...' : esPagado ? 'Inscribirse y Pagar' : 'Inscribirse'}
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                )}
+              </>
             )}
           </div>
         </div>

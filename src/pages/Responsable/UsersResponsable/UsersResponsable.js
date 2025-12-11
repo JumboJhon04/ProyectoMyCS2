@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { FaCheck, FaTimes, FaEye, FaFilePdf, FaImage, FaSpinner, FaUsers, FaMoneyCheckAlt } from 'react-icons/fa';
 import './UsersResponsable.css';
 
+import API_URL from '../../../config/api';
+
 const UsersResponsable = () => {
   const [activeTab, setActiveTab] = useState('pagos'); // 'usuarios' o 'pagos'
   const [usuarios, setUsuarios] = useState([]);
@@ -30,7 +32,7 @@ const UsersResponsable = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('http://localhost:5000/api/estudiantes');
+      const response = await fetch(`${API_URL}/api/estudiantes`);
       const data = await response.json();
       
       if (!response.ok) {
@@ -51,7 +53,7 @@ const UsersResponsable = () => {
     setLoadingPagos(true);
     setError('');
     try {
-      const response = await fetch('http://localhost:5000/api/pagos/pendientes');
+      const response = await fetch(`${API_URL}/api/pagos/pendientes`);
       const data = await response.json();
       
       if (!response.ok) {
@@ -74,7 +76,7 @@ const UsersResponsable = () => {
     setProcesandoPago(pagoId);
     try {
       const user = JSON.parse(localStorage.getItem('user'));
-      const response = await fetch(`http://localhost:5000/api/pagos/${pagoId}/estado`, {
+      const response = await fetch(`${API_URL}/api/pagos/${pagoId}/estado`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -113,7 +115,7 @@ const UsersResponsable = () => {
     setProcesandoPago(pagoId);
     try {
       const user = JSON.parse(localStorage.getItem('user'));
-      const response = await fetch(`http://localhost:5000/api/pagos/${pagoId}/estado`, {
+      const response = await fetch(`${API_URL}/api/pagos/${pagoId}/estado`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

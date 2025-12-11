@@ -1,24 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaBook, FaGlobe, FaTag, FaDollarSign, FaCheckCircle, FaChartBar } from 'react-icons/fa';
 import { useUser } from '../../../../context/UserContext';
 import { useCourses } from '../../../../context/CoursesContext';
 import PaymentModal from '../../../../components/PaymentModal/PaymentModal';
 import './EstudianteEvents.css';
+import '../../../CoursesFilters.css';
+
+import API_URL from '../../../../config/api';
 
 const EstudianteEvents = () => {
   const { user } = useUser();
   const { courses: availableCourses } = useCourses();
   const [courses, setCourses] = useState([]);
+  const [allEvents, setAllEvents] = useState([]);
   const [view, setView] = useState('mine'); // 'mine' o 'all'
   const navigate = useNavigate();
   const [filter, setFilter] = useState('all'); // all, in-progress, completed
+  const [tipoFilter, setTipoFilter] = useState('');
+  const [costoFilter, setCostoFilter] = useState('');
+  const [disponibilidadFilter, setDisponibilidadFilter] = useState('todos');
+  const [soloAptos, setSoloAptos] = useState(false);
+
+  const userCareerIds = useMemo(() => {
+    if (!user) return [];
+    const raw = user.carreras || user.CARRERAS || [];
+    return raw
+      .map(c => c?.SECUENCIAL || c?.id || c?.ID || c?.sec || c?.secId)
+      .filter(Boolean)
+      .map(Number);
+  }, [user]);
 
   // Cargar solo los eventos en los que el estudiante está inscrito
   useEffect(() => {
     const fetchStudentEvents = async () => {
       if (!user || !user.id) return setCourses([]);
       try {
-        const res = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/eventos`);
+        const res = await fetch(`${API_URL}/api/estudiantes/${user.id}/eventos`);
         if (!res.ok) {
           console.warn('No se pudieron obtener las inscripciones del estudiante');
           setCourses([]);
@@ -42,6 +60,10 @@ const EstudianteEvents = () => {
             status = 'in-progress';
           }
 
+          const eventoCarreras = (item.CARRERAS || []).map(cc => cc.SECUENCIAL || cc.id || cc.ID).filter(Boolean).map(Number);
+          const hasCareerRestriction = eventoCarreras.length > 0;
+          const esApto = !hasCareerRestriction || eventoCarreras.some(id => userCareerIds.includes(id));
+
           return {
             id: item.eventoId || item.SECUENCIALEVENTO || item.SECUENCIAL,
             title: item.TITULO || item.title || 'Sin título',
@@ -51,11 +73,19 @@ const EstudianteEvents = () => {
             lessons,
             completedLessons: Math.floor((lessons * (progress || 0)) / 100),
             status,
+            hasCareerRestriction,
+            esApto,
             raw: item
           };
         });
 
-        setCourses(mapped);
+        const uniqueMapped = mapped.filter((item, index, self) =>
+          index === self.findIndex((t) => (
+            t.id === item.id
+          ))
+        );
+
+        setCourses(uniqueMapped);
       } catch (e) {
         console.error('Error cargando eventos del estudiante:', e.message);
         setCourses([]);
@@ -64,6 +94,27 @@ const EstudianteEvents = () => {
 
     fetchStudentEvents();
   }, [user]);
+
+  // Cargar todos los eventos disponibles con información de carreras
+  useEffect(() => {
+    const fetchAllEvents = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/eventos/`);
+        if (!res.ok) {
+          console.warn('No se pudieron obtener todos los eventos');
+          setAllEvents([]);
+          return;
+        }
+        const json = await res.json();
+        setAllEvents(json.data || []);
+      } catch (e) {
+        console.error('Error cargando todos los eventos:', e.message);
+        setAllEvents([]);
+      }
+    };
+
+    fetchAllEvents();
+  }, []);
 
   // Cursos con estado calculado
   const coursesWithStatus = courses;
@@ -77,7 +128,7 @@ const EstudianteEvents = () => {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/inscribir`, {
+      const res = await fetch(`${API_URL}/api/estudiantes/${user.id}/inscribir`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ eventoId })
@@ -86,7 +137,7 @@ const EstudianteEvents = () => {
       if (!res.ok) {
         throw new Error(json.error || 'Error al inscribirse');
       }
-      
+
       // Si requiere pago, abrir modal de pago
       if (json.requierePago && json.inscripcionId) {
         setPaymentModal({
@@ -97,7 +148,7 @@ const EstudianteEvents = () => {
       } else {
         alert('Inscripción realizada correctamente');
       }
-      
+
       // Recargar mis cursos
       await reloadStudentEvents();
     } catch (e) {
@@ -109,39 +160,72 @@ const EstudianteEvents = () => {
   const reloadStudentEvents = async () => {
     if (!user || !user.id) return;
     try {
-      const evRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/eventos`);
+      const evRes = await fetch(`${API_URL}/api/estudiantes/${user.id}/eventos`);
       const evJson = await evRes.json();
-      setCourses((evJson.data || []).map(item => ({
-        id: item.eventoId || item.SECUENCIALEVENTO || item.SECUENCIAL,
-        title: item.TITULO || item.title || 'Sin título',
-        description: item.DESCRIPCION || item.description || 'Sin descripción',
-        imageUrl: item.URL_IMAGEN || null,
-        progress: item.PORCENTAJE_ASISTENCIA ? Math.round(item.PORCENTAJE_ASISTENCIA) : 0,
-        lessons: item.HORAS || 0,
-        completedLessons: Math.floor(((item.HORAS || 0) * (item.PORCENTAJE_ASISTENCIA || 0)) / 100),
-        status: item.CODIGOESTADOINSCRIPCION === 'ACE' ? 'in-progress' : 'in-progress',
-        raw: item
-      })));
+      setCourses((evJson.data || []).map(item => {
+        const eventoCarreras = (item.CARRERAS || []).map(cc => cc.SECUENCIAL || cc.id || cc.ID).filter(Boolean).map(Number);
+        const hasCareerRestriction = eventoCarreras.length > 0;
+        const esApto = !hasCareerRestriction || eventoCarreras.some(id => userCareerIds.includes(id));
+        return {
+          id: item.eventoId || item.SECUENCIALEVENTO || item.SECUENCIAL,
+          title: item.TITULO || item.title || 'Sin título',
+          description: item.DESCRIPCION || item.description || 'Sin descripción',
+          imageUrl: item.URL_IMAGEN || null,
+          progress: item.PORCENTAJE_ASISTENCIA ? Math.round(item.PORCENTAJE_ASISTENCIA) : 0,
+          lessons: item.HORAS || 0,
+          completedLessons: Math.floor(((item.HORAS || 0) * (item.PORCENTAJE_ASISTENCIA || 0)) / 100),
+          status: item.CODIGOESTADOINSCRIPCION === 'ACE' ? 'in-progress' : 'in-progress',
+          hasCareerRestriction,
+          esApto,
+          raw: item
+        };
+      }));
     } catch (e) {
       console.error('Error recargando eventos:', e);
     }
   };
 
   // Filtrar cursos
-  const filteredCourses = (view === 'mine' ? coursesWithStatus : (availableCourses || []).map(ev => ({
-    id: ev.id,
-    title: ev.title,
-    description: ev.description,
-    imageUrl: ev.imageUrl,
-    progress: 0,
-    lessons: ev.meta?.hours || ev.meta?.lessons || ev.HORAS || 0,
-    completedLessons: 0,
-    status: 'available',
-    raw: ev
-  }))).filter(course => {
-    if (filter === 'all') return true;
-    if (filter === 'in-progress') return course.status === 'in-progress';
-    if (filter === 'completed') return course.status === 'completed';
+  const filteredCourses = (view === 'mine' ? coursesWithStatus : (allEvents || []).map(ev => {
+    const eventoCarreras = (ev.CARRERAS || []).map(cc => cc.SECUENCIAL || cc.id || cc.ID).filter(Boolean).map(Number);
+    const hasCareerRestriction = eventoCarreras.length > 0;
+    const esApto = !hasCareerRestriction || eventoCarreras.some(id => userCareerIds.includes(id));
+    return {
+      id: ev.SECUENCIAL || ev.id,
+      title: ev.TITULO || ev.title || 'Sin título',
+      description: ev.DESCRIPCION || ev.description || 'Sin descripción',
+      imageUrl: ev.URL_IMAGEN || ev.imageUrl,
+      progress: 0,
+      lessons: ev.HORAS || ev.meta?.hours || ev.meta?.lessons || 0,
+      completedLessons: 0,
+      status: 'available',
+      hasCareerRestriction,
+      esApto,
+      tipoEvento: ev.CODIGOTIPOEVENTO,
+      esPagado: ev.ES_PAGADO === 1 || ev.ES_PAGADO === true,
+      raw: ev
+    };
+  })).filter(course => {
+    // Filtro de progreso (solo para mis cursos)
+    if (view === 'mine') {
+      if (filter === 'in-progress' && course.status !== 'in-progress') return false;
+      if (filter === 'completed' && course.status !== 'completed') return false;
+    }
+
+    // Filtro por tipo
+    if (tipoFilter && course.tipoEvento !== tipoFilter) return false;
+
+    // Filtro por costo
+    if (costoFilter === 'pagado' && !course.esPagado) return false;
+    if (costoFilter === 'gratis' && course.esPagado) return false;
+
+    // Filtro por aptitud
+    if (soloAptos && !course.esApto) return false;
+
+    // Filtro por disponibilidad
+    if (disponibilidadFilter === 'aptos' && !course.esApto) return false;
+    if (disponibilidadFilter === 'noaptos' && (course.esApto || !course.hasCareerRestriction)) return false;
+
     return true;
   });
 
@@ -149,36 +233,112 @@ const EstudianteEvents = () => {
     <div className="user-events-container">
       {/* Header */}
       <div className="events-header">
-        <div className="header-content">
-          <h1 className="events-title">{view === 'mine' ? 'Mis Cursos' : 'Todos los Cursos'}</h1>
-          <p className="events-subtitle">Gestiona tu progreso de aprendizaje</p>
-          <div style={{ marginTop: 12 }}>
-            <button className={`filter-btn ${view === 'mine' ? 'active' : ''}`} onClick={() => setView('mine')}>Mis Cursos</button>
-            <button className={`filter-btn ${view === 'all' ? 'active' : ''}`} onClick={() => setView('all')} style={{ marginLeft: 8 }}>Todos los Cursos</button>
-          </div>
+        {/* View Tabs */}
+        <div className="view-tabs">
+          <button
+            className={`view-tab ${view === 'mine' ? 'active' : ''}`}
+            onClick={() => setView('mine')}
+          >
+            <FaBook className="tab-icon" />
+            <span>Mis Eventos</span>
+          </button>
+          <button
+            className={`view-tab ${view === 'all' ? 'active' : ''}`}
+            onClick={() => setView('all')}
+          >
+            <FaGlobe className="tab-icon" />
+            <span>Todos los Eventos</span>
+          </button>
         </div>
 
-        {/* Filtros */}
-        <div className="events-filters">
-          <button
-            className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            Todos ({view === 'mine' ? coursesWithStatus.length : (availableCourses || []).length})
-          </button>
-          <button
-            className={`filter-btn ${filter === 'in-progress' ? 'active' : ''}`}
-            onClick={() => setFilter('in-progress')}
-          >
-            En Progreso ({(view === 'mine' ? coursesWithStatus.filter(c => c.status === 'in-progress').length : 0)})
-          </button>
-          <button
-            className={`filter-btn ${filter === 'completed' ? 'active' : ''}`}
-            onClick={() => setFilter('completed')}
-          >
-            Completados ({(view === 'mine' ? coursesWithStatus.filter(c => c.status === 'completed').length : 0)})
-          </button>
-        </div>
+        {/* Filtros de progreso (solo para Mis Cursos) */}
+        {view === 'mine' && (
+          <div className="filters-section">
+            <div className="events-filters">
+              <button
+                className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+                onClick={() => setFilter('all')}
+              >
+                Todos ({coursesWithStatus.length})
+              </button>
+              <button
+                className={`filter-btn ${filter === 'in-progress' ? 'active' : ''}`}
+                onClick={() => setFilter('in-progress')}
+              >
+                En Progreso ({coursesWithStatus.filter(c => c.status === 'in-progress').length})
+              </button>
+              <button
+                className={`filter-btn ${filter === 'completed' ? 'active' : ''}`}
+                onClick={() => setFilter('completed')}
+              >
+                Completados ({coursesWithStatus.filter(c => c.status === 'completed').length})
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Filtros avanzados (solo para Todos los Cursos) */}
+        {view === 'all' && (
+          <div className="filters-container">
+            <div className="filters-grid">
+              {/* Filtro de Tipo */}
+              <div className="filter-group">
+                <div className="filter-group-header">
+                  <FaTag className="filter-icon" />
+                  <span className="filter-label">Tipo de Evento</span>
+                </div>
+                <div className="filter-buttons">
+                  <button className={`filter-btn ${tipoFilter === '' ? 'active' : ''}`} onClick={() => setTipoFilter('')}>Todo</button>
+                  <button className={`filter-btn ${tipoFilter === 'CUR' ? 'active' : ''}`} onClick={() => setTipoFilter('CUR')}>Curso</button>
+                  <button className={`filter-btn ${tipoFilter === 'TALL' ? 'active' : ''}`} onClick={() => setTipoFilter('TALL')}>Taller</button>
+                  <button className={`filter-btn ${tipoFilter === 'SEM' ? 'active' : ''}`} onClick={() => setTipoFilter('SEM')}>Seminario</button>
+                  <button className={`filter-btn ${tipoFilter === 'CONF' ? 'active' : ''}`} onClick={() => setTipoFilter('CONF')}>Conferencia</button>
+                </div>
+              </div>
+
+              {/* Filtro de Costo */}
+              <div className="filter-group">
+                <div className="filter-group-header">
+                  <FaDollarSign className="filter-icon" />
+                  <span className="filter-label">Costo</span>
+                </div>
+                <div className="filter-buttons">
+                  <button className={`filter-btn ${costoFilter === '' ? 'active' : ''}`} onClick={() => setCostoFilter('')}>Todos</button>
+                  <button className={`filter-btn ${costoFilter === 'pagado' ? 'active' : ''}`} onClick={() => setCostoFilter('pagado')}>Pagado</button>
+                  <button className={`filter-btn ${costoFilter === 'gratis' ? 'active' : ''}`} onClick={() => setCostoFilter('gratis')}>Gratis</button>
+                </div>
+              </div>
+            </div>
+
+            {/* Filtros de aptitud y disponibilidad (ancho completo) */}
+            <div className="filters-full-width">
+              {userCareerIds.length > 0 && (
+                <div className="filter-group">
+                  <div className="filter-group-header">
+                    <FaCheckCircle className="filter-icon" />
+                    <span className="filter-label">Aptitud</span>
+                  </div>
+                  <div className="filter-buttons">
+                    <button className={`filter-btn ${!soloAptos ? 'active' : ''}`} onClick={() => setSoloAptos(false)}>Todos</button>
+                    <button className={`filter-btn ${soloAptos ? 'active' : ''}`} onClick={() => setSoloAptos(true)}>Solo aptos para mi carrera</button>
+                  </div>
+                </div>
+              )}
+
+              <div className="filter-group">
+                <div className="filter-group-header">
+                  <FaChartBar className="filter-icon" />
+                  <span className="filter-label">Disponibilidad</span>
+                </div>
+                <div className="filter-buttons">
+                  <button className={`filter-btn ${disponibilidadFilter === 'todos' ? 'active' : ''}`} onClick={() => setDisponibilidadFilter('todos')}>Todos</button>
+                  <button className={`filter-btn ${disponibilidadFilter === 'aptos' ? 'active' : ''}`} onClick={() => setDisponibilidadFilter('aptos')}>Aptos</button>
+                  <button className={`filter-btn ${disponibilidadFilter === 'noaptos' ? 'active' : ''}`} onClick={() => setDisponibilidadFilter('noaptos')}>No aptos</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Grid de Cursos */}
@@ -209,6 +369,23 @@ const EstudianteEvents = () => {
               <div className="event-card-body">
                 <h3 className="event-title">{course.title}</h3>
                 <p className="event-description">{course.description}</p>
+
+                {/* Badge de aptitud */}
+                {course.hasCareerRestriction && (
+                  <div className="apt-badge" style={{
+                    display: 'inline-block',
+                    padding: '4px 10px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    marginBottom: '8px',
+                    background: course.esApto ? '#ecfdf3' : '#fef2f2',
+                    color: course.esApto ? '#065f46' : '#b91c1c',
+                    border: course.esApto ? '1px solid #bbf7d0' : '1px solid #fecdd3'
+                  }}>
+                    {course.esApto ? 'Apto para tu carrera' : 'No apto'}
+                  </div>
+                )}
 
                 {/* Información de progreso */}
                 <div className="progress-info">
@@ -241,19 +418,35 @@ const EstudianteEvents = () => {
 
                 {/* Botón de acción */}
                 {view === 'mine' ? (
-                  <button 
+                  <button
                     className="continue-btn"
                     onClick={() => navigate(`/user/course/${course.id}`)}
                   >
                     {course.status === 'completed' ? 'Revisar' : 'Continuar'}
                   </button>
                 ) : (
-                  <button 
-                    className="continue-btn"
-                    onClick={() => navigate(`/payment/${course.raw?.id || course.id}`)}
-                  >
-                    Comprar
-                  </button>
+                  course.hasCareerRestriction && !course.esApto ? (
+                    <div style={{
+                      padding: '10px 12px',
+                      background: '#fef2f2',
+                      border: '1px solid #fecdd3',
+                      borderLeft: '4px solid #ef4444',
+                      borderRadius: '8px',
+                      color: '#991b1b',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      textAlign: 'center'
+                    }}>
+                      Solo para carreras habilitadas
+                    </div>
+                  ) : (
+                    <button
+                      className="continue-btn"
+                      onClick={() => navigate(`/payment/${course.raw?.id || course.id}`)}
+                    >
+                      Comprar
+                    </button>
+                  )
                 )}
               </div>
             </div>

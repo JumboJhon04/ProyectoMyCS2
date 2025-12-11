@@ -1,0 +1,137 @@
+.asistencia-tab-container {
+    padding: 2rem;
+    display: flex;
+    justify-content: center;
+}
+
+.asistencia-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 2rem;
+    max-width: 600px;
+    width: 100%;
+    text-align: center;
+}
+
+.asistencia-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    color: var(--primary-color, #202527);
+}
+
+.asistencia-icon {
+    font-size: 2rem;
+    color: var(--event-primary-color, #007bff);
+}
+
+.asistencia-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 2rem;
+    gap: 1rem;
+}
+
+.stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    min-width: 150px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+.stat-value.success {
+    color: #28a745;
+}
+
+.stat-value.warning {
+    color: #dc3545;
+}
+
+.stat-value.neutral {
+    color: #495057;
+}
+
+.asistencia-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.status-approved {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-failed {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.asistencia-observation {
+    margin-top: 1.5rem;
+    text-align: left;
+    background: #fff3cd;
+    padding: 1rem;
+    border-radius: 6px;
+    color: #856404;
+}
+
+.asistencia-loading,
+.asistencia-error,
+.asistencia-empty {
+    padding: 2rem;
+    text-align: center;
+    color: #6c757d;
+}
+
+/* Button Registration Style */
+.btn-register-attendance {
+    background-color: #007bff;
+    /* Primary Blue */
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 123, 255, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-register-attendance:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 123, 255, 0.4);
+}
+
+.btn-register-attendance:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}

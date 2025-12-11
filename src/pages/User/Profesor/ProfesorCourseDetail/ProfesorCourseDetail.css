@@ -22,7 +22,8 @@
 .header-overlay-profesor {
     position: absolute;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.4); /* Capa oscura para que el texto resalte */
+    background-color: rgba(0, 0, 0, 0.4);
+    /* Capa oscura para que el texto resalte */
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -46,8 +47,15 @@
 }
 
 /* Colores para las etiquetas de nivel */
-.tag-profesor.level-intermedio { background: #ffc107; color: #333; }
-.tag-profesor.level-principiante { background: #28a745; color: #fff; }
+.tag-profesor.level-intermedio {
+    background: #ffc107;
+    color: #333;
+}
+
+.tag-profesor.level-principiante {
+    background: #0f1724;
+    color: #fff;
+}
 
 .course-detail-title-profesor {
     font-size: 2.5rem;
@@ -87,7 +95,8 @@
 
 .course-detail-content-profesor {
     max-width: 1400px;
-    margin: -30px auto 0; /* Superpone sobre la imagen */
+    margin: -30px auto 0;
+    /* Superpone sobre la imagen */
     padding: 0 30px;
     position: relative;
     z-index: 10;
@@ -102,6 +111,9 @@
     padding: 20px 30px;
     margin-bottom: 25px;
     justify-content: space-around;
+    position: relative;
+    z-index: 20;
+    /* Por encima del overlay oscuro */
 }
 
 .stat-item-profesor {
@@ -115,7 +127,8 @@
 
 .stat-icon-profesor {
     font-size: 1.5rem;
-    color: #007bff;
+    color: #2c3e50;
+    /* Cambiado de #007bff a color oscuro acorde al sistema */
 }
 
 .stat-item-profesor span {
@@ -164,25 +177,47 @@
 }
 
 .tab-button-profesor.create-button {
-    background-color: #28a745;
+    background-color: #0f1724;
     color: #fff;
     border-radius: 8px;
     margin-left: auto;
     border: none;
-    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    box-shadow: 0 2px 8px rgba(15, 23, 36, 0.3);
 }
 
 .tab-button-profesor.create-button:hover {
-    background-color: #1e7e34;
+    background-color: #1e293b;
     transform: translateY(-1px);
     color: #fff;
 }
 
-/* 2c. Lista de Módulos/Lecciones */
+/* 2c. Lista de Módulos/Lecciones - GRID HORIZONTAL */
 .course-modules-list-profesor {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+    padding: 0.5rem 0;
+}
+
+@media (min-width: 1200px) {
+    .course-modules-list-profesor {
+        grid-template-columns: repeat(4, 1fr);
+        /* 4 columnas en pantallas grandes */
+    }
+}
+
+@media (max-width: 1199px) and (min-width: 768px) {
+    .course-modules-list-profesor {
+        grid-template-columns: repeat(2, 1fr);
+        /* 2 columnas en tablets */
+    }
+}
+
+@media (max-width: 767px) {
+    .course-modules-list-profesor {
+        grid-template-columns: 1fr;
+        /* 1 columna en móviles */
+    }
 }
 
 .lesson-item-profesor {
@@ -207,7 +242,8 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #10b981, #059669); /* Verde fuerte */
+    background: linear-gradient(135deg, #10b981, #059669);
+    /* Verde fuerte */
     color: #ffffff;
     display: flex;
     align-items: center;
@@ -260,14 +296,14 @@
 }
 
 /* Estilo para el ícono de "Ver" gris y pequeño del mockup */
-.lesson-item-profesor .action-btn-profesor:nth-child(1) { 
+.lesson-item-profesor .action-btn-profesor:nth-child(1) {
     border: none;
     background: transparent;
     color: #999;
 }
 
 .lesson-item-profesor .action-btn-profesor:nth-child(1) svg {
-    font-size: 1.2rem; 
+    font-size: 1.2rem;
     color: #999;
 }
 
@@ -276,6 +312,7 @@
     background: #0f1724;
     color: #fff;
 }
+
 .lesson-item-profesor .action-btn-profesor:nth-child(2):hover {
     background: #1e293b;
 }
@@ -285,13 +322,16 @@
     .header-overlay-profesor {
         padding: 1.5rem;
     }
+
     .course-detail-title-profesor {
         font-size: 2rem;
     }
+
     .course-detail-content-profesor {
         padding: 0 15px;
         margin-top: -20px;
     }
+
     .course-summary-stats-profesor {
         flex-direction: column;
         gap: 15px;
@@ -302,12 +342,940 @@
     .lesson-item-profesor {
         flex-wrap: wrap;
     }
+
     .lesson-actions-profesor {
         width: 100%;
         justify-content: space-between;
     }
+
     .action-btn-profesor {
         flex: 1;
         justify-content: center;
+    }
+}
+
+/* --- ESTILOS PARA EL MODAL --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    /* Fondo oscuro transparente */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.close-modal-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #666;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+/* ESTILOS ESPECÍFICOS PARA INPUT FILE */
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.form-group input[type="file"]:hover {
+    border-color: #0f1724;
+    background: #ffffff;
+}
+
+.form-group input[type="file"]:focus {
+    outline: none;
+    border-color: #0f1724;
+    box-shadow: 0 0 0 3px rgba(15, 23, 36, 0.1);
+}
+
+/* Estilo para el botón de selección de archivo */
+.form-group input[type="file"]::file-selector-button {
+    padding: 0.5rem 1rem;
+    background: #0f1724;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    margin-right: 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-group input[type="file"]::file-selector-button:hover {
+    background: #1e293b;
+    transform: translateY(-1px);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.cancel-btn {
+    background: #f1f1f1;
+    color: #333;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.confirm-btn {
+    background: #0f1724;
+    /* Cambiado para coincidir con el tema oscuro del sistema */
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.confirm-btn:hover {
+    background: #1e293b;
+    /* Hover más claro */
+}
+
+.confirm-btn:disabled {
+    background: #ccc;
+}
+
+/* --- NUEVOS ESTILOS: UI REFACTORIZADA --- */
+
+/* Floating Action Button (FAB) */
+.fab-profesor {
+    position: fixed;
+    bottom: 6rem; /* Elevado para no tapar el FAB del formulario */
+    right: 2rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #0f1724;
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+    z-index: 3000; /* Por encima de modales y otros FAB */
+}
+
+/* Label para el FAB */
+.fab-profesor-label {
+    position: fixed;
+    bottom: calc(6rem + 64px);
+    right: 2rem;
+    background: #ffffff;
+    color: #333;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    z-index: 3000;
+}
+
+.fab-profesor:hover {
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    background: #1e293b;
+}
+
+.fab-profesor:active {
+    transform: scale(1.05) rotate(90deg);
+}
+
+/* Título de Sección */
+.section-title-profesor {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #0f1724;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.section-title-profesor svg {
+    color: #64748b;
+}
+
+/* Botones de Ícono (para Agregar Tarea) */
+.icon-btn-profesor {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(15, 23, 36, 0.08);
+    border: 1px solid rgba(15, 23, 36, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    color: #0f1724;
+    flex-shrink: 0;
+}
+
+.icon-btn-profesor:hover {
+    background: #0f1724;
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(15, 23, 36, 0.2);
+}
+
+.icon-btn-profesor:active {
+    transform: scale(1.05);
+}
+
+/* Botones de Acción de Tarea (para Calificar) */
+.task-action-btn {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: #64748b;
+}
+
+.task-action-btn:hover {
+    background: #0f1724;
+    color: white;
+    border-color: #0f1724;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(15, 23, 36, 0.15);
+}
+
+.task-action-btn:active {
+    transform: translateY(0);
+}
+
+/* --- ESTILOS PARA CARDS COLAPSABLES DE MÓDULOS --- */
+
+/* Card de Módulo */
+.module-card-profesor {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #0f1724;
+    /* Borde izquierdo oscuro - estilo de la imagen de referencia */
+    border-radius: 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.module-card-profesor:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
+}
+
+/* Header de la Card - Clickeable */
+.module-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+.module-card-header:hover {
+    background-color: #f8fafc;
+}
+
+.module-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+/* Ícono de Expandir/Colapsar */
+.module-expand-icon {
+    color: #64748b;
+    font-size: 1rem;
+    transition: transform 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+/* Contenido del Header */
+.module-header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.module-card-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #0f1724;
+}
+
+.module-task-count {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Descripción del Módulo */
+.module-description {
+    padding: 0 1.25rem 1rem 3.25rem;
+    /* Alineado con el título (después del chevron) */
+    font-size: 0.9rem;
+    color: #64748b;
+    line-height: 1.5;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* Contenedor de Tareas Colapsable */
+.tasks-container-collapsible {
+    padding: 0.5rem 1.25rem 1rem;
+    background-color: #f8fafc;
+}
+
+/* Item de Tarea */
+.task-item-profesor {
+    background: white;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+}
+
+.task-item-profesor:last-child {
+    margin-bottom: 0;
+}
+
+.task-item-profesor:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.task-item-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.task-icon {
+    color: #64748b;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.task-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.task-title {
+    font-size: 0.95rem;
+    color: #0f1724;
+    font-weight: 500;
+}
+
+.task-date {
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+.no-tasks-message {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    font-style: italic;
+    text-align: center;
+    padding: 1.5rem 0;
+    margin: 0;
+}
+
+/* Responsive para cards */
+@media (max-width: 768px) {
+    .module-card-header {
+        padding: 0.875rem 1rem;
+    }
+
+    .module-description {
+        padding: 0 1rem 0.875rem 2.75rem;
+    }
+
+    .tasks-container-collapsible {
+        padding: 0.5rem 1rem 0.875rem;
+    }
+
+    .task-item-profesor {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .task-action-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* --- ESTILOS MEJORADOS BASADOS EN IMAGEN DE REFERENCIA --- */
+
+/* Header Expandido Oscuro - Similar a la imagen de referencia */
+.module-expanded-header {
+    background: linear-gradient(135deg, #0f1724 0%, #1e293b 100%);
+    color: white;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.module-number {
+    background: rgba(255, 255, 255, 0.2);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.module-icon {
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.module-title-expanded {
+    font-size: 1rem;
+    flex: 1;
+}
+
+/* Header de Subsección Oscuro - Para "Tareas" */
+.module-subsection-header {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: white;
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.subsection-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.subsection-title {
+    flex: 1;
+}
+
+/* Responsive para nuevos elementos */
+@media (max-width: 768px) {
+    .module-expanded-header {
+        padding: 0.875rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .module-number {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+    }
+
+    .module-subsection-header {
+        padding: 0.625rem 1rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* --- OVERLAY Y DIMMING --- */
+
+/* Overlay oscuro de fondo */
+.dark-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 5;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Cards dimmed cuando hay una seleccionada */
+.module-card-profesor.dimmed {
+    opacity: 0.3;
+    transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.module-card-profesor.dimmed:hover {
+    opacity: 1;
+    /* Se ilumina al pasar el cursor */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(15, 23, 36, 0.2);
+}
+
+.module-card-profesor.selected {
+    border-color: #0f1724;
+    box-shadow: 0 8px 20px rgba(15, 23, 36, 0.15) !important;
+}
+
+/* --- CONTENIDO EXPANDIDO DEBAJO DEL GRID --- */
+
+/* Contenedor que aparece DESPUÉS del grid completo */
+.module-expanded-content-below-grid {
+    margin-top: 2rem;
+    background: white;
+    border: 2px solid #0f1724;
+    border-radius: 12px;
+    overflow: hidden;
+    animation: slideDown 0.3s ease-out;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    position: relative;
+    z-index: 15;
+    /* Por encima del overlay */
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- ESTILOS PARA MÓDULO EXPANDIDO INLINE --- */
+
+/* Contenedor del módulo expandido INLINE (dentro del grid) */
+.module-expanded-content-inline {
+    grid-column: 1 / -1;
+    /* Ocupa todo el ancho del grid */
+    background: white;
+    border: 2px solid #0f1724;
+    border-radius: 12px;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    animation: slideDown 0.3s ease-out;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+        max-height: 0;
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 2000px;
+    }
+}
+
+/* Header del contenido expandido */
+.expanded-content-header {
+    background: linear-gradient(135deg, #0f1724 0%, #1e293b 100%);
+    color: white;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.expanded-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.module-modal-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.expanded-header-left h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.module-modal-description {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.expanded-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* Body del contenido expandido */
+.expanded-content-body {
+    padding: 2rem;
+    /* Removido max-height y overflow para que se expanda naturalmente */
+}
+
+/* Título de sección dentro del modal */
+.tasks-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #0f1724;
+    margin: 0 0 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Lista de tareas dentro del modal */
+.tasks-list-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Item de tarea dentro del modal */
+.task-item-modal {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #0f1724;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.2s ease;
+}
+
+.task-item-modal:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
+}
+
+.task-modal-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.task-modal-icon {
+    font-size: 1.2rem;
+    color: #64748b;
+    flex-shrink: 0;
+}
+
+.task-modal-info h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0f1724;
+}
+
+.task-modal-date {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.task-modal-action-btn {
+    padding: 0.5rem 1rem;
+    background: #0f1724;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.task-modal-action-btn:hover {
+    background: #1e293b;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(15, 23, 36, 0.2);
+}
+
+.no-tasks-modal {
+    text-align: center;
+    color: #94a3b8;
+    font-style: italic;
+    padding: 2rem;
+    margin: 0;
+}
+
+/* Botón de cerrar expandido */
+.close-expanded-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.close-expanded-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+/* Botón de agregar tarea en el expandido */
+.add-task-btn-expanded {
+    padding: 0.5rem 1rem;
+    background: #0f1724;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.add-task-btn-expanded:hover {
+    background: #1e293b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(15, 23, 36, 0.25);
+}
+
+/* Body del contenido expandido */
+
+
+/* Responsive */
+@media (max-width: 768px) {
+    .module-expanded-content {
+        padding: 1.5rem;
+    }
+
+    .expanded-content-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .add-task-btn-expanded {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .close-expanded-btn {
+        top: 0.75rem;
+        right: 0.75rem;
+    }
+}
+
+/* --- ESTILOS PARA CARDS CENTRADAS (NUEVA VERSIÓN) --- */
+
+.module-card-profesor {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.module-card-profesor::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0f1724, #1e293b);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.module-card-profesor:hover::before {
+    transform: scaleX(1);
+}
+
+.module-card-profesor:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    border-color: #cbd5e1;
+}
+
+.module-card-profesor.selected {
+    border-color: #0f1724;
+    box-shadow: 0 8px 20px rgba(15, 23, 36, 0.15);
+}
+
+.module-card-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #0f1724, #1e293b);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(15, 23, 36, 0.2);
+}
+
+.module-card-title-centered {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #0f1724;
+    line-height: 1.3;
+}
+
+.module-task-count-centered {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.no-modules {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 1rem;
+    padding: 3rem;
+    font-style: italic;
+}
+
+/* Responsive para cards centradas */
+@media (max-width: 768px) {
+    .module-card-profesor {
+        padding: 1.25rem;
+    }
+
+    .module-card-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 1.3rem;
+    }
+
+    .module-card-title-centered {
+        font-size: 1rem;
     }
 }

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { FaImage, FaEdit } from "react-icons/fa";
+import { FaImage, FaEdit, FaHome } from "react-icons/fa";
+import { useNavigate } from 'react-router-dom';
+import API_URL from '../../../config/api';
 import "./AdminPanel.css";
 
 const AdminPanel = () => {
+  const navigate = useNavigate();
   const [eventos, setEventos] = useState([]);
   const [colores, setColores] = useState({
     primario: '#667eea',
@@ -22,7 +25,7 @@ const AdminPanel = () => {
   const cargarEventos = async () => {
     setLoadingEventos(true);
     try {
-      const response = await fetch('http://localhost:5000/api/eventos');
+      const response = await fetch(`${API_URL}/api/eventos`);
       const data = await response.json();
       if (data.success) {
         setEventos(data.data);
@@ -36,7 +39,7 @@ const AdminPanel = () => {
 
   const cargarColores = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/config/colores');
+      const response = await fetch(`${API_URL}/api/config/colores`);
       const data = await response.json();
       if (data.success) {
         setColores(data.data);
@@ -50,11 +53,11 @@ const AdminPanel = () => {
     if (!file) return;
 
     const formData = new FormData();
-    formData.append('imagen', file);
+    formData.append('image', file);
 
     setUploadingImageId(eventoId);
     try {
-      const response = await fetch(`http://localhost:5000/api/eventos/${eventoId}/imagen`, {
+      const response = await fetch(`${API_URL}/api/eventos/${eventoId}/imagen`, {
         method: 'PUT',
         body: formData
       });
@@ -77,7 +80,7 @@ const AdminPanel = () => {
   const handleGuardarColores = async () => {
     setLoadingColores(true);
     try {
-      const response = await fetch('http://localhost:5000/api/config/colores', {
+      const response = await fetch(`${API_URL}/api/config/colores`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -126,6 +129,22 @@ const AdminPanel = () => {
       <main className="main-content1">
         <div className="content-area">
           <div className="content-grid">
+            {/* Botón para editar Home */}
+            <div className="card action-card">
+              <div className="card-header">
+                <h3>Editar Página Principal</h3>
+              </div>
+              <div className="card-body">
+                <p>Personaliza el contenido de la página de inicio: títulos, descripciones, imágenes y testimonios.</p>
+                <button 
+                  className="btn-edit-home"
+                  onClick={() => navigate('/admin/landing')}
+                >
+                  <FaHome /> Editar Home
+                </button>
+              </div>
+            </div>
+
             {/* Editar Imágenes de Eventos */}
             <div className="card large-card">
               <div className="card-header">

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { FaHome, FaCalendarAlt, FaSearch, FaUsers } from "react-icons/fa";
+import { FaHome, FaCalendarAlt, FaSearch, FaUsers, FaLifeRing, FaClipboardList, FaChartBar } from "react-icons/fa";
 import "./Sidebar.css";
 
 const AdminSidebar = ({ isOpen, onClose }) => {
@@ -11,6 +11,10 @@ const AdminSidebar = ({ isOpen, onClose }) => {
     { id: "panel", label: "Editar Página", icon: FaHome, to: "/admin/panel" },
     { id: "eventos", label: "Cursos", icon: FaCalendarAlt, to: "/admin/events" },
     { id: "users", label: "Usuarios Responsables", icon: FaUsers, to: "/admin/users" },
+    { id: "reportes", label: "Reportes", icon: FaChartBar, to: "/admin/reportes" },
+    { id: "solicitudes", label: "Solicitudes de Soporte", icon: FaLifeRing, to: "/admin/solicitudes" },
+    { id: "peticiones", label: "Peticiones de Cambio", icon: FaClipboardList, to: "/admin/peticiones-cambio" },
+    { id: "perfil", label: "Perfil", icon: FaUsers, to: "/perfil" },
   ];
 
   const filtered = menuItems.filter((item) =>

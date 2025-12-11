@@ -1,0 +1,267 @@
+/* ==========================================
+   PARTICIPANTES TAB
+   ========================================== */
+
+.participantes-tab-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2.5rem;
+}
+
+.participantes-header {
+    margin-bottom: 2rem;
+}
+
+.participantes-header h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 1rem 0;
+}
+
+/* Stats */
+.participantes-stats {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.stat-box {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #ffffff;
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    color: var(--event-primary-color, #3b82f6);
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* Sections */
+.docente-section,
+.estudiantes-section {
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 1rem 0;
+}
+
+.title-icon {
+    color: var(--event-primary-color, #3b82f6);
+}
+
+/* Docente Card */
+.docente-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    background: linear-gradient(135deg, var(--event-light-bg, #eff6ff), #ffffff);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 2px solid var(--event-accent-color, #60a5fa);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.docente-avatar {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--event-primary-color, #3b82f6), var(--event-secondary-color, #1d4ed8));
+    color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.docente-info {
+    flex: 1;
+}
+
+.docente-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 0.25rem 0;
+}
+
+.docente-role {
+    font-size: 0.9rem;
+    color: var(--event-primary-color, #3b82f6);
+    font-weight: 500;
+}
+
+/* Estudiantes List */
+.estudiantes-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.participante-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #ffffff;
+    padding: 1.25rem;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.participante-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: var(--event-accent-color, #60a5fa);
+}
+
+.participante-avatar {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--event-primary-color, #3b82f6), var(--event-secondary-color, #1d4ed8));
+    color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.participante-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.participante-nombre {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 0.5rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Progress Bar */
+.progreso-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.progreso-bar {
+    flex: 1;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progreso-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.progreso-text {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    min-width: 40px;
+    text-align: right;
+}
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+
+@media (max-width: 768px) {
+    .participantes-tab-container {
+        padding: 0 1.5rem;
+    }
+
+    .participantes-header h3 {
+        font-size: 1.3rem;
+    }
+
+    .estudiantes-list {
+        grid-template-columns: 1fr;
+    }
+
+    .docente-avatar {
+        width: 60px;
+        height: 60px;
+        font-size: 1.4rem;
+    }
+
+    .docente-name {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .participantes-tab-container {
+        padding: 0 1rem;
+    }
+
+    .participantes-stats {
+        flex-direction: column;
+    }
+
+    .stat-box {
+        width: 100%;
+    }
+
+    .docente-card {
+        padding: 1.25rem;
+    }
+
+    .participante-card {
+        padding: 1rem;
+    }
+
+    .participante-avatar {
+        width: 45px;
+        height: 45px;
+        font-size: 1rem;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+    }
+}

@@ -76,6 +76,54 @@
   margin: 0 0 1rem;
 }
 
+/* Contenedor de descripción expandible */
+.course-description-container {
+  margin-bottom: 1rem;
+}
+
+/* Botón de expandir/colapsar descripción */
+.expand-description-btn {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  margin-top: 0.25rem;
+  transition: color 0.2s;
+}
+
+.expand-description-btn:hover {
+  color: #5568d3;
+  text-decoration: underline;
+}
+
+/* Precio destacado */
+.course-price-highlight {
+  background: linear-gradient(135deg, #333 0%, #4a4a4a 100%);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0 1rem 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.course-price-highlight .price-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #f8f8f8;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.course-price-highlight .price-amount {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+}
+
 .course-info-meta {
   display: flex;
   gap: 0.75rem;
@@ -90,6 +138,12 @@
   font-size: 0.9rem;
   font-weight: 600;
   color: #475569;
+}
+
+.meta-badge.free-badge {
+  background: #d1fae5;
+  border-color: #6ee7b7;
+  color: #065f46;
 }
 
 /* Formulario */
@@ -185,17 +239,8 @@
 }
 
 .form-group input[type="file"] {
-  padding: 0.5rem;
-  border: 2px dashed #d1d5db;
-  border-radius: 8px;
-  background: #f9fafb;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.form-group input[type="file"]:hover {
-  border-color: #667eea;
-  background: #f3f4f6;
+  display: none;
+  /* Ocultar el input nativo ya que usamos versión personalizada */
 }
 
 .form-group small {
@@ -211,6 +256,67 @@
   border-radius: 6px;
   color: #166534;
   font-size: 0.9rem;
+}
+
+/* Custom File Input Styling */
+.custom-file-input-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.custom-file-input {
+  position: absolute;
+  opacity: 0;
+  width: 0.1px;
+  height: 0.1px;
+  z-index: -1;
+}
+
+.custom-file-label {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0.875rem;
+  background: #f8f8f8;
+  color: #333;
+  border: 2px solid #333;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  font-size: 0.875rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.custom-file-label:hover {
+  background: #ffffff;
+  border-color: #4a4a4a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.custom-file-label:active {
+  transform: translateY(0);
+}
+
+.custom-file-label .file-icon {
+  font-size: 1rem;
+  line-height: 1;
+  color: #333;
+}
+
+.custom-file-label .file-text {
+  flex: 1;
+  text-align: center;
+  color: #333;
+}
+
+/* Focus state for accessibility */
+.custom-file-input:focus+.custom-file-label {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
 }
 
 .payment-divider {
@@ -399,4 +505,3 @@
     width: 100%;
   }
 }
-

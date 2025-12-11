@@ -1,15 +1,10 @@
 // src/pages/User/Profesor/ProfesorModules/ProfesorModules.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaBookOpen, FaUserFriends, FaSearch, FaUserGraduate, FaChalkboardTeacher } from 'react-icons/fa';
 import { useUser } from '../../../../context/UserContext';
 import './ProfesorModules.css';
-
-// Mock de datos para los módulos
-const mockModules = [
-  { id: 1, title: 'Base de Datos', type: 'Programacion', level: 'Intermedio', lessons: 20, students: 32, imageUrl: 'https://via.placeholder.com/150/007bff/FFFFFF?text=DB' },
-  { id: 2, title: 'Análisis de Datos', type: 'Matemáticas', level: 'Principiante', lessons: 30, students: 25, imageUrl: 'https://via.placeholder.com/150/28a745/FFFFFF?text=AD' },
-];
+import API_URL from '../../../../config/api';
 
 const ProfesorModules = () => {
     const { user } = useUser();
@@ -17,12 +12,92 @@ const ProfesorModules = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMateria, setSelectedMateria] = useState('Todas');
     const [selectedDificultad, setSelectedDificultad] = useState('Dificultad');
+    const [professorEvents, setProfessorEvents] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // Cargar eventos reales del profesor
+    useEffect(() => {
+        const fetchEvents = async () => {
+            if (!user || !user.id) {
+                console.warn('⚠️ ProfesorModules: No hay usuario o ID de usuario');
+                setProfessorEvents([]);
+                setLoading(false);
+                return;
+            }
+
+            console.log('🔍 ProfesorModules: Iniciando carga de cursos para profesor ID:', user.id);
+
+            try {
+                setLoading(true);
+                const url = `${API_URL}/api/docentes/${user.id}/mis-cursos`;
+                console.log('🌐 ProfesorModules: Llamando a:', url);
+
+                const res = await fetch(url);
+                console.log('📡 ProfesorModules: Status de respuesta:', res.status, res.statusText);
+
+                if (!res.ok) {
+                    console.error('❌ ProfesorModules: Error en la respuesta del servidor:', res.status);
+                    setProfessorEvents([]);
+                    return;
+                }
+
+                const json = await res.json();
+                console.log('📦 ProfesorModules: Respuesta JSON completa:', json);
+                console.log('📦 ProfesorModules: Datos (json.data):', json.data);
+
+                if (json.data) {
+                    console.log('✅ ProfesorModules: Cursos encontrados:', json.data.length);
+                    console.log('📋 ProfesorModules: Detalles de cada curso:');
+                    json.data.forEach((curso, idx) => {
+                        console.log(`  Curso ${idx + 1}:`, {
+                            id: curso.eventoId || curso.SECUENCIAL || curso.id,
+                            titulo: curso.TITULO,
+                            docente: curso.Docente,
+                            tipo: curso.CODIGOTIPOEVENTO
+                        });
+                    });
+                    setProfessorEvents(json.data);
+                } else {
+                    console.warn('⚠️ ProfesorModules: json.data es undefined o null');
+                    setProfessorEvents([]);
+                }
+            } catch (e) {
+                console.error('❌ ProfesorModules: Error al cargar cursos:', e.message);
+                console.error('❌ ProfesorModules: Stack trace completo:', e);
+                setProfessorEvents([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchEvents();
+    }, [user]);
+
+    // Mapear eventos del backend al formato de módulos
+    const modules = professorEvents.map(ev => ({
+        // INTENTA OBTENER EL ID DE VARIAS FORMAS PARA QUE NO FALLE
+        id: ev.eventoId || ev.SECUENCIAL || ev.id,
+
+        title: ev.TITULO || ev.title || 'Sin título',
+        type: ev.CODIGOTIPOEVENTO === 'CUR' ? 'Curso' : 'Taller',
+        level: 'Intermedio',
+        lessons: ev.HORAS || 0,
+        students: ev.CAPACIDAD || 0,
+        imageUrl: ev.URL_IMAGEN || 'https://via.placeholder.com/150',
+        description: ev.DESCRIPCION || ''
+    }));
 
     // role switching by subRole removed; navigation should be based on actual codigoRol
 
     // Adaptamos el CourseCard del estudiante para el profesor (usamos un componente sencillo por ahora)
     const ModuleCard = ({ module }) => {
         const handleViewCourse = () => {
+            // Imprime esto en la consola para verificar antes de navegar
+            console.log("Navegando al curso con ID:", module.id);
+
+            if (!module.id) {
+                alert("Error: El ID del curso no se encontró. Revisa la consola.");
+                return;
+            }
             navigate(`/profesor/course/${module.id}`);
         };
 
@@ -60,7 +135,7 @@ const ProfesorModules = () => {
                     <h1 className="events-title">Módulos de enseñanza</h1>
                     <p className="events-subtitle">Explora y mejora tus cursos con los siguientes módulos</p>
                 </div>
-                
+
                 {/* role switcher removed: roles now come from backend via codigoRol */}
 
                 {/* Resumen de estadísticas (similar a la segunda imagen del estudiante) */}
@@ -68,17 +143,17 @@ const ProfesorModules = () => {
                     <div className="summary-card">
                         <FaBookOpen />
                         <p>Total de cursos</p>
-                        <strong>{mockModules.length}</strong>
+                        <strong>{modules.length}</strong>
                     </div>
                     <div className="summary-card">
                         <FaUserFriends />
                         <p>Estudiantes</p>
-                        <strong>{mockModules.reduce((acc, c) => acc + c.students, 0)}</strong>
+                        <strong>{modules.reduce((acc, c) => acc + c.students, 0)}</strong>
                     </div>
                     <div className="summary-card">
                         <span className="icon">⏱</span>
                         <p>Total de lecciones</p>
-                        <strong>{mockModules.reduce((acc, c) => acc + c.lessons, 0)}</strong>
+                        <strong>{modules.reduce((acc, c) => acc + c.lessons, 0)}</strong>
                     </div>
                 </div>
 
@@ -105,9 +180,19 @@ const ProfesorModules = () => {
 
             {/* Grid de Módulos */}
             <div className="modules-grid">
-                {mockModules.map(module => (
-                    <ModuleCard key={module.id} module={module} />
-                ))}
+                {loading ? (
+                    <div className="empty-state">
+                        <p>Cargando módulos...</p>
+                    </div>
+                ) : modules.length === 0 ? (
+                    <div className="empty-state">
+                        <p>No tienes cursos asignados actualmente</p>
+                    </div>
+                ) : (
+                    modules.map(module => (
+                        <ModuleCard key={module.id} module={module} />
+                    ))
+                )}
             </div>
         </div>
     );

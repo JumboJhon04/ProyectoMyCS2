@@ -1,4 +1,5 @@
 const { pool } = require('../config/database');
+const { buildImageUrl } = require('../utils/imageUrlHelper');
 
 // Obtener todos los estudiantes
 const obtenerEstudiantes = async (req, res) => {
@@ -24,10 +25,9 @@ const obtenerEstudiantes = async (req, res) => {
        ORDER BY u.SECUENCIAL DESC`
     );
 
-    const hostPrefix = `${req.protocol}://${req.get('host')}`;
     const data = rows.map(u => ({
       ...u,
-      FOTO_PERFIL: u.FOTO_PERFIL ? `${hostPrefix}/${u.FOTO_PERFIL}` : null
+      FOTO_PERFIL: buildImageUrl(u.FOTO_PERFIL, req)
     }));
 
     res.json({ success: true, data });
@@ -73,8 +73,7 @@ const obtenerEstudiante = async (req, res) => {
       [id]
     );
 
-    const hostPrefix = `${req.protocol}://${req.get('host')}`;
-    estudiante.FOTO_PERFIL = estudiante.FOTO_PERFIL ? `${hostPrefix}/${estudiante.FOTO_PERFIL}` : null;
+    estudiante.FOTO_PERFIL = buildImageUrl(estudiante.FOTO_PERFIL, req);
     estudiante.CARRERAS = carreras;
 
     res.json({ success: true, data: estudiante });
@@ -118,9 +117,9 @@ const obtenerEventosDeUsuario = async (req, res) => {
   try {
     const [rows] = await pool.execute(
       `SELECT 
-        i.SECUENCIAL as inscripcionId,
-        i.FECHAINSCRIPCION,
-        i.CODIGOESTADOINSCRIPCION,
+        MAX(i.SECUENCIAL) as inscripcionId,
+        MAX(i.FECHAINSCRIPCION) as FECHAINSCRIPCION,
+        MAX(i.CODIGOESTADOINSCRIPCION) as CODIGOESTADOINSCRIPCION,
         e.SECUENCIAL as eventoId,
         e.TITULO,
         e.DESCRIPCION,
@@ -128,19 +127,19 @@ const obtenerEventosDeUsuario = async (req, res) => {
         e.FECHAFIN,
         e.COSTO,
         e.ESTADO,
-        ie.URL_IMAGEN
+        MAX(ie.URL_IMAGEN) as URL_IMAGEN
        FROM inscripcion i
        INNER JOIN evento e ON i.SECUENCIALEVENTO = e.SECUENCIAL
        LEFT JOIN imagen_evento ie ON e.SECUENCIAL = ie.SECUENCIALEVENTO AND ie.TIPO_IMAGEN = 'PORTADA'
        WHERE i.SECUENCIALUSUARIO = ? AND i.CODIGOESTADOINSCRIPCION = 'ACE'
-       ORDER BY i.FECHAINSCRIPCION DESC`,
+       GROUP BY e.SECUENCIAL
+       ORDER BY FECHAINSCRIPCION DESC`,
       [id]
     );
 
-    const hostPrefix = `${req.protocol}://${req.get('host')}`;
     const data = rows.map(r => ({
       ...r,
-      URL_IMAGEN: r.URL_IMAGEN ? `${hostPrefix}/${r.URL_IMAGEN}` : null
+      URL_IMAGEN: buildImageUrl(r.URL_IMAGEN, req)
     }));
 
     res.json({ success: true, data });
@@ -154,11 +153,11 @@ const obtenerEventosDeUsuario = async (req, res) => {
 const obtenerInscripcionPorEvento = async (req, res) => {
   const usuarioId = req.params.id;
   const { eventoId } = req.query;
-  
+
   if (!eventoId) {
     return res.status(400).json({ error: 'Se requiere eventoId como query parameter' });
   }
-  
+
   try {
     const [rows] = await pool.execute(
       `SELECT 
@@ -186,10 +185,9 @@ const obtenerInscripcionPorEvento = async (req, res) => {
       return res.json({ success: true, data: null });
     }
 
-    const hostPrefix = `${req.protocol}://${req.get('host')}`;
     const data = {
       ...rows[0],
-      URL_IMAGEN: rows[0].URL_IMAGEN ? `${hostPrefix}/${rows[0].URL_IMAGEN}` : null
+      URL_IMAGEN: buildImageUrl(rows[0].URL_IMAGEN, req)
     };
 
     res.json({ success: true, data });
@@ -198,7 +196,6 @@ const obtenerInscripcionPorEvento = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener inscripción', details: error.message });
   }
 };
-
 // Crear inscripción para un usuario a un evento
 const crearInscripcion = async (req, res) => {
   const usuarioId = req.params.id;
@@ -222,9 +219,9 @@ const crearInscripcion = async (req, res) => {
       return res.status(400).json({ error: 'Usuario ya inscrito en este evento' });
     }
 
-    // Obtener información del evento para verificar si es pagado
+    // Obtener información del evento para verificar si es pagado y si el usuario es el docente
     const [evento] = await connection.execute(
-      'SELECT ES_PAGADO, COSTO FROM evento WHERE SECUENCIAL = ?',
+      'SELECT ES_PAGADO, COSTO, Docente FROM evento WHERE SECUENCIAL = ?',
       [eventoId]
     );
 
@@ -233,12 +230,22 @@ const crearInscripcion = async (req, res) => {
       return res.status(404).json({ error: 'Evento no encontrado' });
     }
 
+    // VERIFICAR SI EL USUARIO ES EL DOCENTE DEL EVENTO
+    // Nota: 'Docente' en la DB suele ser el ID del usuario (INT/STRING)
+    const docenteId = evento[0].Docente ? String(evento[0].Docente) : null;
+    if (docenteId === String(usuarioId)) {
+      await connection.rollback();
+      return res.status(400).json({
+        error: 'No puedes inscribirte a un evento del cual eres el docente responsable.'
+      });
+    }
+
     const esPagado = evento[0].ES_PAGADO === 1;
     const costo = parseFloat(evento[0].COSTO) || 0;
 
     // Crear inscripción con estado PENDIENTE si es pagado, ACEPTADO si es gratis
     const estadoInscripcion = esPagado ? 'PEN' : 'ACE';
-    
+
     const [result] = await connection.execute(
       `INSERT INTO inscripcion (SECUENCIALEVENTO, SECUENCIALUSUARIO, FECHAINSCRIPCION, CODIGOESTADOINSCRIPCION, MOTIVACION)
        VALUES (?, ?, NOW(), ?, ?)`,
@@ -253,8 +260,8 @@ const crearInscripcion = async (req, res) => {
 
     await connection.commit();
 
-    res.status(201).json({ 
-      success: true, 
+    res.status(201).json({
+      success: true,
       message: esPagado ? 'Inscripción creada. Debes realizar el pago para completar tu inscripción.' : 'Inscripción creada',
       inscripcionId,
       requierePago: esPagado,
@@ -269,11 +276,114 @@ const crearInscripcion = async (req, res) => {
   }
 };
 
+// Obtener asistencia y notas de un estudiante en un evento
+const obtenerAsistenciaEvento = async (req, res) => {
+  const usuarioId = req.params.id;
+  const { eventoId } = req.params;
+
+  try {
+    const [rows] = await pool.execute(
+      `SELECT 
+        an.SECUENCIAL,
+        an.PORCENTAJE_ASISTENCIA,
+        an.ASISTIO,
+        an.NOTAFINAL,
+        an.OBSERVACION,
+        e.ASISTENCIAMINIMA,
+        e.NOTAAPROBACION
+       FROM evento e
+       LEFT JOIN asistencia_nota an ON e.SECUENCIAL = an.SECUENCIALEVENTO AND an.SECUENCIALUSUARIO = ?
+       WHERE e.SECUENCIAL = ?`,
+      [usuarioId, eventoId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+
+    const data = rows[0];
+
+    // Si no hay registro en asistencia_nota, devolvemos nulls pero con la info del evento
+    res.json({
+      success: true,
+      data: {
+        porcentajeAsistencia: data.PORCENTAJE_ASISTENCIA || 0,
+        asistio: data.ASISTIO === 1,
+        notaFinal: data.NOTAFINAL,
+        observacion: data.OBSERVACION,
+        asistenciaMinima: data.ASISTENCIAMINIMA,
+        notaAprobacion: data.NOTAAPROBACION
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error al obtener asistencia:', error);
+    res.status(500).json({ error: 'Error al obtener asistencia', details: error.message });
+  }
+};
+
+// Registrar asistencia por el propio estudiante
+const registrarAsistenciaEvento = async (req, res) => {
+  const usuarioId = req.params.id;
+  const { eventoId } = req.params;
+
+  let connection;
+  try {
+    connection = await pool.getConnection();
+
+    // Verificar si ya registró asistencia
+    const [existing] = await connection.execute(
+      'SELECT SECUENCIAL, ASISTIO FROM asistencia_nota WHERE SECUENCIALEVENTO = ? AND SECUENCIALUSUARIO = ?',
+      [eventoId, usuarioId]
+    );
+
+    if (existing.length > 0 && existing[0].ASISTIO === 1) {
+      return res.status(400).json({ error: 'Ya has registrado tu asistencia para este evento.' });
+    }
+
+    if (existing.length > 0) {
+      // Actualizar registro existente
+      await connection.execute(
+        `UPDATE asistencia_nota SET 
+          PORCENTAJE_ASISTENCIA = 100, 
+          ASISTIO = 1 
+         WHERE SECUENCIAL = ?`,
+        [existing[0].SECUENCIAL]
+      );
+    } else {
+      // Crear nuevo registro
+      // Nota: Asumimos NOTA = 0 si no existe, o se actualiza luego con las calificaciones
+      await connection.execute(
+        `INSERT INTO asistencia_nota (SECUENCIALEVENTO, SECUENCIALUSUARIO, PORCENTAJE_ASISTENCIA, ASISTIO, NOTAFINAL)
+         VALUES (?, ?, 100, 1, 0)`,
+        [eventoId, usuarioId]
+      );
+    }
+
+    // También actualizar tabla inscripcion para mantener sincronía si es necesario
+    await connection.execute(
+      `UPDATE inscripcion SET ASISTENCIA = 100 
+         WHERE SECUENCIALEVENTO = ? AND SECUENCIALUSUARIO = ?`,
+      [eventoId, usuarioId]
+    );
+
+    res.json({ success: true, message: 'Asistencia registrada correctamente.' });
+
+  } catch (error) {
+    console.error('❌ Error al registrar asistencia:', error);
+    res.status(500).json({ error: 'Error al registrar asistencia', details: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
 module.exports = {
   obtenerEstudiantes,
   obtenerEstudiante,
   actualizarEstudiante,
   obtenerEventosDeUsuario,
   obtenerInscripcionPorEvento,
-  crearInscripcion
+  crearInscripcion,
+  obtenerAsistenciaEvento,
+  registrarAsistenciaEvento
 };

@@ -1,3 +1,5 @@
+/* register.css - CSS Actualizado con estilos para validaciones */
+
 .auth-register-root {
   min-height: 100vh;
   display: flex;
@@ -76,7 +78,8 @@
   transition: color 0.2s ease;
 }
 
-.auth-register-group input {
+.auth-register-group input,
+.auth-register-group select {
   width: 100%;
   padding: 12px 14px;
   border-radius: 10px;
@@ -88,12 +91,14 @@
   outline: none;
 }
 
-.auth-register-group input:hover {
+.auth-register-group input:hover,
+.auth-register-group select:hover {
   border-color: #d1d8e0;
   background: #fff;
 }
 
-.auth-register-group input:focus {
+.auth-register-group input:focus,
+.auth-register-group select:focus {
   border-color: #65a3d5;
   background: #fff;
   box-shadow: 0 0 0 3px rgba(101, 163, 213, 0.1);
@@ -102,6 +107,33 @@
 .auth-register-group input:focus + label,
 .auth-register-group:focus-within label {
   color: #1a3b5d;
+}
+
+/* Estilos para inputs con error */
+.auth-register-group input.input-error {
+  border-color: #e74c3c;
+  background: #fee;
+}
+
+.auth-register-group input.input-error:focus {
+  border-color: #e74c3c;
+  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+}
+
+/* Mensaje de error */
+.error-message {
+  display: block;
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 5px;
+  font-weight: 500;
+}
+
+/* Select deshabilitado */
+.auth-register-group select:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .auth-register-actions {
@@ -121,16 +153,23 @@
   letter-spacing: 0.3px;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(44, 62, 80, 0.2);
+  width: 100%;
 }
 
-.auth-register-submit:hover {
+.auth-register-submit:hover:not(:disabled) {
   background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(44, 62, 80, 0.3);
 }
 
-.auth-register-submit:active {
+.auth-register-submit:active:not(:disabled) {
   transform: translateY(0);
+}
+
+.auth-register-submit:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .auth-register-info {

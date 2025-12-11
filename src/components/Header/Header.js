@@ -123,9 +123,10 @@ export default function Header({ onToggleSidebar, onLogout }) {
             className="user-avatar clickable" 
             title={fullName}
             onClick={toggleUserMenu}
+            style={{ overflow: 'hidden', background: '#333' }}
           >
-            {user?.avatarUrl || user?.FOTO_PERFIL ? (
-              <img src={user.avatarUrl || user.FOTO_PERFIL} alt={`${fullName} avatar`} />
+            {user?.foto || user?.avatarUrl || user?.FOTO_PERFIL ? (
+              <img src={user.foto || user.avatarUrl || user.FOTO_PERFIL} alt={`${fullName} avatar`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
             ) : (
               <span>{initials}</span>
             )}

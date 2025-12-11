@@ -1,9 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useCourses } from '../../../../context/CoursesContext';
 import { useUser } from '../../../../context/UserContext';
 import PublicHeader from '../../../../components/PublicHeader/PublicHeader';
+import CourseNavigationTabs from '../../../../components/CourseNavigationTabs/CourseNavigationTabs';
+import MaterialTab from '../../../../components/CourseTabs/MaterialTab';
+import ParticipantesTab from '../../../../components/CourseTabs/ParticipantesTab';
+import CalificacionesTab from '../../../../components/CourseTabs/CalificacionesTab';
+import AsistenciaTab from '../../../../components/CourseTabs/AsistenciaTab';
+import { getEventTheme } from '../../../../config/eventThemes';
+import {
+  FaClock, FaMoneyBill,
+  FaClipboardCheck, FaCheckCircle, FaChartBar,
+  FaBook, FaCheck
+} from 'react-icons/fa';
 import './EstudianteCourseDetail.css';
+
+import jsPDF from 'jspdf';
+import CertificatePreview from '../../../../components/Certificate/CertificatePreview';
+
+import API_URL from '../../../../config/api';
 
 const EstudianteCourseDetail = () => {
   const { courseId } = useParams();
@@ -16,8 +32,41 @@ const EstudianteCourseDetail = () => {
   const [error, setError] = useState(null);
   const [isInscrito, setIsInscrito] = useState(false);
   const [pagoAprobado, setPagoAprobado] = useState(false);
-  const [inscripcionId, setInscripcionId] = useState(null);
-  
+  // const [inscripcionId, setInscripcionId] = useState(null);
+  const [activeTab, setActiveTab] = useState('material');
+  const [entregas, setEntregas] = useState([]); // Estado para entregas del estudiante
+  const [intentos, setIntentos] = useState([]); // Estado para intentos de exámenes
+  const [certificateInfo, setCertificateInfo] = useState(null);
+  const [certificateLoading, setCertificateLoading] = useState(false);
+  const [certificateError, setCertificateError] = useState(null);
+  const [certificateLogo, setCertificateLogo] = useState(null);
+
+  const userCareerIds = useMemo(() => {
+    if (!user) return [];
+    const raw = user.carreras || user.CARRERAS || [];
+    return raw
+      .map(c => c?.SECUENCIAL || c?.id || c?.ID || c?.sec || c?.secId)
+      .filter(Boolean)
+      .map(Number);
+  }, [user]);
+
+  useEffect(() => {
+    const loadCertificateLogo = async () => {
+      try {
+        const response = await fetch('/logo192.png');
+        if (!response.ok) return;
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => setCertificateLogo(reader.result);
+        reader.readAsDataURL(blob);
+      } catch (e) {
+        console.warn('No se pudo precargar el logo del certificado', e);
+      }
+    };
+
+    loadCertificateLogo();
+  }, []);
+
   // Determinar si es una ruta pública (acceso desde /courses/:courseId sin autenticación)
   const isPublicRoute = location.pathname.startsWith('/courses/') && !location.pathname.startsWith('/user/course/') && !location.pathname.startsWith('/profesor/course/');
 
@@ -47,7 +96,7 @@ const EstudianteCourseDetail = () => {
     return modalidades[codigo] || 'Presencial';
   };
 
-  const mapEstado = (estado) => {
+  /* const mapEstado = (estado) => {
     const estados = {
       'DISPONIBLE': 'Disponible',
       'CERRADO': 'Cerrado',
@@ -57,16 +106,27 @@ const EstudianteCourseDetail = () => {
       'CREADO': 'Creado'
     };
     return estados[estado] || estado;
-  };
+  }; */
+
+  const eventCareerIds = useMemo(() => {
+    const raw = courseData?.CARRERAS || courseFromContext?.CARRERAS || [];
+    return raw
+      .map(c => c?.SECUENCIAL || c?.id || c?.ID || c?.sec || c?.secId)
+      .filter(Boolean)
+      .map(Number);
+  }, [courseData, courseFromContext]);
+
+  const hasCareerRestriction = eventCareerIds.length > 0;
+  const esAptoCarrera = !hasCareerRestriction || eventCareerIds.some(id => userCareerIds.includes(id));
 
   // Obtener datos completos del curso desde la API
   useEffect(() => {
     const fetchCourseDetails = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/api/eventos/${courseId}`);
+        const response = await fetch(`${API_URL}/api/eventos/${courseId}`);
         const data = await response.json();
-        
+
         if (!response.ok) {
           throw new Error(data.error || 'Error al cargar el curso');
         }
@@ -78,19 +138,19 @@ const EstudianteCourseDetail = () => {
         if (user && user.id) {
           try {
             // Usar el endpoint que incluye inscripciones pendientes
-            const inscripcionRes = await fetch(`http://localhost:5000/api/estudiantes/${user.id}/inscripcion?eventoId=${courseId}`);
+            const inscripcionRes = await fetch(`${API_URL}/api/estudiantes/${user.id}/inscripcion?eventoId=${courseId}`);
             if (inscripcionRes.ok) {
               const inscripcionData = await inscripcionRes.json();
               if (inscripcionData.data) {
                 setIsInscrito(true);
                 const idInscripcion = inscripcionData.data.inscripcionId || inscripcionData.data.SECUENCIAL;
-                setInscripcionId(idInscripcion);
-                
+                // setInscripcionId(idInscripcion); // Removed unused state update
+
                 // Verificar estado del pago si el curso es pagado (usar data.data que es la respuesta del fetch)
                 const cursoEsPagado = data.data?.ES_PAGADO === 1;
                 if (idInscripcion && cursoEsPagado) {
                   try {
-                    const pagoRes = await fetch(`http://localhost:5000/api/pagos/inscripcion/${idInscripcion}`);
+                    const pagoRes = await fetch(`${API_URL}/api/pagos/inscripcion/${idInscripcion}`);
                     if (pagoRes.ok) {
                       const pagoData = await pagoRes.json();
                       const aprobado = pagoData.data?.some(p => p.CODIGOESTADOPAGO === 'VAL');
@@ -130,10 +190,148 @@ const EstudianteCourseDetail = () => {
     }
   }, [courseId, user]);
 
+  // Fetch Modulos y Tareas
+  // Fetch Modulos y Tareas
+  const [modules, setModules] = useState([]);
+  const [modulesLoading, setModulesLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchModulesAndTasks = async () => {
+      const userId = user?.id || user?.ID || user?.SECUENCIAL || user?.secuencial || user?.usuarioId;
+      if (!courseId || !userId) return;
+
+      try {
+        setModulesLoading(true);
+        // 1. Obtener módulos
+        const modRes = await fetch(`${API_URL}/api/modulos/evento/${courseId}`);
+        const modJson = await modRes.json();
+
+        if (!modRes.ok) throw new Error(modJson.message || 'Error fetching modules');
+
+        const mods = modJson.data || [];
+        console.log('Modules fetched:', mods);
+
+        // 2. Para cada módulo, obtener tareas y recursos
+        const modulesWithContent = await Promise.all(mods.map(async (mod) => {
+          let tareas = [];
+          let recursos = [];
+
+          // Fetch Tareas con status
+          try {
+            const taskRes = await fetch(`${API_URL}/api/tareas/modulo/${mod.SECUENCIAL}/estudiante/${userId}`);
+            const taskJson = await taskRes.json();
+            tareas = taskJson.data || [];
+          } catch (err) {
+            console.warn(`Error cargando tareas para modulo ${mod.SECUENCIAL}`, err);
+          }
+
+          // Fetch Recursos
+          try {
+            // Reutilizamos el endpoint de recursos por módulo
+            const resRes = await fetch(`${API_URL}/api/recursos/modulo/${mod.SECUENCIAL}`);
+            const resJson = await resRes.json();
+            recursos = resJson.data || [];
+          } catch (err) {
+            console.warn(`Error cargando recursos para modulo ${mod.SECUENCIAL}`, err);
+          }
+
+          return { ...mod, tareas, recursos };
+        }));
+
+        setModules(modulesWithContent);
+      } catch (e) {
+        console.error('Error cargando módulos:', e);
+      } finally {
+        setModulesLoading(false);
+      }
+    };
+
+    if (courseId && (user?.id || user?.SECUENCIAL)) {
+      fetchModulesAndTasks();
+    }
+  }, [courseId, user]);
+
+  // Cargar entregas del estudiante
+  useEffect(() => {
+    const fetchEntregas = async () => {
+      if (!user?.id || !courseId) return;
+      try {
+        const response = await fetch(`${API_URL}/api/tareas/estudiante/${user.id}/evento/${courseId}`);
+        const data = await response.json();
+        if (data.success) {
+          setEntregas(data.data || []);
+        }
+      } catch (error) {
+        console.error('Error al cargar entregas:', error);
+      }
+    };
+
+    // Cargar intentos de exámenes
+    const fetchIntentos = async () => {
+      if (!user?.id) return;
+      try {
+        const res = await fetch(`${API_URL}/api/evaluaciones/intentos/${user.id}`);
+        const data = await res.json();
+        if (data.success) {
+          setIntentos(data.data || []);
+        }
+      } catch (error) {
+        console.error('Error al cargar intentos:', error);
+      }
+    };
+
+    if (courseId && user?.id) {
+      fetchEntregas();
+      fetchIntentos();
+    }
+  }, [courseId, user]);
+
+  useEffect(() => {
+    if (!courseData || !isInscrito || !pagoAprobado) return;
+    fetchCertificateInfo();
+  }, [courseData, isInscrito, pagoAprobado]);
+
+  // Calcular actividades totales y completadas dinámicamente (después de declarar modules y entregas)
+  const totalActivities = useMemo(() => {
+    if (!modules || modules.length === 0) return 0;
+    let total = 0;
+    modules.forEach(modulo => {
+      // Contar tareas
+      total += modulo.tareas?.length || 0;
+    });
+    return total;
+  }, [modules]);
+
+  const completedActivities = useMemo(() => {
+    if (!modules || modules.length === 0) return 0;
+    let completed = 0;
+    modules.forEach(modulo => {
+      // Contar tareas entregadas
+      modulo.tareas?.forEach(tarea => {
+        const entrega = entregas.find(e => e.tareaId === tarea.SECUENCIAL);
+        if (entrega) completed++;
+      });
+    });
+    return completed;
+  }, [modules, entregas]);
+
+  // Aplicar tema dinámico con CSS variables
+  useEffect(() => {
+    if (courseData?.CODIGOTIPOEVENTO) {
+      const eventTheme = getEventTheme(courseData.CODIGOTIPOEVENTO);
+      if (eventTheme) {
+        document.documentElement.style.setProperty('--event-primary-color', eventTheme.primaryColor);
+        document.documentElement.style.setProperty('--event-secondary-color', eventTheme.secondaryColor);
+        document.documentElement.style.setProperty('--event-accent-color', eventTheme.accentColor);
+        document.documentElement.style.setProperty('--event-light-bg', eventTheme.lightBg);
+      }
+    }
+  }, [courseData]);
+
   // Parsear topics del contenido
   const parseTopics = (contenido) => {
     if (!contenido) return [];
-    
+
     try {
       const contenidoStr = contenido.trim();
       if (contenidoStr.startsWith('{') && contenidoStr.endsWith('}')) {
@@ -148,25 +346,35 @@ const EstudianteCourseDetail = () => {
     return [];
   };
 
-  // Formatear fecha
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
+  const fetchCertificateInfo = async () => {
+    if (!user?.id || !courseId) return;
+    setCertificateLoading(true);
+    setCertificateError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/reportes/certificados/${courseId}/estudiante/${user.id}`);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'No se pudo cargar el certificado');
+      setCertificateInfo(json.data);
+    } catch (e) {
+      setCertificateError(e.message);
+      setCertificateInfo(null);
+    } finally {
+      setCertificateLoading(false);
+    }
   };
 
-  // Obtener iniciales del docente
+  // Formatear fecha (Removed unused formatDate function)
+
+  // Obtener iniciales del docente (con manejo robusto de nulos e int)
   const getDocenteInitials = (docente) => {
-    if (!docente) return 'ND';
-    const parts = docente.trim().split(' ');
+    if (!docente || docente === 'Por asignar') return 'ND';
+    const docenteStr = String(docente).trim();
+    if (docenteStr === '' || docenteStr === 'null' || docenteStr === 'undefined') return 'ND';
+    const parts = docenteStr.split(' ');
     if (parts.length >= 2) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
-    return docente.substring(0, 2).toUpperCase();
+    return docenteStr.substring(0, 2).toUpperCase();
   };
 
   if (loading) {
@@ -217,261 +425,300 @@ const EstudianteCourseDetail = () => {
   const tipo = mapCodigoToType(courseData?.CODIGOTIPOEVENTO || course?.meta?.type);
   const modalidad = mapCodigoToModalidad(courseData?.CODIGOMODALIDAD || course?.meta?.modality);
   const horas = courseData?.HORAS || course?.meta?.hours || 0;
-  const docente = courseData?.Docente || course?.meta?.docente || 'No especificado';
+  // Ahora Docente puede ser int (SECUENCIAL) o string (nombre completo). Usar NOMBRE_DOCENTE si existe
+  const docente = courseData?.NOMBRE_DOCENTE || courseData?.Docente || course?.meta?.docente || 'Por asignar';
   const costo = courseData?.COSTO || course?.price || 0;
-  const capacidad = courseData?.CAPACIDAD || course?.meta?.capacity || 'No especificada';
-  const notaAprobacion = courseData?.NOTAAPROBACION || course?.meta?.passingGrade;
-  const asistenciaMinima = courseData?.ASISTENCIAMINIMA || course?.meta?.attendanceRequired;
-  const fechaInicio = courseData?.FECHAINICIO || course?.meta?.startDate;
-  const fechaFin = courseData?.FECHAFIN || course?.meta?.endDate;
-  const estado = mapEstado(courseData?.ESTADO || 'DISPONIBLE');
+  // const capacidad = courseData?.CAPACIDAD || course?.meta?.capacity || 'No especificada';
+  // const notaAprobacion = courseData?.NOTAAPROBACION || course?.meta?.passingGrade;
+  // const asistenciaMinima = courseData?.ASISTENCIAMINIMA || course?.meta?.attendanceRequired;
+  // const fechaInicio = courseData?.FECHAINICIO || course?.meta?.startDate;
+  // const fechaFin = courseData?.FECHAFIN || course?.meta?.endDate;
+  // const estado = mapEstado(courseData?.ESTADO || 'DISPONIBLE');
   const esPagado = courseData?.ES_PAGADO === 1 || course?.meta?.isPaid;
-  const carreras = courseData?.CARRERAS || [];
+  // const carreras = courseData?.CARRERAS || [];
   const topics = parseTopics(courseData?.CONTENIDO || '');
-  
-  // Crear "lecciones" basadas en los topics
-  const lessons = topics.length > 0 
-    ? topics.map((topic, index) => ({
-        id: index + 1,
-        title: typeof topic === 'string' ? topic : topic.title || `Tema ${index + 1}`,
-        description: typeof topic === 'string' ? '' : topic.description || '',
-        status: 'locked', // Por defecto bloqueadas
-        type: 'lesson'
-      }))
-    : [];
 
-  const totalLessons = lessons.length || topics.length || 0;
-  const completedLessons = 0; // Esto se podría obtener de la inscripción del estudiante
-  const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  // Obtener tema del evento
+  const eventTheme = getEventTheme(courseData?.CODIGOTIPOEVENTO || 'CUR');
+  const showGrades = eventTheme.showGrades;
+
+  const progressPercentage = totalActivities > 0 ? Math.round((completedActivities / totalActivities) * 100) : 0;
+  const showCertificateTab = isInscrito && pagoAprobado && (courseData?.ESTADO === 'FINALIZADO' || certificateInfo || certificateLoading);
+  const canDownloadCertificate = showCertificateTab && certificateInfo?.elegible;
+
+  const formatDateShort = (date) => {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const handleDownloadCertificate = () => {
+    if (!certificateInfo?.elegible) {
+      alert('Aún no cumples los requisitos de nota y asistencia para descargar el certificado.');
+      return;
+    }
+
+    // Configuración inicial (Horizontal - Landscape, A4)
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    // Dimensiones de A4 Landscape: 297mm x 210mm
+    const pageWidth = 297;
+    const centerX = pageWidth / 2;
+    const colorDorado = [234, 173, 76]; // Color #EAAD4C
+    const colorTexto = [40, 44, 52];    // Gris oscuro casi negro
+
+    // --- DISEÑO GRÁFICO (BORDES) ---
+
+    // Borde Exterior (Dorado Fino)
+    doc.setDrawColor(...colorDorado);
+    doc.setLineWidth(1);
+    doc.rect(10, 10, 277, 190);
+
+    // Borde Interior (Dorado más grueso)
+    doc.setLineWidth(0.5);
+    doc.rect(13, 13, 271, 184);
+
+    // Elementos decorativos en las esquinas (Simples cuadrados)
+    doc.setFillColor(...colorDorado);
+    doc.rect(8, 8, 4, 4, 'F');   // Arriba Izq
+    doc.rect(285, 8, 4, 4, 'F'); // Arriba Der
+    doc.rect(8, 198, 4, 4, 'F'); // Abajo Izq
+    doc.rect(285, 198, 4, 4, 'F');// Abajo Der
+
+    // --- TEXTOS ---
+
+    // Institución
+    doc.setTextColor(...colorTexto);
+    doc.setFont("times", "normal");
+    doc.setFontSize(14);
+    doc.text("Universidad Técnica de Ambato", centerX, 50, { align: "center" });
+
+    // Título Principal
+    doc.setFont("times", "bold");
+    doc.setFontSize(36);
+    doc.text("CERTIFICADO DE RECONOCIMIENTO", centerX, 65, { align: "center" });
+
+    // Subtítulo
+    doc.setFont("times", "normal");
+    doc.setFontSize(12);
+    doc.text("Se otorga el presente certificado a", centerX, 78, { align: "center" });
+
+    // NOMBRE DEL ESTUDIANTE
+    doc.setFont("times", "italic");
+    doc.setFontSize(50);
+    doc.setTextColor(...colorTexto);
+    const nombreCompleto = `${certificateInfo.APELLIDOS || ''} ${certificateInfo.NOMBRES || ''}`.trim();
+    doc.text(nombreCompleto, centerX, 105, { align: "center" });
+
+    // Párrafo del cuerpo
+    doc.setFont("times", "normal");
+    doc.setFontSize(11);
+    const textoCuerpo = `En reconocimiento a su excepcional dedicación, perseverancia y compromiso con la excelencia en la finalización del curso "${certificateInfo.TITULO}". Su destacado desempeño con una calificación de ${certificateInfo.NOTA || 0}/10 y ${certificateInfo.ASISTENCIA || 0}% de asistencia en ${certificateInfo.HORAS || 0} horas refleja su pasión por el aprendizaje y su impulso por alcanzar el éxito. Este certificado es símbolo de sus logros y el impacto positivo de sus esfuerzos.`;
+
+    // Dividir texto para que quepa en el ancho
+    const splitText = doc.splitTextToSize(textoCuerpo, 200);
+    doc.text(splitText, centerX, 130, { align: "center" });
+
+    // --- FIRMAS ---
+
+    // Línea Izquierda
+    doc.setDrawColor(40, 44, 52);
+    doc.setLineWidth(0.5);
+    doc.line(40, 175, 110, 175); // x1, y1, x2, y2
+
+    // Texto Izquierda
+    doc.setFont("times", "bold");
+    doc.setFontSize(12);
+    const docenteNombre = certificateInfo.docenteNombreCompleto || "Docente del Curso";
+    doc.text(docenteNombre, 75, 170, { align: "center" });
+    doc.setFont("times", "normal");
+    doc.setFontSize(10);
+    doc.text("Instructor del Curso", 75, 182, { align: "center" });
+
+    // Línea Derecha
+    doc.line(187, 175, 257, 175);
+
+    // Texto Derecha
+    doc.setFont("times", "bold");
+    doc.setFontSize(12);
+    doc.text("Coordinación del Programa", 222, 170, { align: "center" });
+    doc.setFont("times", "normal");
+    doc.setFontSize(10);
+    doc.text("Coordinación Académica", 222, 182, { align: "center" });
+
+    // Guardar PDF
+    doc.save(`Certificado_${nombreCompleto.replace(/\s+/g, '_')}.pdf`);
+  };
 
   return (
     <div className="course-detail-container">
       {isPublicRoute && <PublicHeader />}
-      
-      {/* Header del Curso */}
-      <div className="course-detail-header">
-        <div className="course-header-content">
-          {/* Información izquierda */}
-          <div className="course-header-left">
-            <div className="course-tags">
-              <span className="tag">{tipo}</span>
-              <span className="tag">{modalidad}</span>
-              {esPagado && <span className="tag">Pago</span>}
-              {!esPagado && <span className="tag">Gratis</span>}
-            </div>
 
-            <h1 className="course-detail-title">{title}</h1>
-            <p className="course-detail-description" dangerouslySetInnerHTML={{ __html: description }} />
-
-            <div className="course-meta-info">
-              {docente && (
-                <div className="meta-item">
-                  <span className="meta-badge">{getDocenteInitials(docente)}</span>
-                  <span className="meta-text">{docente}</span>
-                </div>
-              )}
-              {horas > 0 && (
-                <div className="meta-item">
-                  <span className="meta-icon">⏱</span>
-                  <span className="meta-text">{horas} horas</span>
-                </div>
-              )}
-              {capacidad && (
-                <div className="meta-item">
-                  <span className="meta-icon">👥</span>
-                  <span className="meta-text">{capacidad} cupos</span>
-                </div>
-              )}
-            </div>
-
-            {/* Información adicional */}
-            <div className="course-additional-info">
-              {fechaInicio && fechaFin && (
-                <div>
-                  <strong>📅 Fechas:</strong> Del {formatDate(fechaInicio)} al {formatDate(fechaFin)}
-                </div>
-              )}
-              
-              <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
-                {costo > 0 && (
-                  <div>
-                    <strong>💰 Costo:</strong> ${parseFloat(costo).toFixed(2)}
-                  </div>
+      {/* Header del Curso con Imagen de Fondo */}
+      <div
+        className="course-detail-header"
+        style={{
+          backgroundImage: `url(${imageUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
+        <div className="header-overlay">
+          {/* Layout de dos columnas */}
+          <div className="header-content-grid">
+            {/* Columna izquierda: Tags, Título y Docente */}
+            <div className="header-left">
+              <div className="course-tags">
+                <span className="tag">{tipo}</span>
+                <span className="tag">{modalidad}</span>
+                {esPagado && <span className="tag tag-paid">Pago</span>}
+                {!esPagado && <span className="tag tag-free">Gratis</span>}
+                {hasCareerRestriction && (
+                  <span className={`tag ${esAptoCarrera ? 'apt-tag' : 'not-apt-tag'}`}>
+                    {esAptoCarrera ? 'Apto para tu carrera' : 'No apto'}
+                  </span>
                 )}
-                {notaAprobacion && (
-                  <div>
-                    <strong>📝 Nota de aprobación:</strong> {notaAprobacion}/10
-                  </div>
-                )}
-                {asistenciaMinima && (
-                  <div>
-                    <strong>✅ Asistencia mínima:</strong> {asistenciaMinima}%
-                  </div>
-                )}
-                <div>
-                  <strong>📊 Estado:</strong> {estado}
-                </div>
               </div>
 
-              {carreras.length > 0 && (
-                <div style={{ marginTop: '0.75rem' }}>
-                  <strong>🎓 Carreras relacionadas:</strong>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                    {carreras.map((carrera, idx) => (
-                      <span key={idx} className="tag" style={{ fontSize: '0.85rem' }}>
-                        {carrera.NOMBRE_CARRERA || carrera}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <h1 className="course-detail-title">{title}</h1>
+
+              <div className="teacher-info">
+                <span className="teacher-initials">{getDocenteInitials(docente)}</span>
+                <span className="teacher-name">{docente === 'Por asignar' ? 'Por asignar' : `Ing. ${docente}`}</span>
+              </div>
             </div>
 
-            {/* Botón de comprar/inscribirse - Solo mostrar si NO está inscrito O si está inscrito pero el pago no está aprobado */}
-            <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-              {isPublicRoute ? (
-                <Link 
-                  to={`/payment/${courseId}`}
-                  className="btn btn-primary"
-                  style={{ 
-                    padding: '0.75rem 2rem', 
-                    fontSize: '1.1rem',
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    display: 'inline-block'
-                  }}
-                >
-                  {esPagado ? 'Comprar Curso' : 'Inscribirse Gratis'}
-                </Link>
-              ) : (
-                // Solo mostrar botón si NO está inscrito O si está inscrito pero el pago no está aprobado
-                (!isInscrito || (isInscrito && esPagado && !pagoAprobado)) && (
-                  <Link 
-                    to={`/payment/${courseId}`}
-                    className="btn btn-primary"
-                    style={{ 
-                      padding: '0.75rem 2rem', 
-                      fontSize: '1.1rem',
-                      fontWeight: 600,
-                      textDecoration: 'none',
-                      display: 'inline-block'
-                    }}
-                  >
-                    {isInscrito && esPagado && !pagoAprobado 
-                      ? 'Completar Pago' 
-                      : esPagado 
-                        ? 'Comprar Curso' 
-                        : 'Inscribirse Gratis'}
-                  </Link>
-                )
-              )}
-              {/* Mensaje si ya está inscrito y pagado */}
-              {!isPublicRoute && isInscrito && (!esPagado || pagoAprobado) && (
-                <div style={{
-                  padding: '1rem 1.5rem',
-                  background: '#d1fae5',
-                  border: '1px solid #6ee7b7',
-                  borderRadius: '8px',
-                  color: '#065f46',
-                  fontSize: '1rem',
-                  fontWeight: 500
-                }}>
-                  ✅ Ya estás inscrito en este curso
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Logo del curso */}
-          <div className="course-header-right">
-            <div className="course-logo-circle">
-              <img 
-                src={imageUrl} 
-                alt={title}
-                onError={(e) => { e.target.src = 'https://via.placeholder.com/200'; }}
-              />
+            {/* Columna derecha: Descripción */}
+            <div className="header-right">
+              <p className="course-detail-description">
+                {description}
+              </p>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Barra de progreso - solo mostrar si hay lecciones */}
-        {totalLessons > 0 && (
-          <div className="course-progress-section">
-            <div className="progress-header">
-              <h3>Progreso</h3>
-              <span className="progress-text">{completedLessons} de {totalLessons} temas completados</span>
-            </div>
-            <div className="progress-bar-large">
-              <div 
-                className="progress-bar-fill-large" 
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
+      {/* Stats Cards */}
+      <div className="course-detail-content">
+        <div className="course-summary-stats">
+          <div className="stat-item">
+            <FaBook className="stat-icon" />
+            <span>Total de actividades</span>
+            <strong>{totalActivities}</strong>
           </div>
+          <div className="stat-item">
+            <FaClock className="stat-icon" />
+            <span>Horas</span>
+            <strong>{horas}</strong>
+          </div>
+          {esPagado && (
+            <div className="stat-item">
+              <FaMoneyBill className="stat-icon" />
+              <span>Costo</span>
+              <strong>${parseFloat(costo).toFixed(2)}</strong>
+            </div>
+          )}
+          {isInscrito && totalActivities > 0 && (
+            <div className="stat-item">
+              <FaChartBar className="stat-icon" />
+              <span>Progreso</span>
+              <strong>{progressPercentage}%</strong>
+            </div>
+          )}
+        </div>
+
+        {/* Botón de inscripción/compra - Solo si NO está inscrito O pago pendiente */}
+        {hasCareerRestriction && !esAptoCarrera ? (
+          <div className="not-apt-message">
+            <div className="not-apt-title">Solo para carreras habilitadas</div>
+            <div className="not-apt-text">Este curso no está disponible para tu perfil académico.</div>
+          </div>
+        ) : (
+          <>
+            {isPublicRoute ? (
+              <Link
+                to={`/payment/${courseId}`}
+                className="btn btn-primary enrollment-btn"
+              >
+                {esPagado ? 'Comprar Curso' : 'Inscribirse Gratis'}
+              </Link>
+            ) : (
+              (!isInscrito || (isInscrito && esPagado && !pagoAprobado)) && (
+                <Link
+                  to={`/payment/${courseId}`}
+                  className="btn btn-primary enrollment-btn"
+                >
+                  {isInscrito && esPagado && !pagoAprobado
+                    ? 'Completar Pago'
+                    : esPagado
+                      ? 'Comprar Curso'
+                      : 'Inscribirse Gratis'}
+                </Link>
+              )
+            )}
+            {/* Mensaje de inscripción eliminado - el estudiante inscrito simplemente accede al material */}
+            {false && !isPublicRoute && isInscrito && (!esPagado || pagoAprobado) && (
+              <div className="enrolled-message">
+                <FaCheckCircle /> Ya estás inscrito en este curso
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Sección de Temas/Lecciones */}
-      {totalLessons > 0 && (
-        <div className="course-lessons-section">
-          <div className="lessons-header">
-            <div className="lessons-count-box">
-              <span className="lessons-icon">📚</span>
-              <div>
-                <div className="lessons-count-label">Total de temas</div>
-                <div className="lessons-count-number">{totalLessons}</div>
-              </div>
-            </div>
+      {/* Navegación por Tabs - Solo visible para estudiantes inscritos */}
+      {!isPublicRoute && isInscrito && pagoAprobado && (
+        <>
+          <CourseNavigationTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
+            showGrades={showGrades}
+            showCertificate={showCertificateTab}
+          />
+
+          {/* Contenido de los Tabs */}
+          <div className="tab-content-container">
+            {activeTab === 'material' && (
+              <MaterialTab
+                topics={topics}
+                modules={modules} // Pasamos los módulos reales
+                loading={modulesLoading}
+                eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
+                courseData={courseData}
+              />
+            )}
+            {activeTab === 'participantes' && (
+              <ParticipantesTab
+                courseData={courseData}
+                eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
+              />
+            )}
+            {activeTab === 'calificaciones' && showGrades && (
+              <CalificacionesTab
+                courseData={courseData}
+                eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
+              />
+            )}
+            {activeTab === 'asistencia' && (
+              <AsistenciaTab
+                courseData={courseData}
+              />
+            )}
+            {activeTab === 'certificado' && showCertificateTab && (
+              <CertificatePreview
+                data={certificateInfo}
+                loading={certificateLoading}
+                error={certificateError}
+                onDownload={handleDownloadCertificate}
+                canDownload={canDownloadCertificate}
+              />
+            )}
           </div>
-
-          {/* Lista de Temas */}
-          <div className="lessons-list">
-            {lessons.map((lesson) => (
-              <div 
-                key={lesson.id} 
-                className={`lesson-item ${lesson.status}`}
-              >
-                <div className="lesson-status-icon">
-                  {lesson.status === 'completed' && <span className="status-check">✓</span>}
-                  {lesson.status === 'in-progress' && <span className="status-progress">⟳</span>}
-                  {lesson.status === 'locked' && <span className="status-lock">🔒</span>}
-                </div>
-
-                <div className="lesson-content">
-                  <div className="lesson-header-row">
-                    <h4 className="lesson-title">{lesson.title}</h4>
-                    {lesson.status === 'completed' && (
-                      <span className="lesson-badge completed-badge">Completa</span>
-                    )}
-                    {lesson.status === 'in-progress' && (
-                      <span className="lesson-badge progress-badge">Iniciar</span>
-                    )}
-                  </div>
-                  {lesson.description && (
-                    <p className="lesson-description">{lesson.description}</p>
-                  )}
-                </div>
-
-                <button 
-                  className="lesson-action-btn"
-                  disabled={lesson.status === 'locked'}
-                >
-                  <span className="action-icon">👁</span>
-                  Ver
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Si no hay temas, mostrar mensaje */}
-      {totalLessons === 0 && (
-        <div className="course-lessons-section">
-          <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
-            <p>Este curso no tiene temas definidos aún.</p>
-          </div>
-        </div>
+        </>
       )}
     </div>
   );

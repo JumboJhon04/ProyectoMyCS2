@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -11,16 +12,45 @@ const configRoutes = require('./routes/configRoutes'); // NUEVA LÍNEA
 const estudiantesRoutes = require('./routes/estudiantesRoutes');
 const docentesRoutes = require('./routes/docentesRoutes');
 const pagoRoutes = require('./routes/pagoRoutes');
-
+const solicitudRoutes = require('./routes/solicitudRoutes');
+const peticionCambioRoutes = require('./routes/peticionCambioRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const reporteRoutes = require('./routes/reporteRoutes');
+const facultadCarreraRoutes = require('./routes/facultadCarrera'); // NUEVA IMPORTACIÓN
+const requisitoRoutes = require('./routes/requisitoRoutes');
+const modulosRoutes = require('./routes/modulosRoutes');
+const tareasRoutes = require('./routes/tareasRoutes');
+const evaluacionesRoutes = require('./routes/evaluacionesRoutes');
+const recursosRoutes = require('./routes/recursosRoutes');
 
 const app = express();
 
-// Middlewares
-app.use(cors());
+// Configurar CORS para producción
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5000',
+  process.env.FRONTEND_URL || 'https://proyectomycs2.netlify.app'
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Servir archivos estáticos (imágenes)
+// Servir archivos estáticos (imágenes locales antiguas - solo para migración)
+// Nuevos archivos se almacenan en Cloudinary
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Log de peticiones en desarrollo
@@ -37,8 +67,19 @@ app.use('/api/config', configRoutes); // NUEVA LÍNEA
 app.use('/api/estudiantes', estudiantesRoutes);
 app.use('/api/docentes', docentesRoutes);
 app.use('/api/pagos', pagoRoutes);
-
-
+app.use('/api/solicitudes', solicitudRoutes);
+app.use('/api/peticiones-cambio', peticionCambioRoutes);
+app.use('/api/admins', adminRoutes);
+app.use('/api/reportes', reporteRoutes);
+app.use('/api/users', require('./routes/userRoutes')); // NUEVA RUTA USUARIOS
+app.use('/api', facultadCarreraRoutes); // NUEVA RUTA
+app.use('/api', requisitoRoutes);
+app.use(cors());
+app.use(express.json());
+app.use('/api/modulos', modulosRoutes);
+app.use('/api/tareas', tareasRoutes);
+app.use('/api/evaluaciones', evaluacionesRoutes);
+app.use('/api/recursos', recursosRoutes);
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -76,4 +117,5 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Not Found', path: req.path });
 });
 
+module.exports = app;
 module.exports = app;

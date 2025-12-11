@@ -1,6 +1,8 @@
+
 const { pool } = require('../config/database');
 console.log('📧 Cargando emailService desde pagoController...');
 const { enviarEmailPagoAprobado } = require('../services/emailService');
+const { buildImageUrl } = require('../utils/imageUrlHelper');
 console.log('📧 emailService cargado, función disponible:', typeof enviarEmailPagoAprobado);
 
 // Obtener todos los métodos de pago disponibles
@@ -57,10 +59,10 @@ const crearPago = async (req, res) => {
       });
     }
 
-    // Guardar comprobante si existe
+    // Guardar comprobante si existe (Cloudinary ya subió el archivo)
     let comprobanteUrl = null;
     if (comprobanteFile) {
-      comprobanteUrl = `uploads/pagos/${comprobanteFile.filename}`;
+      comprobanteUrl = comprobanteFile.path; // URL de Cloudinary
     }
 
     // Crear el pago
@@ -123,10 +125,9 @@ const obtenerPagosPorInscripcion = async (req, res) => {
       [inscripcionId]
     );
 
-    const hostPrefix = `${req.protocol}://${req.get('host')}`;
     const data = rows.map(p => ({
       ...p,
-      COMPROBANTE_URL: p.COMPROBANTE_URL ? `${hostPrefix}/${p.COMPROBANTE_URL}` : null
+      COMPROBANTE_URL: buildImageUrl(p.COMPROBANTE_URL, req)
     }));
 
     res.json({ success: true, data });
@@ -299,10 +300,9 @@ const obtenerPagosPendientes = async (req, res) => {
        ORDER BY p.FECHA_PAGO DESC`
     );
 
-    const hostPrefix = `${req.protocol}://${req.get('host')}`;
     const data = rows.map(p => ({
       ...p,
-      COMPROBANTE_URL: p.COMPROBANTE_URL ? `${hostPrefix}/${p.COMPROBANTE_URL}` : null
+      COMPROBANTE_URL: buildImageUrl(p.COMPROBANTE_URL, req)
     }));
 
     res.json({ success: true, data });
@@ -502,4 +502,3 @@ module.exports = {
   obtenerPagosPendientes,
   obtenerConteoPagosPendientes
 };
-
