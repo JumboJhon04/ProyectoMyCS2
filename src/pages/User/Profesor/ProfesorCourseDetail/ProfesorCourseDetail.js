@@ -533,7 +533,8 @@ const ProfesorCourseDetail = () => {
       )}
       {showPreview && <FilePreview fileUrl={previewFile.url} fileName={previewFile.name} onClose={() => setShowPreview(false)} />}
 
-      <button className="fab-profesor" onClick={() => setShowModal(true)}><FaPlus /></button>
+      <button className="fab-profesor" aria-label="Crear módulo" onClick={() => setShowModal(true)}><FaPlus /></button>
+      <div className="fab-profesor-label">Crear módulo</div>
     </div>
   );
 };

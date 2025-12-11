@@ -178,6 +178,36 @@ const crearEvento = async (req, res) => {
       console.log('✅ Responsable asociado en organizador_evento:', responsableId);
     }
 
+    // 🎯 NUEVO: Guardar módulos en tabla relacional
+    if (modules) {
+      let modulesArray = [];
+      if (typeof modules === 'string') {
+        try {
+          modulesArray = JSON.parse(modules);
+        } catch (e) {
+          modulesArray = [];
+        }
+      } else if (Array.isArray(modules)) {
+        modulesArray = modules;
+      }
+
+      // Insertar módulos con orden
+      for (let orden = 0; orden < modulesArray.length; orden++) {
+        const mod = modulesArray[orden];
+        if (mod.name && mod.name.trim()) {
+          const descripcion = mod.description || '';
+          const estado = mod.estado || 'ACTIVO';
+          
+          await connection.execute(
+            `INSERT INTO modulo (SECUENCIALEVENTO, TITULO, DESCRIPCION, ORDEN, ESTADO) 
+             VALUES (?, ?, ?, ?, ?)`,
+            [eventoId, mod.name, descripcion, orden + 1, estado]
+          );
+        }
+      }
+      console.log(`✅ ${modulesArray.length} módulos guardados`);
+    }
+
     // Guardar imagen (Cloudinary ya subió el archivo)
     const imageUrl = req.file.path; // URL de Cloudinary
     const [imagenResult] = await connection.execute(
@@ -499,6 +529,39 @@ const actualizarEvento = async (req, res) => {
         }
       }
       console.log('✅ Requisitos actualizados');
+    }
+
+    // 🎯 NUEVO: Actualizar módulos en tabla relacional
+    if (modules) {
+      // Borrar módulos anteriores
+      await connection.execute('DELETE FROM modulo WHERE SECUENCIALEVENTO = ?', [eventoId]);
+
+      let modulesArray = [];
+      if (typeof modules === 'string') {
+        try {
+          modulesArray = JSON.parse(modules);
+        } catch (e) {
+          modulesArray = [];
+        }
+      } else if (Array.isArray(modules)) {
+        modulesArray = modules;
+      }
+
+      // Insertar nuevos módulos con orden
+      for (let orden = 0; orden < modulesArray.length; orden++) {
+        const mod = modulesArray[orden];
+        if (mod.name && mod.name.trim()) {
+          const descripcion = mod.description || '';
+          const estado = mod.estado || 'ACTIVO';
+          
+          await connection.execute(
+            `INSERT INTO modulo (SECUENCIALEVENTO, TITULO, DESCRIPCION, ORDEN, ESTADO) 
+             VALUES (?, ?, ?, ?, ?)`,
+            [eventoId, mod.name, descripcion, orden + 1, estado]
+          );
+        }
+      }
+      console.log('✅ Módulos actualizados en tabla relacional');
     }
 
     // Actualizar imagen si existe

@@ -19,23 +19,24 @@
 
 .filter-chip {
   background: #f3f4f6;
-  border: 1px solid #dfe6ea;
+  border: 1px solid #ddd;
   border-radius: 20px;
   padding: 6px 18px;
   font-size: 15px;
   cursor: pointer;
   transition: background 0.2s, border 0.2s;
-  color: #222;
+  color: #333;
 }
 
 .filter-chip.selected {
-  background: #202527;
+  background: #333;
   color: #fff;
-  border-color: #202527;
+  border-color: #333;
 }
 
 .filter-chip:hover {
-  background: #e0e7ef;
+  background: #e5e5e5;
+  border-color: #999;
 }
 
 .course-type {
@@ -55,7 +56,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .course-apt-badge {
@@ -65,19 +67,27 @@
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.2px;
-  background: #e6f7ed;
-  color: #0f5132;
-  border: 1px solid #b9e5c8;
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .not-apt-note {
-  font-size: 0.85rem;
-  color: #b91c1c;
-  background: #fef2f2;
-  border: 1px solid #fecdd3;
+  font-size: 0.8rem;
+  color: #a33;
+  background: #fbf2f2;
+  border: 1px solid #e5c7c7;
   border-radius: 6px;
-  padding: 6px 10px;
+  padding: 4px 8px;
   font-weight: 600;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .course-apt-badge.not-eligible {
@@ -88,12 +98,16 @@
 
 .enrolled-badge {
   display: inline-block;
-  padding: 6px 12px;
-  background-color: #e0e7ff;
-  color: #4338ca;
+  padding: 5px 10px;
+  background-color: #f3f4f6;
+  color: #333;
   border-radius: 4px;
   font-size: 0.85rem;
   font-weight: 600;
   text-align: center;
-  border: 1px solid #c7d2fe;
+  border: 1px solid #ddd;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

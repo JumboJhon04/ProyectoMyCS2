@@ -1,7 +1,7 @@
 :root {
-  --color-primary: #667eea;
+  --color-primary: #333333;
   --color-secondary: #51cf66;
-  --color-tertiary: #845ef7;
+  --color-tertiary: #555555;
 }
 
 .landing-root {
@@ -73,12 +73,12 @@
 }
 
 .btn-primary {
-  background: var(--color-primary);
+  background: #333;
   color: #fff;
 }
 
 .btn-primary:hover {
-  background: var(--color-tertiary);
+  background: #555;
   box-shadow: 0 6px 16px rgba(0,0,0,0.2);
 }
 
@@ -154,8 +154,41 @@
   border-radius: 8px; 
 }
 
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .landing-nav .nav-inner {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .landing-nav .logo { flex: 1 1 auto; }
+  .landing-nav .nav-links {
+    order: 3;
+    width: 100%;
+    display: none;
+    justify-content: center;
+    padding: 8px 0;
+  }
+  .landing-nav.nav-open .nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .landing-nav .nav-links a {
+    padding: 6px 10px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background: #fafafa;
+  }
+  .right-controls { order: 2; }
+  .user-chip { padding: 6px 8px; }
+  .user-chip-avatar { width: 30px; height: 30px; }
+  .user-chip-name { max-width: 120px; }
+  .user-chip-menu { left: 0; top: calc(100% + 6px); min-width: 180px; }
+  .hamburger { display: inline-flex; }
+}
+
 .user-chip {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 10px;
   padding: 6px 10px;
@@ -176,17 +209,17 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #111827;
+  background: #333;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 12px;
   overflow: hidden;
   flex-shrink: 0;
   border: 2px solid #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .user-chip-avatar img {
@@ -205,20 +238,22 @@
   text-overflow: ellipsis;
 }
 
+.right-controls .nav-actions { position: relative; }
+
 .user-chip-menu {
   position: absolute;
-  right: 16px;
-  top: 64px;
+  left: 0;
+  top: calc(100% + 8px);
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.12);
   padding: 10px 0;
   min-width: 200px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  z-index: 120;
+  z-index: 1000;
 }
 
 .user-chip-menu a,
@@ -412,16 +447,16 @@
   max-width: 1100px; 
   margin: 0 auto; 
   display: grid; 
-  grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); 
-  gap: 18px; 
-  padding: 0 16px; 
+  grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); 
+  gap: 16px; 
+  padding: 0 12px; 
 }
 
 .course-card { 
   background: #fff; 
-  border: 2px solid transparent; 
-  box-shadow: 0 4px 12px rgba(0,0,0,0.04); 
-  border-radius: 12px; 
+  border: 1px solid #ddd; 
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
+  border-radius: 10px; 
   overflow: hidden; 
   display: flex; 
   flex-direction: column;
@@ -437,9 +472,9 @@
 .course-card:nth-child(6) { animation-delay: 0.6s; }
 
 .course-card:hover { 
-  transform: translateY(-8px);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.12);
-  border-color: var(--color-primary);
+  transform: translateY(-6px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  border-color: #333;
 }
 
 .course-image-wrap {
@@ -464,7 +499,7 @@
 
 .course-image-wrap img { 
   width: 100%; 
-  height: 200px; 
+  height: 180px; 
   object-fit: cover; 
   display: block;
   transition: transform 0.5s ease;
@@ -475,74 +510,84 @@
 }
 
 .course-body { 
-  padding: 12px; 
+  padding: 16px; 
   flex: 1; 
   display: flex; 
   flex-direction: column; 
+  gap: 8px;
 }
 
 .course-title { 
   margin: 0 0 8px; 
   font-size: 16px;
+  font-weight: 600;
+  color: #333;
   transition: color 0.3s ease;
 }
 
 .course-card:hover .course-title {
-  color: #1a1a1a;
+  color: #000;
 }
 
 .course-desc { 
   flex: 1; 
   color: #666; 
-  font-size: 13px; 
-  margin-bottom: 12px; 
+  font-size: 14px; 
+  margin-bottom: 12px;
+  line-height: 1.4;
 }
 
 .course-meta { 
   display: flex; 
   align-items: center; 
   justify-content: space-between; 
+  margin-top: 6px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .course-price { 
   font-weight: 700; 
-  color: var(--color-secondary);
+  color: #333;
   font-size: 18px;
   transition: transform 0.3s ease;
 }
 
 .course-card:hover .course-price {
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .course-actions { 
   display: flex; 
-  gap: 12px; 
+  gap: 8px; 
   align-items: center; 
+  flex-wrap: wrap;
 }
 
 .course-actions .btn { 
   margin-left: 0; 
+  white-space: nowrap;
 }
 
 .btn.small { 
-  padding: 8px 10px; 
+  padding: 7px 10px; 
   font-size: 13px; 
   border-radius: 6px; 
-  background: rgba(102, 126, 234, 0.1);
-  border: 1px solid var(--color-primary);
-  color: var(--color-primary);
-  transition: all 0.3s ease;
+  background: #f3f4f6;
+  border: 1px solid #ddd;
+  color: #333;
+  transition: all 0.2s ease;
 }
 
 .btn.small:hover {
-  background: var(--color-primary);
-  color: #fff;
+  background: #e9e9e9;
+  color: #111;
 }
 
 .btn.small.primary { 
-  background: var(--color-primary); 
+  background: #333; 
   color: #fff; 
+  border-color: #333;
 }
 
 /* TESTIMONIALS */
@@ -561,13 +606,13 @@
 }
 
 .testi-card { 
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(132, 94, 247, 0.05) 100%); 
-  border-radius: 12px; 
+  background: linear-gradient(135deg, rgba(51, 51, 51, 0.05) 0%, rgba(85, 85, 85, 0.05) 100%); 
+  border-radius: 10px; 
   padding: 18px; 
   text-align: center;
   transition: all 0.3s ease;
   animation: fadeInUp 0.6s ease backwards;
-  border: 2px solid transparent;
+  border: 1px solid #ddd;
 }
 
 .testi-card:nth-child(1) { animation-delay: 0.1s; }
@@ -576,19 +621,23 @@
 
 .testi-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-  border-color: var(--color-tertiary);
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(132, 94, 247, 0.1) 100%);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  border-color: #333;
+  background: linear-gradient(135deg, rgba(51, 51, 51, 0.1) 0%, rgba(85, 85, 85, 0.1) 100%);
 }
 
 .testi-avatar { 
   width: 64px; 
   height: 64px; 
   border-radius: 50%; 
-  background: #dfeef6; 
+  background: #e8e8e8; 
   margin: 0 auto 8px;
   transition: transform 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .testi-card:hover .testi-avatar {

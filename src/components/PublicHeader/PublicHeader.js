@@ -16,27 +16,30 @@ export default function PublicHeader() {
     ]
   });
   const { user, setUser } = useUser();
+  const storedUser = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; }
+  }, []);
 
   const isAuthenticated = useMemo(() => {
-    if (user) return true;
+    if (user || storedUser) return true;
     return localStorage.getItem('isAuthenticated') === 'true' && !!localStorage.getItem('user');
-  }, [user]);
+  }, [user, storedUser]);
 
   const displayName = useMemo(() => {
-    const u = user || JSON.parse(localStorage.getItem('user') || 'null');
+    const u = user || storedUser;
     if (!u) return '';
     return u.nombres || u.NOMBRES || u.nombre || u.name || u.correo || u.email || 'Mi cuenta';
-  }, [user]);
+  }, [user, storedUser]);
 
   const dashboardPath = useMemo(() => {
-    const u = user || JSON.parse(localStorage.getItem('user') || 'null');
+    const u = user || storedUser;
     const rol = u?.codigoRol || u?.CODIGOROL;
     if (rol === 'ADM') return '/admin/panel';
     if (rol === 'RES') return '/responsable/profile';
     if (rol === 'DOC') return '/profesor/panel';
     if (rol === 'EST') return '/user/panel';
     return '/';
-  }, [user]);
+  }, [user, storedUser]);
 
   const userInitials = useMemo(() => {
     const name = displayName || '';
@@ -47,10 +50,10 @@ export default function PublicHeader() {
   }, [displayName]);
 
   const userPhoto = useMemo(() => {
-    const u = user || JSON.parse(localStorage.getItem('user') || 'null');
+    const u = user || storedUser;
     if (!u) return null;
     return u.fotoPerfil || u.FOTO_PERFIL || u.foto || null;
-  }, [user]);
+  }, [user, storedUser]);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -91,7 +94,7 @@ export default function PublicHeader() {
       <div className="nav-inner">
         <div className="logo">{headerConfig.siteName}</div>
 
-        <nav className="nav-links" onClick={closeMenu}>
+        <nav className="nav-links" onClick={closeMenu} style={{ display: 'flex', gap: '14px', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
           {headerConfig.menuItems?.map((item, idx) => (
             <Link key={idx} to={item.link}>{item.label}</Link>
           ))}
@@ -100,11 +103,11 @@ export default function PublicHeader() {
           <div className="nav-actions">
             {isAuthenticated ? (
               <div className="user-chip" onClick={() => setUserMenuOpen(prev => !prev)}>
-                <div className="user-chip-avatar" style={{ overflow: 'hidden', background: '#e0e0e0' }}>
+                <div className="user-chip-avatar" style={{ overflow: 'hidden', background: '#e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {userPhoto ? (
                     <img src={userPhoto} alt="Foto de perfil" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                   ) : (
-                    <span>{userInitials}</span>
+                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>{userInitials}</span>
                   )}
                 </div>
                 <div className="user-chip-name">{displayName}</div>

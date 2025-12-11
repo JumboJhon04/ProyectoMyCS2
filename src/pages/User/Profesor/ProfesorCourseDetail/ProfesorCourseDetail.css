@@ -495,7 +495,7 @@
 /* Floating Action Button (FAB) */
 .fab-profesor {
     position: fixed;
-    bottom: 2rem;
+    bottom: 6rem; /* Elevado para no tapar el FAB del formulario */
     right: 2rem;
     width: 56px;
     height: 56px;
@@ -510,7 +510,23 @@
     justify-content: center;
     font-size: 1.5rem;
     transition: all 0.3s ease;
-    z-index: 100;
+    z-index: 3000; /* Por encima de modales y otros FAB */
+}
+
+/* Label para el FAB */
+.fab-profesor-label {
+    position: fixed;
+    bottom: calc(6rem + 64px);
+    right: 2rem;
+    background: #ffffff;
+    color: #333;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    z-index: 3000;
 }
 
 .fab-profesor:hover {
