@@ -687,7 +687,13 @@ const obtenerEventosResponsable = async (req, res) => {
         e.ESTADO,
         e.Docente,
         CONCAT(u.NOMBRES, ' ', u.APELLIDOS) as NOMBRE_DOCENTE,
-        (SELECT AVG(CAST(i.NOTA as FLOAT)) FROM inscripcion i WHERE i.SECUENCIALEVENTO = e.SECUENCIAL AND i.CODIGOESTADOINSCRIPCION='ACE') as PROMEDIO_GENERAL,
+        (
+          SELECT AVG(et.CALIFICACION)
+          FROM entrega_tarea et
+          INNER JOIN tarea t ON et.SECUENCIALTAREA = t.SECUENCIAL
+          INNER JOIN modulo m ON t.SECUENCIALMODULO = m.SECUENCIAL
+          WHERE m.SECUENCIALEVENTO = e.SECUENCIAL
+        ) as PROMEDIO_GENERAL,
         MAX(ie.URL_IMAGEN) as URL_IMAGEN
        FROM organizador_evento oe
        INNER JOIN evento e ON oe.SECUENCIALEVENTO = e.SECUENCIAL
@@ -1155,6 +1161,128 @@ const finalizarEvento = async (req, res) => {
   }
 };
 
+// 9. Obtener Reporte Detallado (Estudiantes + Tareas + Notas)
+const obtenerReporteDetallado = async (req, res) => {
+    const { id } = req.params;
+    try {
+        // 1. Obtener Estudiantes Inscritos
+        const [estudiantes] = await pool.execute(
+            `SELECT 
+                u.SECUENCIAL as usuarioId,
+                u.NOMBRES,
+                u.APELLIDOS,
+                u.CEDULA,
+                u.CORREO,
+                i.ASISTENCIA,
+                i.NOTA,
+                i.CODIGOESTADOINSCRIPCION
+             FROM inscripcion i
+             INNER JOIN usuario u ON i.SECUENCIALUSUARIO = u.SECUENCIAL
+             WHERE i.SECUENCIALEVENTO = ? AND i.CODIGOESTADOINSCRIPCION = 'ACE'
+             ORDER BY u.APELLIDOS ASC`,
+            [id]
+        );
+
+        // 3. Obtener Tareas (Deberes)
+        const [tareas] = await pool.execute(
+            `SELECT 
+                t.SECUENCIAL,
+                t.TITULO,
+                t.PUNTOS_MAXIMOS,
+                'TAREA' as TIPO
+             FROM tarea t
+             INNER JOIN modulo m ON t.SECUENCIALMODULO = m.SECUENCIAL
+             WHERE m.SECUENCIALEVENTO = ?
+             ORDER BY m.SECUENCIAL ASC, t.FECHA_LIMITE ASC`,
+            [id]
+        );
+
+        // 4. Obtener Evaluaciones (Exámenes)
+        const [evaluaciones] = await pool.execute(
+            `SELECT 
+                e.SECUENCIAL,
+                e.TITULO,
+                'EXAMEN' as TIPO
+             FROM evaluacion e
+             INNER JOIN modulo m ON e.SECUENCIALMODULO = m.SECUENCIAL
+             WHERE m.SECUENCIALEVENTO = ?
+             ORDER BY m.SECUENCIAL ASC, e.FECHA_INICIO ASC`,
+            [id]
+        );
+
+        // 5. Obtener Entregas Tareas
+        const [entregas] = await pool.execute(
+            `SELECT 
+                et.SECUENCIALESTUDIANTE,
+                et.SECUENCIALTAREA,
+                et.CALIFICACION
+             FROM entrega_tarea et
+             INNER JOIN tarea t ON et.SECUENCIALTAREA = t.SECUENCIAL
+             INNER JOIN modulo m ON t.SECUENCIALMODULO = m.SECUENCIAL
+             WHERE m.SECUENCIALEVENTO = ?`,
+            [id]
+        );
+
+        // 6. Obtener Intentos Evaluaciones (Notas Exámenes)
+        const [intentos] = await pool.execute(
+            `SELECT 
+                ie.SECUENCIALESTUDIANTE,
+                ie.SECUENCIALEVALUACION,
+                ie.CALIFICACION_FINAL as CALIFICACION
+             FROM intento_evaluacion ie
+             INNER JOIN evaluacion e ON ie.SECUENCIALEVALUACION = e.SECUENCIAL
+             INNER JOIN modulo m ON e.SECUENCIALMODULO = m.SECUENCIAL
+             WHERE m.SECUENCIALEVENTO = ?`,
+            [id]
+        );
+
+        // 7. Estructurar Datos
+        const gradesMap = {};
+        
+        // Mapear Tareas
+        entregas.forEach(e => {
+            if (!gradesMap[e.SECUENCIALESTUDIANTE]) gradesMap[e.SECUENCIALESTUDIANTE] = {};
+            gradesMap[e.SECUENCIALESTUDIANTE][`T-${e.SECUENCIALTAREA}`] = e.CALIFICACION;
+        });
+
+        // Mapear Exámenes
+        intentos.forEach(i => {
+            if (!gradesMap[i.SECUENCIALESTUDIANTE]) gradesMap[i.SECUENCIALESTUDIANTE] = {};
+            gradesMap[i.SECUENCIALESTUDIANTE][`E-${i.SECUENCIALEVALUACION}`] = i.CALIFICACION;
+        });
+
+        // Combinar Todo
+        const evaluables = [
+            ...tareas.map(t => ({ ...t, ID_REF: `T-${t.SECUENCIAL}` })), 
+            ...evaluaciones.map(e => ({ ...e, ID_REF: `E-${e.SECUENCIAL}`, PUNTOS_MAXIMOS: 10 })) // Asumimos 10 por defecto para exámenes si no hay campo
+        ];
+
+        const data = estudiantes.map(student => {
+            const studentGrades = {};
+            evaluables.forEach(item => {
+                studentGrades[item.ID_REF] = gradesMap[student.usuarioId]?.[item.ID_REF] || 0;
+            });
+
+            return {
+                ...student,
+                grades: studentGrades
+            };
+        });
+
+        res.json({
+            success: true,
+            data: {
+                students: data,
+                evaluables: evaluables // Lista unificada de Tareas y Exámenes
+            }
+        });
+
+    } catch (error) {
+        console.error('Error al generar reporte detallado:', error);
+        res.status(500).json({ error: 'Error al generar reporte detallado' });
+    }
+};
+
 module.exports = {
   crearEvento,
   obtenerEventos,
@@ -1170,5 +1298,6 @@ module.exports = {
   obtenerTiposEvento,
   obtenerInscritosEvento,
   actualizarNotas,
-  finalizarEvento
+  finalizarEvento,
+  obtenerReporteDetallado
 };

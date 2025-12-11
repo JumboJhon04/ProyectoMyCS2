@@ -21,4 +21,10 @@ router.put('/calificar/:entregaId', tareasController.calificarEntrega);
 // Nueva ruta: Obtener entregas de un estudiante en un evento específico
 router.get('/estudiante/:estudianteId/evento/:eventoId', tareasController.listarEntregasPorEstudiante);
 
+// Nueva ruta: Obtener todas las tareas de un evento (para cabeceras de reporte)
+router.get('/evento/:eventoId', tareasController.listarTareasPorEvento);
+
+// Nueva ruta: Obtener todas las entregas de un evento
+router.get('/evento/:eventoId/entregas', tareasController.listarEntregasPorEvento);
+
 module.exports = router;

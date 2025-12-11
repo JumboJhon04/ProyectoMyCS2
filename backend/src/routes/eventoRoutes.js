@@ -16,7 +16,8 @@ const {
   obtenerTiposEvento,
   obtenerInscritosEvento, // New
   actualizarNotas,        // New
-  finalizarEvento         // New
+  finalizarEvento,        // New
+  obtenerReporteDetallado // New
 } = require('../controllers/eventoController');
 
 // Rutas
@@ -38,6 +39,7 @@ router.put('/:id/imagen', uploadEventos.single('image'), actualizarImagenEvento)
 
 // Rutas de Calificaciones y Finalización (Close Course)
 router.get('/:id/inscritos', obtenerInscritosEvento);
+router.get('/:id/reporte-detallado', obtenerReporteDetallado); // New Optimized Route
 router.put('/:id/notas', actualizarNotas); // Sin upload middleware
 router.put('/:id/finalizar', finalizarEvento);
 
