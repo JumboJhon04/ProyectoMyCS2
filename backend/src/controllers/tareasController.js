@@ -165,3 +165,45 @@ exports.listarEntregasPorEstudiante = async (req, res) => {
         res.status(500).json({ success: false, message: 'Error al listar entregas' });
     }
 };
+
+// 8. Listar TODAS las tareas de un Evento (para reportes y headers)
+exports.listarTareasPorEvento = async (req, res) => {
+    const { eventoId } = req.params;
+    try {
+        const [tareas] = await pool.execute(
+            `SELECT 
+                t.*
+             FROM tarea t
+             INNER JOIN modulo m ON t.SECUENCIALMODULO = m.SECUENCIAL
+             WHERE m.SECUENCIALEVENTO = ?
+             ORDER BY m.SECUENCIAL ASC, t.FECHA_LIMITE ASC`,
+            [eventoId]
+        );
+    } catch (error) {
+        console.error("❌ Error listando tareas del evento:", error);
+        res.status(500).json({ success: false, message: 'Error al listar tareas del evento' });
+    }
+};
+
+// 9. Listar TODAS las entregas de un Evento (para el reporte de notas masivo)
+exports.listarEntregasPorEvento = async (req, res) => {
+    const { eventoId } = req.params;
+    try {
+        const [entregas] = await pool.execute(
+            `SELECT 
+                et.SECUENCIALESTUDIANTE,
+                et.SECUENCIALTAREA,
+                et.CALIFICACION,
+                et.ESTADO
+             FROM entrega_tarea et
+             INNER JOIN tarea t ON et.SECUENCIALTAREA = t.SECUENCIAL
+             INNER JOIN modulo m ON t.SECUENCIALMODULO = m.SECUENCIAL
+             WHERE m.SECUENCIALEVENTO = ?`,
+            [eventoId]
+        );
+        res.json({ success: true, data: entregas });
+    } catch (error) {
+        console.error("❌ Error listando entregas del evento:", error);
+        res.status(500).json({ success: false, message: 'Error al listar entregas del evento' });
+    }
+};
