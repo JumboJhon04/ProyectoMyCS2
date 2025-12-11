@@ -316,6 +316,18 @@ const actualizarEvento = async (req, res) => {
 
     console.log('📝 Actualizando evento ID:', eventoId);
     console.log('👨‍🏫 Docente:', docente);
+
+    // Verificar estado actual del evento
+    const [currentEvent] = await connection.execute('SELECT ESTADO FROM evento WHERE SECUENCIAL = ?', [eventoId]);
+    if (currentEvent.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+
+    if (currentEvent[0].ESTADO === 'FINALIZADO') {
+        await connection.rollback();
+        return res.status(403).json({ error: 'No se puede editar un evento finalizado.' });
+    }
     
     // if (!title || !type) {
     if (!title) {
@@ -669,16 +681,19 @@ const obtenerEventosResponsable = async (req, res) => {
         e.ASISTENCIAMINIMA,
         e.FECHAINICIO,
         e.FECHAFIN,
+        e.ESTADO,
         e.Docente,
-        e.Docente,
+        CONCAT(u.NOMBRES, ' ', u.APELLIDOS) as NOMBRE_DOCENTE,
+        (SELECT AVG(CAST(i.NOTA as FLOAT)) FROM inscripcion i WHERE i.SECUENCIALEVENTO = e.SECUENCIAL AND i.CODIGOESTADOINSCRIPCION='ACE') as PROMEDIO_GENERAL,
         MAX(ie.URL_IMAGEN) as URL_IMAGEN
        FROM organizador_evento oe
        INNER JOIN evento e ON oe.SECUENCIALEVENTO = e.SECUENCIAL
        LEFT JOIN categoria_evento ce ON e.SECUENCIALCATEGORIA = ce.SECUENCIAL
        LEFT JOIN tipo_evento te ON e.CODIGOTIPOEVENTO = te.CODIGO
        LEFT JOIN imagen_evento ie ON ie.SECUENCIALEVENTO = e.SECUENCIAL AND ie.TIPO_IMAGEN = 'PORTADA'
+       LEFT JOIN usuario u ON e.Docente = u.SECUENCIAL
        WHERE oe.SECUENCIALUSUARIO = ?
-       GROUP BY e.SECUENCIAL, te.NOMBRE
+       GROUP BY e.SECUENCIAL, te.NOMBRE, u.NOMBRES, u.APELLIDOS
        ORDER BY e.SECUENCIAL DESC`,
       [id]
     );
@@ -956,6 +971,99 @@ const obtenerTiposEvento = async (req, res) => {
   }
 };
 
+
+// NUEVO: Obtener inscritos con notas
+const obtenerInscritosEvento = async (req, res) => {
+  const eventoId = req.params.id;
+  try {
+    const [rows] = await pool.execute(
+      `SELECT 
+        i.SECUENCIAL as inscripcionId,
+        u.SECUENCIAL as usuarioId,
+        u.NOMBRES,
+        u.APELLIDOS,
+        u.CORREO,
+        u.CEDULA,
+        i.NOTA,
+        i.ASISTENCIA,
+        i.CODIGOESTADOINSCRIPCION,
+        i.FECHAINSCRIPCION
+       FROM inscripcion i
+       INNER JOIN usuario u ON i.SECUENCIALUSUARIO = u.SECUENCIAL
+       INNER JOIN evento e ON i.SECUENCIALEVENTO = e.SECUENCIAL
+       WHERE i.SECUENCIALEVENTO = ? 
+         AND i.CODIGOESTADOINSCRIPCION = 'ACE'
+         AND i.SECUENCIALUSUARIO != e.Docente
+       ORDER BY u.APELLIDOS ASC`,
+      [eventoId]
+    );
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('❌ Error al obtener inscritos:', error);
+    res.status(500).json({ error: 'Error al obtener inscritos' });
+  }
+};
+
+// NUEVO: Actualizar notas masivamente
+const actualizarNotas = async (req, res) => {
+  const eventoId = req.params.id;
+  const { grades } = req.body; // Array de { usuarioId, nota, asistencia }
+  
+  if (!Array.isArray(grades)) {
+    return res.status(400).json({ error: 'Formato de notas inválido' });
+  }
+
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    // Verificamos si el evento está cerrado
+    const [evt] = await connection.execute('SELECT ESTADO FROM evento WHERE SECUENCIAL = ?', [eventoId]);
+    if (evt.length > 0 && evt[0].ESTADO === 'FINALIZADO') {
+      await connection.rollback();
+      return res.status(403).json({ error: 'El evento está finalizado y no se pueden editar notas.' });
+    }
+
+    for (const g of grades) {
+      await connection.execute(
+        `UPDATE inscripcion SET NOTA = ?, ASISTENCIA = ? 
+         WHERE SECUENCIALEVENTO = ? AND SECUENCIALUSUARIO = ?`,
+        [g.nota, g.asistencia, eventoId, g.usuarioId]
+      );
+    }
+    
+    await connection.commit();
+    res.json({ success: true, message: 'Notas actualizadas correctamente' });
+  } catch (error) {
+    if (connection) await connection.rollback();
+    console.error('❌ Error al actualizar notas:', error);
+    res.status(500).json({ error: 'Error al actualizar notas' });
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
+// NUEVO: Finalizar evento
+const finalizarEvento = async (req, res) => {
+  const eventoId = req.params.id;
+  try {
+    const [result] = await pool.execute(
+      "UPDATE evento SET ESTADO = 'FINALIZADO' WHERE SECUENCIAL = ?",
+      [eventoId]
+    );
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+    
+    res.json({ success: true, message: 'Evento finalizado correctamente' });
+  } catch (error) {
+    console.error('❌ Error al finalizar evento:', error);
+    res.status(500).json({ error: 'Error al finalizar evento' });
+  }
+};
+
 module.exports = {
   crearEvento,
   obtenerEventos,
@@ -968,5 +1076,8 @@ module.exports = {
   actualizarImagenEvento,
   obtenerEventosFiltrados,
   obtenerCategoriasEvento,
-  obtenerTiposEvento
+  obtenerTiposEvento,
+  obtenerInscritosEvento,
+  actualizarNotas,
+  finalizarEvento
 };

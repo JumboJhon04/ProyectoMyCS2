@@ -4,9 +4,19 @@ import { useUser } from '../../../context/UserContext';
 import './EventoResponsable.css';
 import NewEventModal from './NewEventModal';
 
+import GradesModal from './GradesModal';
+
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
 const EventoResponsable = () => {
   const { courses, loading, error, deleteCourse, fetchCourses } = useCourses();
   const { user } = useUser();
+  
+  // Modal states
+  const [showModal, setShowModal] = useState(false);
+  const [showGradesModal, setShowGradesModal] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
 
   useEffect(() => {
     const responsableId = user?.id || user?.SECUENCIAL;
@@ -24,12 +34,38 @@ const EventoResponsable = () => {
     }
   };
 
-  const [showModal, setShowModal] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState(null);
-
   const handleEdit = (course) => {
     setSelectedCourse(course);
     setShowModal(true);
+  };
+
+  const handleGrades = (course) => {
+    setSelectedCourse(course);
+    setShowGradesModal(true);
+  };
+
+  const generateGeneralReport = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('Reporte General de Cursos', 14, 20);
+    doc.setFontSize(12);
+    doc.text(`Responsable: ${user?.nombres || ''} ${user?.apellidos || ''}`, 14, 30);
+
+    const bodyData = courses.map(c => [
+        c.title,
+        c.NOMBRE_DOCENTE || 'No asignado',
+        c.PROMEDIO_GENERAL ? Number(c.PROMEDIO_GENERAL).toFixed(2) : '0.00'
+    ]);
+
+    autoTable(doc, {
+        head: [['Nombre del Curso', 'Docente Encargado', 'Nota Promedio']],
+        body: bodyData,
+        startY: 40,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] }
+    });
+    
+    doc.save('reporte_general_cursos.pdf');
   };
 
   if (loading) {
@@ -45,6 +81,12 @@ const EventoResponsable = () => {
       <main className="main-content2">
 
         <div className="content-area">
+          <div style={{display: 'flex', justifyContent: 'flex-end', marginBottom: '20px'}}>
+             <button onClick={generateGeneralReport} className="btn-primary" style={{padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+               📄 Generar Reporte General
+             </button>
+          </div>
+
           {courses.length === 0 ? (
             <div className="empty-state">
               <p>No hay eventos disponibles</p>
@@ -64,6 +106,9 @@ const EventoResponsable = () => {
                       className="edit-btn" 
                       onClick={() => handleEdit(course)}
                       aria-label="Editar curso"
+                      disabled={course.ESTADO === 'FINALIZADO'}
+                      style={course.ESTADO === 'FINALIZADO' ? { opacity: 0.5, cursor: 'not-allowed', background: '#ccc' } : {}}
+                      title={course.ESTADO === 'FINALIZADO' ? 'El curso está finalizado y no se puede editar' : 'Editar curso'}
                     >
                       Editar
                     </button>
@@ -88,6 +133,13 @@ const EventoResponsable = () => {
                       <span className="course-price">
                         ${Number(course.price || 0).toFixed(2)}
                       </span>
+                      <button 
+                        className="btn-text" 
+                        onClick={() => handleGrades(course)}
+                        style={{fontSize:'0.8rem', marginLeft:'auto', marginRight:'10px'}}
+                      >
+                        {course.ESTADO === 'FINALIZADO' ? '📜 Reporte' : '📝 Notas'}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -100,6 +152,14 @@ const EventoResponsable = () => {
             isOpen={showModal}
             onClose={() => { setShowModal(false); setSelectedCourse(null); }}
             course={selectedCourse}
+          />
+        )}
+        {showGradesModal && (
+          <GradesModal
+            isOpen={showGradesModal}
+            onClose={() => { setShowGradesModal(false); setSelectedCourse(null); }}
+            course={selectedCourse}
+            user={user}
           />
         )}
       </main>

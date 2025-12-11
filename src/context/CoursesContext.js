@@ -152,7 +152,10 @@ export const CoursesProvider = ({ children }) => {
         NOMBRE_TIPO_EVENTO: evento.NOMBRE_TIPO_EVENTO,
         CONTENIDO: evento.CONTENIDO, // Pass raw content for Modal parsing if needed
         categoryId: evento.SECUENCIALCATEGORIA, // Alias for consistencym
-        REQUISITOS: evento.REQUISITOS || [] // Pass Requirements properly
+        REQUISITOS: evento.REQUISITOS || [], // Pass Requirements properly
+        ESTADO: evento.ESTADO, // ✅ Pass ESTADO explicitly
+        NOMBRE_DOCENTE: evento.NOMBRE_DOCENTE,
+        PROMEDIO_GENERAL: evento.PROMEDIO_GENERAL
       };
     });
 

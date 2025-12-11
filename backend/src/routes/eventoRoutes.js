@@ -13,7 +13,10 @@ const {
   actualizarImagenEvento,
   obtenerEventosFiltrados,
   obtenerCategoriasEvento,
-  obtenerTiposEvento
+  obtenerTiposEvento,
+  obtenerInscritosEvento, // New
+  actualizarNotas,        // New
+  finalizarEvento         // New
 } = require('../controllers/eventoController');
 
 // Rutas
@@ -32,5 +35,10 @@ router.delete('/:id', eliminarEvento);
 
 // Ruta para actualizar solo la imagen de un evento
 router.put('/:id/imagen', uploadEventos.single('image'), actualizarImagenEvento);
+
+// Rutas de Calificaciones y Finalización (Close Course)
+router.get('/:id/inscritos', obtenerInscritosEvento);
+router.put('/:id/notas', actualizarNotas); // Sin upload middleware
+router.put('/:id/finalizar', finalizarEvento);
 
 module.exports = router;

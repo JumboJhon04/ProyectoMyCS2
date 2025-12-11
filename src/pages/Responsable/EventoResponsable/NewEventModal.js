@@ -600,8 +600,14 @@
             </div>
             
             <div className="modal-actions">
-              <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Guardando...' : hasChanges ? 'Guardar Cambios' : 'Guardar'}</button>
-              <button type="button" className="btn-secondary" onClick={handleClose}>Cancelar</button>
+              {(!course || course.ESTADO !== 'FINALIZADO') ? (
+                  <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Guardando...' : hasChanges ? 'Guardar Cambios' : 'Guardar'}</button>
+              ) : (
+                  <div className="alert-warning" style={{marginRight:'auto'}}>⚠️ Curso Finalizado - Modo Lectura</div>
+              )}
+              <button type="button" className="btn-secondary" onClick={handleClose}>
+                  {course && course.ESTADO === 'FINALIZADO' ? 'Cerrar' : 'Cancelar'}
+              </button>
             </div>
           </form>
         </div>
