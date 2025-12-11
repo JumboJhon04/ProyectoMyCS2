@@ -1141,9 +1141,7 @@
 }
 
 /* Body del contenido expandido */
-.expanded-content-body {
-    /* Ya tiene los estilos heredados de modal-body-tasks */
-}
+
 
 /* Responsive */
 @media (max-width: 768px) {
