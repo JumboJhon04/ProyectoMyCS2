@@ -1,21 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { FaBook, FaCheck, FaSync, FaLock, FaEye, FaFilePdf, FaVideo, FaLink, FaUpload, FaClipboardList, FaClock, FaTrophy } from 'react-icons/fa';
+import { FaBook, FaCheck, FaSync, FaLock, FaEye, FaFilePdf, FaVideo, FaLink, FaUpload, FaClipboardList, FaClock, FaTrophy, FaEdit } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../context/UserContext';
+import FilePreview from '../../components/FilePreview/FilePreview';
 import API_URL from '../../config/api';
 import './MaterialTab.css';
 
 const MaterialTab = ({ topics, eventType, courseData, modules, loading }) => {
     const { user } = useUser();
+    const navigate = useNavigate();
     const modulos = modules || [];
     const [entregas, setEntregas] = useState([]);
+    const [examsByModule, setExamsByModule] = useState({}); // NUEVO ESTADO PARA EXAMENES
+    const [intentos, setIntentos] = useState([]); // NUEVO: Estado para intentos de examenes
+    // loading viene de props
     const [selectedTarea, setSelectedTarea] = useState(null);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [uploadFile, setUploadFile] = useState(null);
     const [uploadComment, setUploadComment] = useState('');
     const [uploading, setUploading] = useState(false);
 
+    // Estados para Preview de Archivos
+    const [showPreview, setShowPreview] = useState(false);
+    const [previewFile, setPreviewFile] = useState({ url: '', name: '' });
+
     // Nuevo estado para módulo seleccionado (similar al profesor)
     const [selectedModule, setSelectedModule] = useState(null);
+
+    // Cargar exámenes cuando cambian los módulos
+    useEffect(() => {
+        if (modulos.length > 0) {
+            modulos.forEach(m => fetchExams(m.SECUENCIAL));
+        }
+    }, [modulos]);
 
     // Obtener entregas del estudiante
     useEffect(() => {
@@ -32,10 +49,31 @@ const MaterialTab = ({ topics, eventType, courseData, modules, loading }) => {
             } catch (error) {
                 console.error('Error al cargar entregas:', error);
             }
-        };
-
+        }
         fetchEntregas();
+        fetchIntentos();
     }, [user, courseData]);
+
+    const fetchIntentos = async () => {
+        if (!user || !user.id) return;
+        try {
+            const res = await fetch(`${API_URL}/api/evaluaciones/intentos/${user.id}`);
+            const data = await res.json();
+            if (data.success) {
+                setIntentos(data.data);
+            }
+        } catch (error) { console.error(error); }
+    };
+
+    const fetchExams = async (moduloId) => {
+        try {
+            const res = await fetch(`${API_URL}/api/evaluaciones/modulo/${moduloId}`);
+            const data = await res.json();
+            if (data.success) {
+                setExamsByModule(prev => ({ ...prev, [moduloId]: data.data }));
+            }
+        } catch (error) { console.error(error); }
+    };
 
     // Verificar si una tarea ya fue entregada
     const getEntregaStatus = (tareaId) => {
@@ -104,6 +142,12 @@ const MaterialTab = ({ topics, eventType, courseData, modules, loading }) => {
     // Verificar si una tarea está vencida
     const isTareaVencida = (fechaLimite) => {
         return new Date(fechaLimite) < new Date();
+    };
+
+    // Función para abrir preview de archivos
+    const handleOpenPreview = (url, name) => {
+        setPreviewFile({ url, name });
+        setShowPreview(true);
     };
 
     if (loading) {
@@ -202,14 +246,13 @@ const MaterialTab = ({ topics, eventType, courseData, modules, loading }) => {
                                                     <p>{recurso.DESCRIPCION || 'Documento informativo'}</p>
                                                 </div>
                                             </div>
-                                            <a
-                                                href={recurso.URL_RECURSO}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
+                                            <button
+                                                onClick={() => handleOpenPreview(recurso.URL_RECURSO, recurso.TITULO)}
                                                 className="recurso-btn-expandido"
+                                                style={{ border: 'none', cursor: 'pointer' }}
                                             >
                                                 <FaEye /> Ver
-                                            </a>
+                                            </button>
                                         </div>
                                     ))}
                                 </div>
@@ -269,9 +312,12 @@ const MaterialTab = ({ topics, eventType, courseData, modules, loading }) => {
 
                                                 {tarea.URL_ADJUNTO && (
                                                     <div className="tarea-adjunto-expandido">
-                                                        <a href={tarea.URL_ADJUNTO} target="_blank" rel="noopener noreferrer">
+                                                        <button
+                                                            onClick={() => handleOpenPreview(tarea.URL_ADJUNTO, `Consigna - ${tarea.TITULO}`)}
+                                                            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                                                        >
                                                             <FaFilePdf /> Ver consigna del profesor
-                                                        </a>
+                                                        </button>
                                                     </div>
                                                 )}
 
@@ -284,14 +330,13 @@ const MaterialTab = ({ topics, eventType, courseData, modules, loading }) => {
 
                                                 <div className="tarea-actions-expandido">
                                                     {entrega ? (
-                                                        <a
-                                                            href={entrega.URL_ARCHIVO}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
+                                                        <button
+                                                            onClick={() => handleOpenPreview(entrega.URL_ARCHIVO, `Mi entrega - ${tarea.TITULO}`)}
                                                             className="tarea-btn-expandido view-btn"
+                                                            style={{ border: 'none', cursor: 'pointer' }}
                                                         >
                                                             <FaEye /> Ver mi entrega
-                                                        </a>
+                                                        </button>
                                                     ) : (
                                                         <button
                                                             className="tarea-btn-expandido upload-btn"
@@ -313,7 +358,52 @@ const MaterialTab = ({ topics, eventType, courseData, modules, loading }) => {
                             </div>
                         )}
 
-                        {(!selectedModule.tareas || selectedModule.tareas.length === 0) && (!selectedModule.recursos || selectedModule.recursos.length === 0) && (
+                        {/* Exámenes del módulo (NUEVO) */}
+                        {examsByModule[selectedModule.SECUENCIAL] && examsByModule[selectedModule.SECUENCIAL].length > 0 && (
+                            <div className="modulo-section">
+                                <h5 className="section-title" style={{ color: '#d97706' }}>
+                                    <FaClipboardList /> Evaluaciones
+                                </h5>
+                                <div className="recursos-list">
+                                    {examsByModule[selectedModule.SECUENCIAL].map((exam) => {
+                                        const intento = intentos.find(i => i.SECUENCIALEVALUACION === exam.SECUENCIAL);
+                                        const isCompleted = !!intento;
+
+                                        return (
+                                            <div key={exam.SECUENCIAL} className="recurso-item" style={{ borderLeft: '4px solid #d97706' }}>
+                                                <FaClock className="recurso-icon" style={{ color: '#d97706' }} />
+                                                <div className="recurso-info">
+                                                    <span className="recurso-name">{exam.TITULO}</span>
+                                                    <span className="recurso-description">
+                                                        Duración: {exam.DURACION_MINUTOS} mins •
+                                                        {isCompleted
+                                                            ? <span style={{ fontWeight: 'bold', color: '#10b981' }}> Calificación: {intento.CALIFICACION_FINAL}</span>
+                                                            : ` Inicio: ${new Date(exam.FECHA_INICIO).toLocaleDateString()} ${new Date(exam.FECHA_INICIO).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                                                        }
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    onClick={() => !isCompleted && navigate(`/user/taking-exam/${exam.SECUENCIAL}`)}
+                                                    className="recurso-btn"
+                                                    disabled={isCompleted}
+                                                    style={{
+                                                        border: 'none',
+                                                        cursor: isCompleted ? 'default' : 'pointer',
+                                                        background: isCompleted ? '#e2e8f0' : '#fef3c7',
+                                                        color: isCompleted ? '#64748b' : '#92400e',
+                                                        opacity: isCompleted ? 0.8 : 1
+                                                    }}
+                                                >
+                                                    {isCompleted ? <><FaCheck /> Completado</> : <><FaEdit /> Realizar prueba</>}
+                                                </button>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {(!selectedModule.tareas || selectedModule.tareas.length === 0) && (!selectedModule.recursos || selectedModule.recursos.length === 0) && (!examsByModule[selectedModule.SECUENCIAL] || examsByModule[selectedModule.SECUENCIAL].length === 0) && (
                             <div className="empty-modulo-expandido">
                                 <p>Este módulo no tiene contenido disponible aún.</p>
                             </div>
@@ -391,6 +481,15 @@ const MaterialTab = ({ topics, eventType, courseData, modules, loading }) => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* File Preview Modal */}
+            {showPreview && (
+                <FilePreview
+                    fileUrl={previewFile.url}
+                    fileName={previewFile.name}
+                    onClose={() => setShowPreview(false)}
+                />
             )}
         </div>
     );
