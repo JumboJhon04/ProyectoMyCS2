@@ -30,6 +30,8 @@ const EstudianteCourseDetail = () => {
   const [pagoAprobado, setPagoAprobado] = useState(false);
   // const [inscripcionId, setInscripcionId] = useState(null);
   const [activeTab, setActiveTab] = useState('material');
+  const [entregas, setEntregas] = useState([]); // Estado para entregas del estudiante
+  const [intentos, setIntentos] = useState([]); // Estado para intentos de exámenes
 
   const userCareerIds = useMemo(() => {
     if (!user) return [];
@@ -224,6 +226,65 @@ const EstudianteCourseDetail = () => {
     }
   }, [courseId, user]);
 
+  // Cargar entregas del estudiante
+  useEffect(() => {
+    const fetchEntregas = async () => {
+      if (!user?.id || !courseId) return;
+      try {
+        const response = await fetch(`${API_URL}/api/tareas/estudiante/${user.id}/evento/${courseId}`);
+        const data = await response.json();
+        if (data.success) {
+          setEntregas(data.data || []);
+        }
+      } catch (error) {
+        console.error('Error al cargar entregas:', error);
+      }
+    };
+
+    // Cargar intentos de exámenes
+    const fetchIntentos = async () => {
+      if (!user?.id) return;
+      try {
+        const res = await fetch(`${API_URL}/api/evaluaciones/intentos/${user.id}`);
+        const data = await res.json();
+        if (data.success) {
+          setIntentos(data.data || []);
+        }
+      } catch (error) {
+        console.error('Error al cargar intentos:', error);
+      }
+    };
+
+    if (courseId && user?.id) {
+      fetchEntregas();
+      fetchIntentos();
+    }
+  }, [courseId, user]);
+
+  // Calcular actividades totales y completadas dinámicamente (después de declarar modules y entregas)
+  const totalActivities = useMemo(() => {
+    if (!modules || modules.length === 0) return 0;
+    let total = 0;
+    modules.forEach(modulo => {
+      // Contar tareas
+      total += modulo.tareas?.length || 0;
+    });
+    return total;
+  }, [modules]);
+
+  const completedActivities = useMemo(() => {
+    if (!modules || modules.length === 0) return 0;
+    let completed = 0;
+    modules.forEach(modulo => {
+      // Contar tareas entregadas
+      modulo.tareas?.forEach(tarea => {
+        const entrega = entregas.find(e => e.tareaId === tarea.SECUENCIAL);
+        if (entrega) completed++;
+      });
+    });
+    return completed;
+  }, [modules, entregas]);
+
   // Aplicar tema dinámico con CSS variables
   useEffect(() => {
     if (courseData?.CODIGOTIPOEVENTO) {
@@ -334,9 +395,7 @@ const EstudianteCourseDetail = () => {
   const eventTheme = getEventTheme(courseData?.CODIGOTIPOEVENTO || 'CUR');
   const showGrades = eventTheme.showGrades;
 
-  const totalLessons = topics.length || 0;
-  const completedLessons = 0; // Esto se podría obtener de la inscripción del estudiante
-  const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  const progressPercentage = totalActivities > 0 ? Math.round((completedActivities / totalActivities) * 100) : 0;
 
   return (
     <div className="course-detail-container">
@@ -391,8 +450,8 @@ const EstudianteCourseDetail = () => {
         <div className="course-summary-stats">
           <div className="stat-item">
             <FaBook className="stat-icon" />
-            <span>Total de temas</span>
-            <strong>{totalLessons}</strong>
+            <span>Total de actividades</span>
+            <strong>{totalActivities}</strong>
           </div>
           <div className="stat-item">
             <FaClock className="stat-icon" />
@@ -406,7 +465,7 @@ const EstudianteCourseDetail = () => {
               <strong>${parseFloat(costo).toFixed(2)}</strong>
             </div>
           )}
-          {isInscrito && totalLessons > 0 && (
+          {isInscrito && totalActivities > 0 && (
             <div className="stat-item">
               <FaChartBar className="stat-icon" />
               <span>Progreso</span>

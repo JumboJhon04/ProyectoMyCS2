@@ -146,6 +146,43 @@
     font-weight: 500;
 }
 
+.modulo-completed-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.6rem;
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    color: #047857;
+    border: 1px solid #6ee7b7;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.25rem;
+}
+
+.modulo-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.modulo-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--event-primary-color, #3b82f6), var(--event-secondary-color, #1d4ed8));
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.modulo-progress-text {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+    font-weight: 500;
+}
+
 /* ==========================================
    OVERLAY OSCURO (ESTUDIANTE)
    ========================================== */

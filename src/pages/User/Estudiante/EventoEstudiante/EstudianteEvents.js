@@ -240,14 +240,14 @@ const EstudianteEvents = () => {
             onClick={() => setView('mine')}
           >
             <FaBook className="tab-icon" />
-            <span>Mis Cursos</span>
+            <span>Mis Eventos</span>
           </button>
           <button
             className={`view-tab ${view === 'all' ? 'active' : ''}`}
             onClick={() => setView('all')}
           >
             <FaGlobe className="tab-icon" />
-            <span>Todos los Cursos</span>
+            <span>Todos los Eventos</span>
           </button>
         </div>
 

@@ -80,6 +80,46 @@ const MaterialTab = ({ topics, eventType, courseData, modules, loading }) => {
         return entregas.find(e => e.tareaId === tareaId);
     };
 
+    // Calcular progreso de un módulo basado en tareas entregadas y exámenes completados
+    const calculateModuleProgress = (modulo) => {
+        const totalTareas = modulo.tareas?.length || 0;
+        const examenesModulo = examsByModule[modulo.SECUENCIAL] || [];
+        const totalExamenes = examenesModulo.length;
+        const totalActividades = totalTareas + totalExamenes;
+
+        if (totalActividades === 0) {
+            return { percentage: 0, completed: 0, total: 0, isCompleted: false };
+        }
+
+        // Contar tareas entregadas
+        const tareasEntregadas = modulo.tareas?.filter(tarea => {
+            const entrega = getEntregaStatus(tarea.SECUENCIAL);
+            return entrega !== undefined;
+        }).length || 0;
+
+        // Contar exámenes completados
+        const examenesCompletados = examenesModulo.filter(exam => {
+            const intento = intentos.find(i => i.SECUENCIALEVALUACION === exam.SECUENCIAL);
+            return !!intento;
+        }).length;
+
+        const actividadesCompletadas = tareasEntregadas + examenesCompletados;
+        const percentage = Math.round((actividadesCompletadas / totalActividades) * 100);
+        // Solo marcar como completado si hay actividades Y todas están completadas
+        const isCompleted = totalActividades > 0 && actividadesCompletadas === totalActividades;
+
+        return {
+            percentage,
+            completed: actividadesCompletadas,
+            total: totalActividades,
+            isCompleted,
+            tareasCompletadas: tareasEntregadas,
+            totalTareas,
+            examenesCompletados,
+            totalExamenes
+        };
+    };
+
     // Manejar subida de tarea
     const handleUploadTarea = async () => {
         if (!uploadFile || !selectedTarea) {
@@ -185,8 +225,8 @@ const MaterialTab = ({ topics, eventType, courseData, modules, loading }) => {
             <div className="modulos-grid-estudiante">
                 {modulos.map((modulo, index) => {
                     const isSelected = selectedModule?.SECUENCIAL === modulo.SECUENCIAL;
-                    const taskCount = modulo.tareas?.length || 0;
                     const resourceCount = modulo.recursos?.length || 0;
+                    const progress = calculateModuleProgress(modulo);
 
                     return (
                         <div
@@ -198,8 +238,26 @@ const MaterialTab = ({ topics, eventType, courseData, modules, loading }) => {
                             <div className="modulo-card-icon-estudiante"><FaBook /></div>
                             <h4 className="modulo-card-title-estudiante">{modulo.TITULO}</h4>
                             <span className="modulo-card-count-estudiante">
-                                {resourceCount} Materiales • {taskCount} Tareas
+                                {resourceCount} Materiales • {progress.total} Actividades
                             </span>
+                            {progress.isCompleted && (
+                                <span className="modulo-completed-badge">
+                                    <FaCheck /> Completado
+                                </span>
+                            )}
+                            {progress.total > 0 && (
+                                <>
+                                    <div className="modulo-progress-bar">
+                                        <div
+                                            className="modulo-progress-fill"
+                                            style={{ width: `${progress.percentage}%` }}
+                                        />
+                                    </div>
+                                    <span className="modulo-progress-text">
+                                        {progress.completed}/{progress.total} completadas
+                                    </span>
+                                </>
+                            )}
                         </div>
                     );
                 })}
