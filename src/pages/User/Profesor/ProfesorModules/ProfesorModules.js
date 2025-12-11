@@ -19,22 +19,51 @@ const ProfesorModules = () => {
     useEffect(() => {
         const fetchEvents = async () => {
             if (!user || !user.id) {
+                console.warn('⚠️ ProfesorModules: No hay usuario o ID de usuario');
                 setProfessorEvents([]);
                 setLoading(false);
                 return;
             }
+
+            console.log('🔍 ProfesorModules: Iniciando carga de cursos para profesor ID:', user.id);
+
             try {
                 setLoading(true);
-                const res = await fetch(`${API_URL}/api/docentes/${user.id}/mis-cursos`);
+                const url = `${API_URL}/api/docentes/${user.id}/mis-cursos`;
+                console.log('🌐 ProfesorModules: Llamando a:', url);
+
+                const res = await fetch(url);
+                console.log('📡 ProfesorModules: Status de respuesta:', res.status, res.statusText);
+
                 if (!res.ok) {
-                    console.warn('No se pudieron cargar los eventos del docente');
+                    console.error('❌ ProfesorModules: Error en la respuesta del servidor:', res.status);
                     setProfessorEvents([]);
                     return;
                 }
+
                 const json = await res.json();
-                setProfessorEvents(json.data || []);
+                console.log('📦 ProfesorModules: Respuesta JSON completa:', json);
+                console.log('📦 ProfesorModules: Datos (json.data):', json.data);
+
+                if (json.data) {
+                    console.log('✅ ProfesorModules: Cursos encontrados:', json.data.length);
+                    console.log('📋 ProfesorModules: Detalles de cada curso:');
+                    json.data.forEach((curso, idx) => {
+                        console.log(`  Curso ${idx + 1}:`, {
+                            id: curso.eventoId || curso.SECUENCIAL || curso.id,
+                            titulo: curso.TITULO,
+                            docente: curso.Docente,
+                            tipo: curso.CODIGOTIPOEVENTO
+                        });
+                    });
+                    setProfessorEvents(json.data);
+                } else {
+                    console.warn('⚠️ ProfesorModules: json.data es undefined o null');
+                    setProfessorEvents([]);
+                }
             } catch (e) {
-                console.error('Error cargando eventos del docente:', e.message);
+                console.error('❌ ProfesorModules: Error al cargar cursos:', e.message);
+                console.error('❌ ProfesorModules: Stack trace completo:', e);
                 setProfessorEvents([]);
             } finally {
                 setLoading(false);
@@ -46,11 +75,11 @@ const ProfesorModules = () => {
     // Mapear eventos del backend al formato de módulos
     const modules = professorEvents.map(ev => ({
         // INTENTA OBTENER EL ID DE VARIAS FORMAS PARA QUE NO FALLE
-        id: ev.eventoId || ev.SECUENCIAL || ev.id, 
-        
+        id: ev.eventoId || ev.SECUENCIAL || ev.id,
+
         title: ev.TITULO || ev.title || 'Sin título',
         type: ev.CODIGOTIPOEVENTO === 'CUR' ? 'Curso' : 'Taller',
-        level: 'Intermedio', 
+        level: 'Intermedio',
         lessons: ev.HORAS || 0,
         students: ev.CAPACIDAD || 0,
         imageUrl: ev.URL_IMAGEN || 'https://via.placeholder.com/150',
@@ -63,8 +92,8 @@ const ProfesorModules = () => {
     const ModuleCard = ({ module }) => {
         const handleViewCourse = () => {
             // Imprime esto en la consola para verificar antes de navegar
-            console.log("Navegando al curso con ID:", module.id); 
-            
+            console.log("Navegando al curso con ID:", module.id);
+
             if (!module.id) {
                 alert("Error: El ID del curso no se encontró. Revisa la consola.");
                 return;

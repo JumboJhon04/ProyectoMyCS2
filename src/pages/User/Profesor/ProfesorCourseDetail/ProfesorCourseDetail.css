@@ -22,7 +22,8 @@
 .header-overlay-profesor {
     position: absolute;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.4); /* Capa oscura para que el texto resalte */
+    background-color: rgba(0, 0, 0, 0.4);
+    /* Capa oscura para que el texto resalte */
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -46,8 +47,15 @@
 }
 
 /* Colores para las etiquetas de nivel */
-.tag-profesor.level-intermedio { background: #ffc107; color: #333; }
-.tag-profesor.level-principiante { background: #28a745; color: #fff; }
+.tag-profesor.level-intermedio {
+    background: #ffc107;
+    color: #333;
+}
+
+.tag-profesor.level-principiante {
+    background: #0f1724;
+    color: #fff;
+}
 
 .course-detail-title-profesor {
     font-size: 2.5rem;
@@ -87,7 +95,8 @@
 
 .course-detail-content-profesor {
     max-width: 1400px;
-    margin: -30px auto 0; /* Superpone sobre la imagen */
+    margin: -30px auto 0;
+    /* Superpone sobre la imagen */
     padding: 0 30px;
     position: relative;
     z-index: 10;
@@ -115,7 +124,8 @@
 
 .stat-icon-profesor {
     font-size: 1.5rem;
-    color: #007bff;
+    color: #2c3e50;
+    /* Cambiado de #007bff a color oscuro acorde al sistema */
 }
 
 .stat-item-profesor span {
@@ -164,16 +174,16 @@
 }
 
 .tab-button-profesor.create-button {
-    background-color: #28a745;
+    background-color: #0f1724;
     color: #fff;
     border-radius: 8px;
     margin-left: auto;
     border: none;
-    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    box-shadow: 0 2px 8px rgba(15, 23, 36, 0.3);
 }
 
 .tab-button-profesor.create-button:hover {
-    background-color: #1e7e34;
+    background-color: #1e293b;
     transform: translateY(-1px);
     color: #fff;
 }
@@ -207,7 +217,8 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #10b981, #059669); /* Verde fuerte */
+    background: linear-gradient(135deg, #10b981, #059669);
+    /* Verde fuerte */
     color: #ffffff;
     display: flex;
     align-items: center;
@@ -260,14 +271,14 @@
 }
 
 /* Estilo para el ícono de "Ver" gris y pequeño del mockup */
-.lesson-item-profesor .action-btn-profesor:nth-child(1) { 
+.lesson-item-profesor .action-btn-profesor:nth-child(1) {
     border: none;
     background: transparent;
     color: #999;
 }
 
 .lesson-item-profesor .action-btn-profesor:nth-child(1) svg {
-    font-size: 1.2rem; 
+    font-size: 1.2rem;
     color: #999;
 }
 
@@ -276,6 +287,7 @@
     background: #0f1724;
     color: #fff;
 }
+
 .lesson-item-profesor .action-btn-profesor:nth-child(2):hover {
     background: #1e293b;
 }
@@ -285,13 +297,16 @@
     .header-overlay-profesor {
         padding: 1.5rem;
     }
+
     .course-detail-title-profesor {
         font-size: 2rem;
     }
+
     .course-detail-content-profesor {
         padding: 0 15px;
         margin-top: -20px;
     }
+
     .course-summary-stats-profesor {
         flex-direction: column;
         gap: 15px;
@@ -302,10 +317,12 @@
     .lesson-item-profesor {
         flex-wrap: wrap;
     }
+
     .lesson-actions-profesor {
         width: 100%;
         justify-content: space-between;
     }
+
     .action-btn-profesor {
         flex: 1;
         justify-content: center;
@@ -314,87 +331,198 @@
 
 /* --- ESTILOS PARA EL MODAL --- */
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro transparente */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    /* Fondo oscuro transparente */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
 }
 
 .modal-content {
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 500px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
 }
 
 .close-modal-btn {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  color: #666;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #666;
 }
 
 .form-group {
-  margin-bottom: 1rem;
+    margin-bottom: 1rem;
 }
 
 .form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: bold;
-  color: #333;
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #333;
 }
 
-.form-group input, 
+.form-group input,
 .form-group textarea {
-  width: 100%;
-  padding: 0.8rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 1rem;
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
 }
 
 .modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 1.5rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
 }
 
 .cancel-btn {
-  background: #f1f1f1;
-  color: #333;
-  padding: 0.6rem 1.2rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+    background: #f1f1f1;
+    color: #333;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
 }
 
 .confirm-btn {
-  background: #007bff; /* O el color principal de tu app */
-  color: white;
-  padding: 0.6rem 1.2rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+    background: #0f1724;
+    /* Cambiado para coincidir con el tema oscuro del sistema */
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.confirm-btn:hover {
+    background: #1e293b;
+    /* Hover más claro */
 }
 
 .confirm-btn:disabled {
-  background: #ccc;
+    background: #ccc;
+}
+
+/* --- NUEVOS ESTILOS: UI REFACTORIZADA --- */
+
+/* Floating Action Button (FAB) */
+.fab-profesor {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #0f1724;
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+    z-index: 100;
+}
+
+.fab-profesor:hover {
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    background: #1e293b;
+}
+
+.fab-profesor:active {
+    transform: scale(1.05) rotate(90deg);
+}
+
+/* Título de Sección */
+.section-title-profesor {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #0f1724;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.section-title-profesor svg {
+    color: #64748b;
+}
+
+/* Botones de Ícono (para Agregar Tarea) */
+.icon-btn-profesor {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(15, 23, 36, 0.08);
+    border: 1px solid rgba(15, 23, 36, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    color: #0f1724;
+    flex-shrink: 0;
+}
+
+.icon-btn-profesor:hover {
+    background: #0f1724;
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(15, 23, 36, 0.2);
+}
+
+.icon-btn-profesor:active {
+    transform: scale(1.05);
+}
+
+/* Botones de Acción de Tarea (para Calificar) */
+.task-action-btn {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: #64748b;
+}
+
+.task-action-btn:hover {
+    background: #0f1724;
+    color: white;
+    border-color: #0f1724;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(15, 23, 36, 0.15);
+}
+
+.task-action-btn:active {
+    transform: translateY(0);
 }

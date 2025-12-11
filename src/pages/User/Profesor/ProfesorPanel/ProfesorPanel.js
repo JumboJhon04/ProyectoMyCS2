@@ -21,14 +21,39 @@ const ProfesorPanel = () => {
 
   useEffect(() => {
     const fetchEvents = async () => {
-      if (!user || !user.id) return;
+      if (!user || !user.id) {
+        console.warn('⚠️ ProfesorPanel: No hay usuario o ID de usuario');
+        return;
+      }
+
+      console.log('🔍 ProfesorPanel: Cargando cursos del profesor ID:', user.id);
+
       try {
-        const res = await fetch(`${API_URL}/api/docentes/${user.id}/eventos`);
-        if (!res.ok) return;
+        const url = `${API_URL}/api/docentes/${user.id}/mis-cursos`;
+        console.log('🌐 ProfesorPanel: Llamando a:', url);
+
+        const res = await fetch(url);
+        console.log('📡 ProfesorPanel: Status de respuesta:', res.status, res.statusText);
+
+        if (!res.ok) {
+          console.error('❌ ProfesorPanel: Error en la respuesta del servidor');
+          return;
+        }
+
         const json = await res.json();
-        if (json && json.data) setProfessorEvents(json.data);
+        console.log('📦 ProfesorPanel: Datos recibidos:', json);
+
+        if (json && json.data) {
+          console.log('✅ ProfesorPanel: Cursos encontrados:', json.data.length);
+          console.log('📋 ProfesorPanel: Detalles de cursos:', json.data);
+          setProfessorEvents(json.data);
+        } else {
+          console.warn('⚠️ ProfesorPanel: No se encontraron datos en la respuesta');
+          setProfessorEvents([]);
+        }
       } catch (e) {
-        console.warn('No se pudieron cargar los eventos del docente:', e.message);
+        console.error('❌ ProfesorPanel: Error al cargar eventos:', e.message);
+        console.error('Stack trace:', e);
       }
     };
     fetchEvents();
