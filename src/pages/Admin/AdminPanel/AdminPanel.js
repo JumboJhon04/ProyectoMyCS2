@@ -145,21 +145,6 @@ const AdminPanel = () => {
               </div>
             </div>
 
-            <div className="card action-card">
-              <div className="card-header">
-                <h3>Reportes administrativos</h3>
-              </div>
-              <div className="card-body">
-                <p>Exporta inscripciones, pagos y asistencia en PDF con filtros por fecha y estado.</p>
-                <button
-                  className="btn-edit-home"
-                  onClick={() => navigate('/admin/reportes')}
-                >
-                  <FaHome /> Abrir reportes
-                </button>
-              </div>
-            </div>
-
             {/* Editar Imágenes de Eventos */}
             <div className="card large-card">
               <div className="card-header">

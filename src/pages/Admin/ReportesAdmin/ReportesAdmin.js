@@ -425,7 +425,7 @@ const ReportesAdmin = () => {
 
           <div className="reportes-panel">
             <div className="report-selector">
-              {['inscripciones', 'pagos', 'asistencias', 'completacion', 'ingresos'].map((id) => (
+                {['inscripciones', 'pagos', 'asistencias'].map((id) => (
                 <button
                   key={id}
                   className={reportType === id ? 'selector active' : 'selector'}
