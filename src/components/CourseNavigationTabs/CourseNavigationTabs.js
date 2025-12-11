@@ -1,8 +1,8 @@
 import React from 'react';
-import { FaBook, FaUsers, FaChartBar, FaCalendarCheck } from 'react-icons/fa';
+import { FaBook, FaUsers, FaChartBar, FaCalendarCheck, FaCertificate } from 'react-icons/fa';
 import './CourseNavigationTabs.css';
 
-const CourseNavigationTabs = ({ activeTab, onTabChange, eventType, showGrades }) => {
+const CourseNavigationTabs = ({ activeTab, onTabChange, eventType, showGrades, showCertificate }) => {
     const tabs = [
         {
             id: 'material',
@@ -27,6 +27,14 @@ const CourseNavigationTabs = ({ activeTab, onTabChange, eventType, showGrades })
             id: 'calificaciones',
             label: 'Calificaciones',
             icon: <FaChartBar />,
+        });
+    }
+
+    if (showCertificate) {
+        tabs.push({
+            id: 'certificado',
+            label: 'Certificado',
+            icon: <FaCertificate />,
         });
     }
 

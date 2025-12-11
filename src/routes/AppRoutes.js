@@ -14,6 +14,7 @@ import UserPanelAdmin from '../pages/Admin/UserPanelAdmin/UserPanelAdmin';
 import SolicitudesAdmin from '../pages/Admin/SolicitudesAdmin/SolicitudesAdmin';
 import PeticionesCambioAdmin from '../pages/Admin/PeticionesCambioAdmin/PeticionesCambioAdmin';
 import LandingAdminAdvanced from '../pages/Admin/LandingAdmin/LandingAdminAdvanced';
+import ReportesAdmin from '../pages/Admin/ReportesAdmin/ReportesAdmin';
 
 import ResponsableProfile from '../pages/Responsable/ProfileResponsable/Profile';
 import EventoResponsable from '../pages/Responsable/EventoResponsable/EventoResponsable';
@@ -83,6 +84,11 @@ export default function AppRoutes() {
       <Route path="/admin/landing" element={
         <ProtectedRoute requireAdmin={true}>
           <LandingAdminAdvanced />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/reportes" element={
+        <ProtectedRoute requireAdmin={true}>
+          <ReportesAdmin />
         </ProtectedRoute>
       } />
 

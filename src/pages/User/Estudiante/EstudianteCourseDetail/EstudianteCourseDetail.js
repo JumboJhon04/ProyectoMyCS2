@@ -16,6 +16,9 @@ import {
 } from 'react-icons/fa';
 import './EstudianteCourseDetail.css';
 
+import jsPDF from 'jspdf';
+import CertificatePreview from '../../../../components/Certificate/CertificatePreview';
+
 import API_URL from '../../../../config/api';
 
 const EstudianteCourseDetail = () => {
@@ -33,6 +36,10 @@ const EstudianteCourseDetail = () => {
   const [activeTab, setActiveTab] = useState('material');
   const [entregas, setEntregas] = useState([]); // Estado para entregas del estudiante
   const [intentos, setIntentos] = useState([]); // Estado para intentos de exámenes
+  const [certificateInfo, setCertificateInfo] = useState(null);
+  const [certificateLoading, setCertificateLoading] = useState(false);
+  const [certificateError, setCertificateError] = useState(null);
+  const [certificateLogo, setCertificateLogo] = useState(null);
 
   const userCareerIds = useMemo(() => {
     if (!user) return [];
@@ -42,6 +49,23 @@ const EstudianteCourseDetail = () => {
       .filter(Boolean)
       .map(Number);
   }, [user]);
+
+  useEffect(() => {
+    const loadCertificateLogo = async () => {
+      try {
+        const response = await fetch('/logo192.png');
+        if (!response.ok) return;
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => setCertificateLogo(reader.result);
+        reader.readAsDataURL(blob);
+      } catch (e) {
+        console.warn('No se pudo precargar el logo del certificado', e);
+      }
+    };
+
+    loadCertificateLogo();
+  }, []);
 
   // Determinar si es una ruta pública (acceso desde /courses/:courseId sin autenticación)
   const isPublicRoute = location.pathname.startsWith('/courses/') && !location.pathname.startsWith('/user/course/') && !location.pathname.startsWith('/profesor/course/');
@@ -262,6 +286,11 @@ const EstudianteCourseDetail = () => {
     }
   }, [courseId, user]);
 
+  useEffect(() => {
+    if (!courseData || !isInscrito || !pagoAprobado) return;
+    fetchCertificateInfo();
+  }, [courseData, isInscrito, pagoAprobado]);
+
   // Calcular actividades totales y completadas dinámicamente (después de declarar modules y entregas)
   const totalActivities = useMemo(() => {
     if (!modules || modules.length === 0) return 0;
@@ -315,6 +344,23 @@ const EstudianteCourseDetail = () => {
       console.warn('Error parseando topics:', e);
     }
     return [];
+  };
+
+  const fetchCertificateInfo = async () => {
+    if (!user?.id || !courseId) return;
+    setCertificateLoading(true);
+    setCertificateError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/reportes/certificados/${courseId}/estudiante/${user.id}`);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'No se pudo cargar el certificado');
+      setCertificateInfo(json.data);
+    } catch (e) {
+      setCertificateError(e.message);
+      setCertificateInfo(null);
+    } finally {
+      setCertificateLoading(false);
+    }
   };
 
   // Formatear fecha (Removed unused formatDate function)
@@ -397,6 +443,115 @@ const EstudianteCourseDetail = () => {
   const showGrades = eventTheme.showGrades;
 
   const progressPercentage = totalActivities > 0 ? Math.round((completedActivities / totalActivities) * 100) : 0;
+  const showCertificateTab = isInscrito && pagoAprobado && (courseData?.ESTADO === 'FINALIZADO' || certificateInfo || certificateLoading);
+  const canDownloadCertificate = showCertificateTab && certificateInfo?.elegible;
+
+  const formatDateShort = (date) => {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const handleDownloadCertificate = () => {
+    if (!certificateInfo?.elegible) {
+      alert('Aún no cumples los requisitos de nota y asistencia para descargar el certificado.');
+      return;
+    }
+
+    // Configuración inicial (Horizontal - Landscape, A4)
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    // Dimensiones de A4 Landscape: 297mm x 210mm
+    const pageWidth = 297;
+    const centerX = pageWidth / 2;
+    const colorDorado = [234, 173, 76]; // Color #EAAD4C
+    const colorTexto = [40, 44, 52];    // Gris oscuro casi negro
+
+    // --- DISEÑO GRÁFICO (BORDES) ---
+
+    // Borde Exterior (Dorado Fino)
+    doc.setDrawColor(...colorDorado);
+    doc.setLineWidth(1);
+    doc.rect(10, 10, 277, 190);
+
+    // Borde Interior (Dorado más grueso)
+    doc.setLineWidth(0.5);
+    doc.rect(13, 13, 271, 184);
+
+    // Elementos decorativos en las esquinas (Simples cuadrados)
+    doc.setFillColor(...colorDorado);
+    doc.rect(8, 8, 4, 4, 'F');   // Arriba Izq
+    doc.rect(285, 8, 4, 4, 'F'); // Arriba Der
+    doc.rect(8, 198, 4, 4, 'F'); // Abajo Izq
+    doc.rect(285, 198, 4, 4, 'F');// Abajo Der
+
+    // --- TEXTOS ---
+
+    // Institución
+    doc.setTextColor(...colorTexto);
+    doc.setFont("times", "normal");
+    doc.setFontSize(14);
+    doc.text("Universidad Técnica de Ambato", centerX, 50, { align: "center" });
+
+    // Título Principal
+    doc.setFont("times", "bold");
+    doc.setFontSize(36);
+    doc.text("CERTIFICADO DE RECONOCIMIENTO", centerX, 65, { align: "center" });
+
+    // Subtítulo
+    doc.setFont("times", "normal");
+    doc.setFontSize(12);
+    doc.text("Se otorga el presente certificado a", centerX, 78, { align: "center" });
+
+    // NOMBRE DEL ESTUDIANTE
+    doc.setFont("times", "italic");
+    doc.setFontSize(50);
+    doc.setTextColor(...colorTexto);
+    const nombreCompleto = `${certificateInfo.APELLIDOS || ''} ${certificateInfo.NOMBRES || ''}`.trim();
+    doc.text(nombreCompleto, centerX, 105, { align: "center" });
+
+    // Párrafo del cuerpo
+    doc.setFont("times", "normal");
+    doc.setFontSize(11);
+    const textoCuerpo = `En reconocimiento a su excepcional dedicación, perseverancia y compromiso con la excelencia en la finalización del curso "${certificateInfo.TITULO}". Su destacado desempeño con una calificación de ${certificateInfo.NOTA || 0}/10 y ${certificateInfo.ASISTENCIA || 0}% de asistencia en ${certificateInfo.HORAS || 0} horas refleja su pasión por el aprendizaje y su impulso por alcanzar el éxito. Este certificado es símbolo de sus logros y el impacto positivo de sus esfuerzos.`;
+
+    // Dividir texto para que quepa en el ancho
+    const splitText = doc.splitTextToSize(textoCuerpo, 200);
+    doc.text(splitText, centerX, 130, { align: "center" });
+
+    // --- FIRMAS ---
+
+    // Línea Izquierda
+    doc.setDrawColor(40, 44, 52);
+    doc.setLineWidth(0.5);
+    doc.line(40, 175, 110, 175); // x1, y1, x2, y2
+
+    // Texto Izquierda
+    doc.setFont("times", "bold");
+    doc.setFontSize(12);
+    const docenteNombre = certificateInfo.docenteNombreCompleto || "Docente del Curso";
+    doc.text(docenteNombre, 75, 170, { align: "center" });
+    doc.setFont("times", "normal");
+    doc.setFontSize(10);
+    doc.text("Instructor del Curso", 75, 182, { align: "center" });
+
+    // Línea Derecha
+    doc.line(187, 175, 257, 175);
+
+    // Texto Derecha
+    doc.setFont("times", "bold");
+    doc.setFontSize(12);
+    doc.text("Coordinación del Programa", 222, 170, { align: "center" });
+    doc.setFont("times", "normal");
+    doc.setFontSize(10);
+    doc.text("Coordinación Académica", 222, 182, { align: "center" });
+
+    // Guardar PDF
+    doc.save(`Certificado_${nombreCompleto.replace(/\s+/g, '_')}.pdf`);
+  };
 
   return (
     <div className="course-detail-container">
@@ -522,6 +677,7 @@ const EstudianteCourseDetail = () => {
             onTabChange={setActiveTab}
             eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
             showGrades={showGrades}
+            showCertificate={showCertificateTab}
           />
 
           {/* Contenido de los Tabs */}
@@ -550,6 +706,15 @@ const EstudianteCourseDetail = () => {
             {activeTab === 'asistencia' && (
               <AsistenciaTab
                 courseData={courseData}
+              />
+            )}
+            {activeTab === 'certificado' && showCertificateTab && (
+              <CertificatePreview
+                data={certificateInfo}
+                loading={certificateLoading}
+                error={certificateError}
+                onDownload={handleDownloadCertificate}
+                canDownload={canDownloadCertificate}
               />
             )}
           </div>

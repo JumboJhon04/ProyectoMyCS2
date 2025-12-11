@@ -397,7 +397,7 @@
   padding: 24px 0; 
 }
 
-.section-title { 
+.landing-section-title { 
   text-align: center; 
   font-size: 22px; 
   margin: 6px 0 18px;
@@ -796,7 +796,7 @@
   background: linear-gradient(90deg, var(--color-primary), var(--color-secondary), var(--color-tertiary));
 }
 
-.text-only .section-title {
+  .text-only .landing-section-title {
   max-width: 900px;
   margin: 0 auto 12px;
   font-size: 26px;
@@ -807,7 +807,7 @@
   padding-bottom: 12px;
 }
 
-.text-only .section-title::after {
+  .text-only .landing-section-title::after {
   content: '';
   position: absolute;
   bottom: 0;

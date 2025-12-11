@@ -352,9 +352,211 @@ const enviarEmailSolicitud = async (destinatario, nombreUsuario, estado, mensaje
   }
 };
 
+/**
+ * Enviar certificado de aprobación al estudiante
+ * @param {string} destinatario - Correo del destinatario
+ * @param {string} nombreUsuario - Nombre del estudiante
+ * @param {string} tituloEvento - Título del evento
+ * @param {number} horas - Horas del evento
+ * @param {string} fechaFinalizacion - Fecha de finalización
+ * @param {string} docente - Nombre del docente
+ */
+const enviarEmailCertificado = async (destinatario, nombreUsuario, tituloEvento, horas, fechaFinalizacion, docente) => {
+  try {
+    console.log('📧 Enviando certificado a:', destinatario);
+    
+    const fechaFormato = new Date(fechaFinalizacion).toLocaleDateString('es-ES', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    
+    const payload = buildPayload(
+      destinatario,
+      nombreUsuario,
+      '🎓 Tu Certificado de Aprobación - ' + tituloEvento,
+      `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            .header {
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              padding: 30px;
+              text-align: center;
+              border-radius: 8px 8px 0 0;
+            }
+            .content {
+              background: #f9fafb;
+              padding: 30px;
+              border-radius: 0 0 8px 8px;
+              border: 1px solid #e5e7eb;
+              border-top: none;
+            }
+            .cert-icon {
+              font-size: 48px;
+              margin-bottom: 10px;
+            }
+            .cert-box {
+              background: white;
+              padding: 20px;
+              border-radius: 8px;
+              margin: 20px 0;
+              border: 2px solid #667eea;
+              text-align: center;
+            }
+            .cert-title {
+              font-size: 14px;
+              color: #667eea;
+              text-transform: uppercase;
+              letter-spacing: 2px;
+              margin-bottom: 10px;
+            }
+            .cert-info {
+              margin: 15px 0;
+              padding: 10px 0;
+              border-bottom: 1px solid #e5e7eb;
+            }
+            .cert-info:last-child {
+              border-bottom: none;
+            }
+            .cert-label {
+              font-size: 12px;
+              color: #6b7280;
+              text-transform: uppercase;
+            }
+            .cert-value {
+              font-size: 16px;
+              font-weight: bold;
+              color: #1f2937;
+              margin-top: 5px;
+            }
+            .highlight {
+              color: #667eea;
+              font-weight: bold;
+            }
+            .button {
+              display: inline-block;
+              padding: 12px 24px;
+              background: #667eea;
+              color: white;
+              text-decoration: none;
+              border-radius: 6px;
+              margin-top: 20px;
+              font-weight: bold;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 30px;
+              padding-top: 20px;
+              border-top: 1px solid #e5e7eb;
+              color: #6b7280;
+              font-size: 12px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="cert-icon">🎓</div>
+            <h1 style="margin: 0;">¡Felicitaciones!</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Has completado exitosamente el evento</p>
+          </div>
+          
+          <div class="content">
+            <p>Estimado/a <strong>${nombreUsuario}</strong>,</p>
+            
+            <p>Nos complace informarte que has <span class="highlight">completado exitosamente</span> el evento y eres acreedor a tu certificado de aprobación.</p>
+            
+            <div class="cert-box">
+              <div class="cert-title">Certificado de Aprobación</div>
+              
+              <div class="cert-info">
+                <div class="cert-label">Evento</div>
+                <div class="cert-value">${tituloEvento}</div>
+              </div>
+              
+              <div class="cert-info">
+                <div class="cert-label">Horas Académicas</div>
+                <div class="cert-value">${horas} horas</div>
+              </div>
+              
+              <div class="cert-info">
+                <div class="cert-label">Docente</div>
+                <div class="cert-value">${docente || 'Docente asignado'}</div>
+              </div>
+              
+              <div class="cert-info">
+                <div class="cert-label">Fecha de Finalización</div>
+                <div class="cert-value">${fechaFormato}</div>
+              </div>
+            </div>
+            
+            <p>Tu certificado está disponible en tu plataforma. Puedes descargarlo en cualquier momento desde tu panel de estudiante en la sección "Mis Cursos".</p>
+            
+            <p style="text-align: center;">
+              <a href="#" class="button">Ver Mi Certificado</a>
+            </p>
+            
+            <p>Si tienes alguna pregunta o necesitas más información, no dudes en contactarnos.</p>
+          </div>
+          
+          <div class="footer">
+            <p>Este es un mensaje automático, por favor no respondas a este correo.</p>
+            <p>© ${new Date().getFullYear()} Sistema de Eventos UTA - FISEI</p>
+          </div>
+        </body>
+        </html>
+      `,
+      `
+        ¡Felicitaciones! Has Completado el Evento
+        
+        Estimado/a ${nombreUsuario},
+        
+        Nos complace informarte que has completado exitosamente el evento y eres acreedor a tu certificado de aprobación.
+        
+        --- CERTIFICADO DE APROBACIÓN ---
+        
+        Evento: ${tituloEvento}
+        Horas Académicas: ${horas} horas
+        Docente: ${docente || 'Docente asignado'}
+        Fecha de Finalización: ${fechaFormato}
+        
+        Tu certificado está disponible en tu plataforma. Puedes descargarlo en cualquier momento desde tu panel de estudiante.
+        
+        Si tienes alguna pregunta, no dudes en contactarnos.
+        
+        Este es un mensaje automático, por favor no respondas a este correo.
+        © ${new Date().getFullYear()} Sistema de Eventos UTA - FISEI
+      `
+    );
+
+    const info = await transactionalEmailApi.sendTransacEmail(payload);
+    console.log('✅ Certificado enviado exitosamente:', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    logBrevoError(error, 'certificado');
+    return {
+      success: false,
+      error: error.message,
+      details: error.response && error.response.body ? error.response.body : error
+    };
+  }
+};
+
 console.log('📧 Módulo emailService (Brevo) exportado correctamente');
 
 module.exports = {
   enviarEmailPagoAprobado,
-  enviarEmailSolicitud
+  enviarEmailSolicitud,
+  enviarEmailCertificado
 };

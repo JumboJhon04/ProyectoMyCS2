@@ -165,7 +165,7 @@ export default function Landing() {
   // Renderizar sección de cursos
   const renderCoursesSection = (section) => (
     <section id="courses" className="courses-section" key={section.id}>
-      <h3 className="section-title">{section.title}</h3>
+        <h3 className="landing-section-title">{section.title}</h3>
       {section.description && <p className="section-description">{section.description}</p>}
 
       {loadingCourses && <div className="courses-loading">Cargando cursos...</div>}
@@ -201,7 +201,7 @@ export default function Landing() {
   // Renderizar sección de testimonios
   const renderTestimonialsSection = (section) => (
     <section className="testimonials" key={section.id}>
-      <h3 className="section-title">{section.title}</h3>
+        <h3 className="landing-section-title">{section.title}</h3>
       {section.description && <p className="section-description">{section.description}</p>}
       <div className="testi-grid">
         {section.items?.map((testimonial, idx) => (
@@ -221,7 +221,7 @@ export default function Landing() {
     <section className={`content-image ${section.imagePosition || 'right'}`} key={section.id}>
       <div className="content-image-inner">
         <div className="content-text">
-          <h3 className="section-title">{section.title}</h3>
+            <h3 className="landing-section-title">{section.title}</h3>
           {section.description && <p className="section-description">{section.description}</p>}
           <div className="content-body" dangerouslySetInnerHTML={{ __html: section.content }} />
         </div>
@@ -237,7 +237,7 @@ export default function Landing() {
   // Renderizar sección de solo texto
   const renderTextOnlySection = (section) => (
     <section className="text-only" key={section.id}>
-      <h3 className="section-title">{section.title}</h3>
+        <h3 className="landing-section-title">{section.title}</h3>
       {section.description && <p className="section-description">{section.description}</p>}
       <div className="text-content" dangerouslySetInnerHTML={{ __html: section.content }} />
     </section>
@@ -246,7 +246,7 @@ export default function Landing() {
   // Renderizar sección de tarjetas
   const renderCardsSection = (section) => (
     <section className="cards-section" key={section.id}>
-      <h3 className="section-title">{section.title}</h3>
+        <h3 className="landing-section-title">{section.title}</h3>
       {section.description && <p className="section-description">{section.description}</p>}
       <div className="cards-grid">
         {section.items?.map((card, idx) => (
@@ -270,7 +270,7 @@ export default function Landing() {
   // Renderizar sección de galería
   const renderGallerySection = (section) => (
     <section className="gallery-section" key={section.id}>
-      <h3 className="section-title">{section.title}</h3>
+        <h3 className="landing-section-title">{section.title}</h3>
       {section.description && <p className="section-description">{section.description}</p>}
       <div className="gallery-grid">
         {section.images?.map((img, idx) => (

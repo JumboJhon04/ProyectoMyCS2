@@ -1055,21 +1055,109 @@ const actualizarNotas = async (req, res) => {
 
 // NUEVO: Finalizar evento
 const finalizarEvento = async (req, res) => {
+  const { enviarEmailCertificado } = require('../services/emailService');
   const eventoId = req.params.id;
+  let connection;
+
   try {
-    const [result] = await pool.execute(
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    // Actualizar estado del evento
+    const [result] = await connection.execute(
       "UPDATE evento SET ESTADO = 'FINALIZADO' WHERE SECUENCIAL = ?",
       [eventoId]
     );
 
     if (result.affectedRows === 0) {
+      await connection.rollback();
       return res.status(404).json({ error: 'Evento no encontrado' });
     }
 
-    res.json({ success: true, message: 'Evento finalizado correctamente' });
+    // Obtener info del evento
+    const [evento] = await connection.execute(
+      `SELECT e.TITULO, e.HORAS, e.FECHAFIN, e.NOTAAPROBACION, e.ASISTENCIAMINIMA, 
+              u.NOMBRES as docenteNombres, u.APELLIDOS as docenteApellidos
+       FROM evento e
+       LEFT JOIN usuario u ON e.Docente = u.SECUENCIAL
+       WHERE e.SECUENCIAL = ?`,
+      [eventoId]
+    );
+
+    if (!evento.length) {
+      await connection.rollback();
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+
+    const eventoData = evento[0];
+    const notaMinima = Number(eventoData.NOTAAPROBACION || 0);
+    const asistenciaMinima = Number(eventoData.ASISTENCIAMINIMA || 0);
+    const docente = `${eventoData.docenteNombres || ''} ${eventoData.docenteApellidos || ''}`.trim();
+
+    // Obtener estudiantes elegibles para certificado
+    const [estudiantes] = await connection.execute(
+      `SELECT DISTINCT
+        i.SECUENCIALUSUARIO,
+        u.CORREO,
+        u.NOMBRES,
+        u.APELLIDOS,
+        i.NOTA,
+        i.ASISTENCIA
+       FROM inscripcion i
+       INNER JOIN usuario u ON i.SECUENCIALUSUARIO = u.SECUENCIAL
+       WHERE i.SECUENCIALEVENTO = ?
+         AND i.CODIGOESTADOINSCRIPCION = 'ACE'
+         AND CAST(i.NOTA AS DECIMAL(10,2)) >= ?
+         AND CAST(i.ASISTENCIA AS DECIMAL(10,2)) >= ?`,
+      [eventoId, notaMinima, asistenciaMinima]
+    );
+
+    await connection.commit();
+
+    // Enviar certificados por email (fuera de la transacción para no bloquear)
+    let certificadosEnviados = 0;
+    let certificadosError = 0;
+
+    for (const estudiante of estudiantes) {
+      try {
+        const nombreCompleto = `${estudiante.NOMBRES} ${estudiante.APELLIDOS}`;
+        const resultado = await enviarEmailCertificado(
+          estudiante.CORREO,
+          nombreCompleto,
+          eventoData.TITULO,
+          eventoData.HORAS || 0,
+          eventoData.FECHAFIN,
+          docente
+        );
+
+        if (resultado.success) {
+          certificadosEnviados++;
+          console.log(`✅ Certificado enviado a ${estudiante.CORREO}`);
+        } else {
+          certificadosError++;
+          console.error(`❌ Error enviando certificado a ${estudiante.CORREO}:`, resultado.error);
+        }
+      } catch (err) {
+        certificadosError++;
+        console.error(`❌ Excepción enviando certificado a ${estudiante.CORREO}:`, err.message);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Evento finalizado correctamente',
+      certificados: {
+        elegibles: estudiantes.length,
+        enviados: certificadosEnviados,
+        errores: certificadosError
+      }
+    });
   } catch (error) {
+    if (connection) await connection.rollback();
     console.error('❌ Error al finalizar evento:', error);
     res.status(500).json({ error: 'Error al finalizar evento' });
+  } finally {
+    if (connection) connection.release();
   }
 };
 
