@@ -243,10 +243,10 @@ const ProfesorCourseDetail = () => {
           <FaBook /> Módulos del Curso
         </div>
 
-        {/* LISTA DE MÓDULOS (TARJETAS) */}
+        {/* LISTA DE MÓDULOS (TARJETAS) - Siempre en el grid */}
         <div className="course-modules-list-profesor">
           {modules.length === 0 ? <p className="no-modules">No hay módulos definidos.</p> :
-            modules.map((module) => {
+            modules.map((module, index) => {
               const taskCount = tasksByModule[module.SECUENCIAL]?.length || 0;
               const resourceCount = resourcesByModule[module.SECUENCIAL]?.length || 0;
               const isSelected = selectedModuleForView?.SECUENCIAL === module.SECUENCIAL;
@@ -254,8 +254,9 @@ const ProfesorCourseDetail = () => {
               return (
                 <div
                   key={module.SECUENCIAL}
-                  className={`module-card-profesor ${isSelected ? 'selected' : ''}`}
+                  className={`module-card-profesor ${isSelected ? 'selected' : ''} ${selectedModuleForView && !isSelected ? 'dimmed' : ''}`}
                   onClick={() => setSelectedModuleForView(isSelected ? null : module)}
+                  style={{ position: 'relative', zIndex: isSelected ? 10 : selectedModuleForView ? 6 : 2 }}
                 >
                   <div className="module-card-icon"><FaBook /></div>
                   <h4 className="module-card-title-centered">{module.TITULO}</h4>
@@ -267,13 +268,17 @@ const ProfesorCourseDetail = () => {
             })}
         </div>
 
-        {/* --- OVERLAY DETALLE MÓDULO --- */}
+        {/* OVERLAY OSCURO */}
         {selectedModuleForView && (
-          <div className="dark-overlay" onClick={() => setSelectedModuleForView(null)} />
+          <div
+            className="dark-overlay"
+            onClick={() => setSelectedModuleForView(null)}
+          />
         )}
 
+        {/* CONTENIDO EXPANDIDO - Aparece DESPUÉS del grid completo */}
         {selectedModuleForView && (
-          <div className="module-expanded-content">
+          <div className="module-expanded-content-below-grid">
             {/* CABECERA DEL MÓDULO EXPANDIDO */}
             <div className="expanded-content-header">
               <div className="expanded-header-left">

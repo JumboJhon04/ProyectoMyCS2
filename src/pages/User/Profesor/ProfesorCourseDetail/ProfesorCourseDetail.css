@@ -111,6 +111,9 @@
     padding: 20px 30px;
     margin-bottom: 25px;
     justify-content: space-around;
+    position: relative;
+    z-index: 20;
+    /* Por encima del overlay oscuro */
 }
 
 .stat-item-profesor {
@@ -843,18 +846,18 @@
     }
 }
 
-/* --- ESTILOS PARA MÓDULO EXPANDIDO (OVERLAY) --- */
+/* --- OVERLAY Y DIMMING --- */
 
 /* Overlay oscuro de fondo */
 .dark-overlay {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-    animation: fadeIn 0.2s ease;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 5;
+    animation: fadeIn 0.2s ease-out;
 }
 
 @keyframes fadeIn {
@@ -867,32 +870,79 @@
     }
 }
 
-/* Contenedor del módulo expandido */
-.module-expanded-content {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90%;
-    max-width: 900px;
-    max-height: 85vh;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
-    overflow: hidden;
-    animation: slideIn 0.3s ease;
+/* Cards dimmed cuando hay una seleccionada */
+.module-card-profesor.dimmed {
+    opacity: 0.3;
+    transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-@keyframes slideIn {
+.module-card-profesor.dimmed:hover {
+    opacity: 1;
+    /* Se ilumina al pasar el cursor */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(15, 23, 36, 0.2);
+}
+
+.module-card-profesor.selected {
+    border-color: #0f1724;
+    box-shadow: 0 8px 20px rgba(15, 23, 36, 0.15) !important;
+}
+
+/* --- CONTENIDO EXPANDIDO DEBAJO DEL GRID --- */
+
+/* Contenedor que aparece DESPUÉS del grid completo */
+.module-expanded-content-below-grid {
+    margin-top: 2rem;
+    background: white;
+    border: 2px solid #0f1724;
+    border-radius: 12px;
+    overflow: hidden;
+    animation: slideDown 0.3s ease-out;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    position: relative;
+    z-index: 15;
+    /* Por encima del overlay */
+}
+
+@keyframes slideDown {
     from {
-        transform: translate(-50%, -60%);
         opacity: 0;
+        transform: translateY(-10px);
     }
 
     to {
-        transform: translate(-50%, -50%);
         opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- ESTILOS PARA MÓDULO EXPANDIDO INLINE --- */
+
+/* Contenedor del módulo expandido INLINE (dentro del grid) */
+.module-expanded-content-inline {
+    grid-column: 1 / -1;
+    /* Ocupa todo el ancho del grid */
+    background: white;
+    border: 2px solid #0f1724;
+    border-radius: 12px;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    animation: slideDown 0.3s ease-out;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+        max-height: 0;
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 2000px;
     }
 }
 
@@ -947,8 +997,7 @@
 /* Body del contenido expandido */
 .expanded-content-body {
     padding: 2rem;
-    max-height: calc(85vh - 120px);
-    overflow-y: auto;
+    /* Removido max-height y overflow para que se expanda naturalmente */
 }
 
 /* Título de sección dentro del modal */
