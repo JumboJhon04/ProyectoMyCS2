@@ -167,3 +167,58 @@ exports.obtenerIntentosEstudiante = async (req, res) => {
         res.status(500).json({ success: false, message: 'Error obteniendo intentos' });
     }
 };
+
+// 7. Listar evaluaciones creadas por un profesor (Todas)
+exports.listarEvaluacionesPorProfesor = async (req, res) => {
+    const { profesorId } = req.params;
+    try {
+        const [evaluaciones] = await pool.execute(
+            `SELECT 
+                e.*, 
+                m.TITULO as ModuloNombre, 
+                ev.TITULO as CursoNombre,
+                (SELECT COUNT(*) FROM pregunta p WHERE p.SECUENCIALEVALUACION = e.SECUENCIAL) as questionsCount,
+                (SELECT COUNT(*) FROM intento_evaluacion i WHERE i.SECUENCIALEVALUACION = e.SECUENCIAL) as attemptsCount
+             FROM evaluacion e
+             INNER JOIN modulo m ON e.SECUENCIALMODULO = m.SECUENCIAL
+             INNER JOIN evento ev ON m.SECUENCIALEVENTO = ev.SECUENCIAL
+             WHERE ev.Docente = ?
+             ORDER BY e.FECHA_INICIO DESC`,
+            [profesorId]
+        );
+        res.json({ success: true, data: evaluaciones });
+    } catch (error) {
+        console.error("Error listando evaluaciones profesor:", error);
+        res.status(500).json({ success: false, message: 'Error listando evaluaciones' });
+    }
+};
+
+// 8. Listar TODAS las evaluaciones disponibles para un estudiante (Inscrito)
+exports.obtenerEvaluacionesPorEstudiante = async (req, res) => {
+    const { estudianteId } = req.params;
+    try {
+        const [evaluaciones] = await pool.execute(
+            `SELECT 
+                e.*, 
+                m.TITULO as ModuloNombre,
+                ev.TITULO as CursoNombre,
+                i.SECUENCIAL as IntentoId,
+                i.CALIFICACION_FINAL,
+                i.ESTADO as EstadoIntento,
+                i.FECHA_INICIO as FechaIntento,
+                (SELECT COUNT(*) FROM pregunta p WHERE p.SECUENCIALEVALUACION = e.SECUENCIAL) as questionsCount
+            FROM evaluacion e
+            INNER JOIN modulo m ON e.SECUENCIALMODULO = m.SECUENCIAL
+            INNER JOIN evento ev ON m.SECUENCIALEVENTO = ev.SECUENCIAL
+            INNER JOIN inscripcion ins ON ev.SECUENCIAL = ins.SECUENCIALEVENTO
+            LEFT JOIN intento_evaluacion i ON e.SECUENCIAL = i.SECUENCIALEVALUACION AND i.SECUENCIALESTUDIANTE = ?
+            WHERE ins.SECUENCIALUSUARIO = ? AND ins.CODIGOESTADOINSCRIPCION = 'ACE'
+            ORDER BY e.FECHA_INICIO ASC`,
+            [estudianteId, estudianteId]
+        );
+        res.json({ success: true, data: evaluaciones });
+    } catch (error) {
+        console.error("Error obteniendo evaluaciones estudiante:", error);
+        res.status(500).json({ success: false, message: 'Error obteniendo evaluaciones' });
+    }
+};

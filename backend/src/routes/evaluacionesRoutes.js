@@ -20,4 +20,10 @@ router.post('/entregar', evaluacionesController.entregarEvaluacion);
 // Obtener intentos del estudiante
 router.get('/intentos/:estudianteId', evaluacionesController.obtenerIntentosEstudiante);
 
+// Obtener todas las evaluaciones del profesor
+router.get('/profesor/:profesorId', evaluacionesController.listarEvaluacionesPorProfesor);
+
+// Obtener todas las evaluaciones disponibles para un estudiante
+router.get('/estudiante/:estudianteId', evaluacionesController.obtenerEvaluacionesPorEstudiante);
+
 module.exports = router;
