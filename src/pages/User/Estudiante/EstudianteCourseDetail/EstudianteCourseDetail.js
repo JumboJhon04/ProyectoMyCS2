@@ -7,6 +7,7 @@ import CourseNavigationTabs from '../../../../components/CourseNavigationTabs/Co
 import MaterialTab from '../../../../components/CourseTabs/MaterialTab';
 import ParticipantesTab from '../../../../components/CourseTabs/ParticipantesTab';
 import CalificacionesTab from '../../../../components/CourseTabs/CalificacionesTab';
+import AsistenciaTab from '../../../../components/CourseTabs/AsistenciaTab';
 import { getEventTheme } from '../../../../config/eventThemes';
 import {
   FaClock, FaMoneyBill,
@@ -544,6 +545,11 @@ const EstudianteCourseDetail = () => {
               <CalificacionesTab
                 courseData={courseData}
                 eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
+              />
+            )}
+            {activeTab === 'asistencia' && (
+              <AsistenciaTab
+                courseData={courseData}
               />
             )}
           </div>

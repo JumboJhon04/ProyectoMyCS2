@@ -234,10 +234,10 @@ const crearInscripcion = async (req, res) => {
     // Nota: 'Docente' en la DB suele ser el ID del usuario (INT/STRING)
     const docenteId = evento[0].Docente ? String(evento[0].Docente) : null;
     if (docenteId === String(usuarioId)) {
-        await connection.rollback();
-        return res.status(400).json({ 
-            error: 'No puedes inscribirte a un evento del cual eres el docente responsable.' 
-        });
+      await connection.rollback();
+      return res.status(400).json({
+        error: 'No puedes inscribirte a un evento del cual eres el docente responsable.'
+      });
     }
 
     const esPagado = evento[0].ES_PAGADO === 1;
@@ -276,11 +276,114 @@ const crearInscripcion = async (req, res) => {
   }
 };
 
+// Obtener asistencia y notas de un estudiante en un evento
+const obtenerAsistenciaEvento = async (req, res) => {
+  const usuarioId = req.params.id;
+  const { eventoId } = req.params;
+
+  try {
+    const [rows] = await pool.execute(
+      `SELECT 
+        an.SECUENCIAL,
+        an.PORCENTAJE_ASISTENCIA,
+        an.ASISTIO,
+        an.NOTAFINAL,
+        an.OBSERVACION,
+        e.ASISTENCIAMINIMA,
+        e.NOTAAPROBACION
+       FROM evento e
+       LEFT JOIN asistencia_nota an ON e.SECUENCIAL = an.SECUENCIALEVENTO AND an.SECUENCIALUSUARIO = ?
+       WHERE e.SECUENCIAL = ?`,
+      [usuarioId, eventoId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+
+    const data = rows[0];
+
+    // Si no hay registro en asistencia_nota, devolvemos nulls pero con la info del evento
+    res.json({
+      success: true,
+      data: {
+        porcentajeAsistencia: data.PORCENTAJE_ASISTENCIA || 0,
+        asistio: data.ASISTIO === 1,
+        notaFinal: data.NOTAFINAL,
+        observacion: data.OBSERVACION,
+        asistenciaMinima: data.ASISTENCIAMINIMA,
+        notaAprobacion: data.NOTAAPROBACION
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error al obtener asistencia:', error);
+    res.status(500).json({ error: 'Error al obtener asistencia', details: error.message });
+  }
+};
+
+// Registrar asistencia por el propio estudiante
+const registrarAsistenciaEvento = async (req, res) => {
+  const usuarioId = req.params.id;
+  const { eventoId } = req.params;
+
+  let connection;
+  try {
+    connection = await pool.getConnection();
+
+    // Verificar si ya registró asistencia
+    const [existing] = await connection.execute(
+      'SELECT SECUENCIAL, ASISTIO FROM asistencia_nota WHERE SECUENCIALEVENTO = ? AND SECUENCIALUSUARIO = ?',
+      [eventoId, usuarioId]
+    );
+
+    if (existing.length > 0 && existing[0].ASISTIO === 1) {
+      return res.status(400).json({ error: 'Ya has registrado tu asistencia para este evento.' });
+    }
+
+    if (existing.length > 0) {
+      // Actualizar registro existente
+      await connection.execute(
+        `UPDATE asistencia_nota SET 
+          PORCENTAJE_ASISTENCIA = 100, 
+          ASISTIO = 1 
+         WHERE SECUENCIAL = ?`,
+        [existing[0].SECUENCIAL]
+      );
+    } else {
+      // Crear nuevo registro
+      // Nota: Asumimos NOTA = 0 si no existe, o se actualiza luego con las calificaciones
+      await connection.execute(
+        `INSERT INTO asistencia_nota (SECUENCIALEVENTO, SECUENCIALUSUARIO, PORCENTAJE_ASISTENCIA, ASISTIO, NOTAFINAL)
+         VALUES (?, ?, 100, 1, 0)`,
+        [eventoId, usuarioId]
+      );
+    }
+
+    // También actualizar tabla inscripcion para mantener sincronía si es necesario
+    await connection.execute(
+      `UPDATE inscripcion SET ASISTENCIA = 100 
+         WHERE SECUENCIALEVENTO = ? AND SECUENCIALUSUARIO = ?`,
+      [eventoId, usuarioId]
+    );
+
+    res.json({ success: true, message: 'Asistencia registrada correctamente.' });
+
+  } catch (error) {
+    console.error('❌ Error al registrar asistencia:', error);
+    res.status(500).json({ error: 'Error al registrar asistencia', details: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
 module.exports = {
   obtenerEstudiantes,
   obtenerEstudiante,
   actualizarEstudiante,
   obtenerEventosDeUsuario,
   obtenerInscripcionPorEvento,
-  crearInscripcion
+  crearInscripcion,
+  obtenerAsistenciaEvento,
+  registrarAsistenciaEvento
 };
