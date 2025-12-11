@@ -218,15 +218,25 @@ const crearInscripcion = async (req, res) => {
       return res.status(400).json({ error: 'Usuario ya inscrito en este evento' });
     }
 
-    // Obtener información del evento para verificar si es pagado
+    // Obtener información del evento para verificar si es pagado y si el usuario es el docente
     const [evento] = await connection.execute(
-      'SELECT ES_PAGADO, COSTO FROM evento WHERE SECUENCIAL = ?',
+      'SELECT ES_PAGADO, COSTO, Docente FROM evento WHERE SECUENCIAL = ?',
       [eventoId]
     );
 
     if (evento.length === 0) {
       await connection.rollback();
       return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+
+    // VERIFICAR SI EL USUARIO ES EL DOCENTE DEL EVENTO
+    // Nota: 'Docente' en la DB suele ser el ID del usuario (INT/STRING)
+    const docenteId = evento[0].Docente ? String(evento[0].Docente) : null;
+    if (docenteId === String(usuarioId)) {
+        await connection.rollback();
+        return res.status(400).json({ 
+            error: 'No puedes inscribirte a un evento del cual eres el docente responsable.' 
+        });
     }
 
     const esPagado = evento[0].ES_PAGADO === 1;

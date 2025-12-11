@@ -106,7 +106,32 @@ const actualizarPerfil = async (req, res) => {
   }
 };
 
+// Obtener lista de docentes (usuarios disponibles para asignar)
+const obtenerDocentes = async (req, res) => {
+  try {
+    const [docentes] = await pool.execute(
+      `SELECT SECUENCIAL as id, NOMBRES, APELLIDOS, CORREO 
+       FROM usuario 
+       WHERE CODIGOROL = 'EST'
+       ORDER BY APELLIDOS ASC`
+    );
+
+    res.json({
+      success: true,
+      data: docentes
+    });
+  } catch (error) {
+    console.error('❌ Error al obtener docentes:', error);
+    res.status(500).json({
+      error: 'Error al obtener lista de docentes',
+      details: error.message
+    });
+  }
+};
+
 module.exports = {
   obtenerPerfil,
-  actualizarPerfil
+  actualizarPerfil,
+  obtenerDocentes
 };
+
