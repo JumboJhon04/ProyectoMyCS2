@@ -9,7 +9,7 @@ import ParticipantesTab from '../../../../components/CourseTabs/ParticipantesTab
 import CalificacionesTab from '../../../../components/CourseTabs/CalificacionesTab';
 import { getEventTheme } from '../../../../config/eventThemes';
 import {
-  FaClock, FaMoneyBillWave,
+  FaClock, FaMoneyBill,
   FaClipboardCheck, FaCheckCircle, FaChartBar,
   FaBook, FaCheck
 } from 'react-icons/fa';
@@ -170,7 +170,7 @@ const EstudianteCourseDetail = () => {
 
   useEffect(() => {
     const fetchModulesAndTasks = async () => {
-      const userId = user?.id || user?.SECUENCIAL;
+      const userId = user?.id || user?.ID || user?.SECUENCIAL || user?.secuencial || user?.usuarioId;
       if (!courseId || !userId) return;
 
       try {
@@ -184,19 +184,34 @@ const EstudianteCourseDetail = () => {
         const mods = modJson.data || [];
         console.log('Modules fetched:', mods);
 
-        // 2. Para cada módulo, obtener tareas con status de estudiante
-        const modulesWithTasks = await Promise.all(mods.map(async (mod) => {
+        // 2. Para cada módulo, obtener tareas y recursos
+        const modulesWithContent = await Promise.all(mods.map(async (mod) => {
+          let tareas = [];
+          let recursos = [];
+
+          // Fetch Tareas con status
           try {
             const taskRes = await fetch(`${API_URL}/api/tareas/modulo/${mod.SECUENCIAL}/estudiante/${userId}`);
             const taskJson = await taskRes.json();
-            return { ...mod, tasks: taskJson.data || [] };
+            tareas = taskJson.data || [];
           } catch (err) {
             console.warn(`Error cargando tareas para modulo ${mod.SECUENCIAL}`, err);
-            return { ...mod, tasks: [] };
           }
+
+          // Fetch Recursos
+          try {
+            // Reutilizamos el endpoint de recursos por módulo
+            const resRes = await fetch(`${API_URL}/api/recursos/modulo/${mod.SECUENCIAL}`);
+            const resJson = await resRes.json();
+            recursos = resJson.data || [];
+          } catch (err) {
+            console.warn(`Error cargando recursos para modulo ${mod.SECUENCIAL}`, err);
+          }
+
+          return { ...mod, tareas, recursos };
         }));
 
-        setModules(modulesWithTasks);
+        setModules(modulesWithContent);
       } catch (e) {
         console.error('Error cargando módulos:', e);
       } finally {
@@ -386,7 +401,7 @@ const EstudianteCourseDetail = () => {
           </div>
           {esPagado && (
             <div className="stat-item">
-              <FaMoneyBillWave className="stat-icon" />
+              <FaMoneyBill className="stat-icon" />
               <span>Costo</span>
               <strong>${parseFloat(costo).toFixed(2)}</strong>
             </div>
@@ -457,6 +472,7 @@ const EstudianteCourseDetail = () => {
                 modules={modules} // Pasamos los módulos reales
                 loading={modulesLoading}
                 eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
+                courseData={courseData}
               />
             )}
             {activeTab === 'participantes' && (

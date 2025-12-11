@@ -87,6 +87,7 @@ exports.listarTareasEstudiantePorModulo = async (req, res) => {
     }
 };
 
+
 // 5. Listar entregas de una tarea específica (Para calificar)
 exports.listarEntregasPorTarea = async (req, res) => {
     const { tareaId } = req.params;
@@ -132,5 +133,35 @@ exports.calificarEntrega = async (req, res) => {
     } catch (error) {
         console.error("❌ Error calificando:", error);
         res.status(500).json({ success: false, message: 'Error al calificar' });
+    }
+};
+
+// 7. Listar entregas de un estudiante en un evento específico
+exports.listarEntregasPorEstudiante = async (req, res) => {
+    const { estudianteId, eventoId } = req.params;
+    try {
+        // Obtener todas las entregas del estudiante para tareas de módulos del evento
+        const [entregas] = await pool.execute(
+            `SELECT 
+                et.SECUENCIAL as entregaId,
+                et.SECUENCIALTAREA as tareaId,
+                et.URL_ARCHIVO,
+                et.COMENTARIO_ESTUDIANTE,
+                et.FECHA_ENTREGA,
+                et.CALIFICACION,
+                et.RETROALIMENTACION,
+                et.ESTADO,
+                t.TITULO as tituloTarea,
+                t.PUNTOS_MAXIMOS
+             FROM entrega_tarea et
+             INNER JOIN tarea t ON et.SECUENCIALTAREA = t.SECUENCIAL
+             INNER JOIN modulo m ON t.SECUENCIALMODULO = m.SECUENCIAL
+             WHERE et.SECUENCIALESTUDIANTE = ? AND m.SECUENCIALEVENTO = ?`,
+            [estudianteId, eventoId]
+        );
+        res.json({ success: true, data: entregas });
+    } catch (error) {
+        console.error("❌ Error listando entregas del estudiante:", error);
+        res.status(500).json({ success: false, message: 'Error al listar entregas' });
     }
 };

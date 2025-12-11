@@ -1,14 +1,32 @@
 const { pool } = require('../config/database'); // Asegúrate que apunta a tu conexión MySQL
 
-// Listar módulos de un evento específico
+// Listar módulos de un evento específico con tareas y recursos
 exports.listarModulosPorEvento = async (req, res) => {
     const { eventoId } = req.params;
     try {
         // Obtenemos los módulos ordenados
         const [modulos] = await pool.query(
-            `SELECT * FROM modulo WHERE SECUENCIALEVENTO = ? ORDER BY ORDEN ASC`, 
+            `SELECT * FROM modulo WHERE SECUENCIALEVENTO = ? ORDER BY ORDEN ASC`,
             [eventoId]
         );
+
+        // Para cada módulo, obtener sus tareas y recursos
+        for (let modulo of modulos) {
+            // Obtener tareas del módulo
+            const [tareas] = await pool.query(
+                `SELECT * FROM tarea WHERE SECUENCIALMODULO = ? ORDER BY FECHA_APERTURA ASC`,
+                [modulo.SECUENCIAL]
+            );
+            modulo.tareas = tareas;
+
+            // Obtener recursos del módulo
+            const [recursos] = await pool.query(
+                `SELECT * FROM recurso WHERE SECUENCIALMODULO = ? ORDER BY FECHA_SUBIDA DESC`,
+                [modulo.SECUENCIAL]
+            );
+            modulo.recursos = recursos;
+        }
+
         res.json({ success: true, data: modulos });
     } catch (error) {
         console.error(error);
