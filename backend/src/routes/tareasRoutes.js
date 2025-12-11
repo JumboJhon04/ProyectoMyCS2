@@ -15,6 +15,9 @@ router.get('/modulo/:moduloId/estudiante/:estudianteId', tareasController.listar
 // Ver quién entregó
 router.get('/:tareaId/entregas', tareasController.listarEntregasPorTarea);
 
+// Ruta para calificar entrega
+router.put('/calificar/:entregaId', tareasController.calificarEntrega);
+
 // Nueva ruta: Obtener entregas de un estudiante en un evento específico
 router.get('/estudiante/:estudianteId/evento/:eventoId', tareasController.listarEntregasPorEstudiante);
 
