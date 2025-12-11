@@ -8,5 +8,7 @@ router.put('/:id', estudiantesController.actualizarEstudiante);
 router.get('/:id/eventos', estudiantesController.obtenerEventosDeUsuario);
 router.get('/:id/inscripcion', estudiantesController.obtenerInscripcionPorEvento);
 router.post('/:id/inscribir', estudiantesController.crearInscripcion);
+router.get('/:id/evento/:eventoId/asistencia', estudiantesController.obtenerAsistenciaEvento);
+router.post('/:id/evento/:eventoId/asistencia', estudiantesController.registrarAsistenciaEvento);
 
 module.exports = router;

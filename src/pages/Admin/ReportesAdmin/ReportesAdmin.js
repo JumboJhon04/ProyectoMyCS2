@@ -3,6 +3,7 @@ import { FaFilePdf, FaFilter, FaChartBar, FaSync } from 'react-icons/fa';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import API_URL from '../../../config/api';
+import { useUser } from '../../../context/UserContext';
 import './ReportesAdmin.css';
 
 const REPORT_ENDPOINT = {
@@ -32,6 +33,7 @@ const ESTADO_OPTIONS = {
 };
 
 const ReportesAdmin = () => {
+  const { user } = useUser();
   const [reportType, setReportType] = useState('inscripciones');
   const [filtros, setFiltros] = useState({ eventoId: '', estado: '', desde: '', hasta: '' });
   const [eventos, setEventos] = useState([]);
@@ -425,7 +427,7 @@ const ReportesAdmin = () => {
 
           <div className="reportes-panel">
             <div className="report-selector">
-                {['inscripciones', 'pagos', 'asistencias'].map((id) => (
+              {['inscripciones', 'pagos', 'asistencias'].map((id) => (
                 <button
                   key={id}
                   className={reportType === id ? 'selector active' : 'selector'}

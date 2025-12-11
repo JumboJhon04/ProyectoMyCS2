@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaBook, FaUsers, FaChartBar, FaCertificate } from 'react-icons/fa';
+import { FaBook, FaUsers, FaChartBar, FaCalendarCheck, FaCertificate } from 'react-icons/fa';
 import './CourseNavigationTabs.css';
 
 const CourseNavigationTabs = ({ activeTab, onTabChange, eventType, showGrades, showCertificate }) => {
@@ -13,6 +13,11 @@ const CourseNavigationTabs = ({ activeTab, onTabChange, eventType, showGrades, s
             id: 'participantes',
             label: 'Participantes',
             icon: <FaUsers />,
+        },
+        {
+            id: 'asistencia',
+            label: 'Asistencia',
+            icon: <FaCalendarCheck />,
         },
     ];
 

@@ -7,6 +7,7 @@ import CourseNavigationTabs from '../../../../components/CourseNavigationTabs/Co
 import MaterialTab from '../../../../components/CourseTabs/MaterialTab';
 import ParticipantesTab from '../../../../components/CourseTabs/ParticipantesTab';
 import CalificacionesTab from '../../../../components/CourseTabs/CalificacionesTab';
+import AsistenciaTab from '../../../../components/CourseTabs/AsistenciaTab';
 import { getEventTheme } from '../../../../config/eventThemes';
 import {
   FaClock, FaMoneyBill,
@@ -470,11 +471,11 @@ const EstudianteCourseDetail = () => {
     const colorTexto = [40, 44, 52];    // Gris oscuro casi negro
 
     // --- DISEÑO GRÁFICO (BORDES) ---
-    
+
     // Borde Exterior (Dorado Fino)
     doc.setDrawColor(...colorDorado);
     doc.setLineWidth(1);
-    doc.rect(10, 10, 277, 190); 
+    doc.rect(10, 10, 277, 190);
 
     // Borde Interior (Dorado más grueso)
     doc.setLineWidth(0.5);
@@ -506,9 +507,9 @@ const EstudianteCourseDetail = () => {
     doc.text("Se otorga el presente certificado a", centerX, 78, { align: "center" });
 
     // NOMBRE DEL ESTUDIANTE
-    doc.setFont("times", "italic"); 
+    doc.setFont("times", "italic");
     doc.setFontSize(50);
-    doc.setTextColor(...colorTexto); 
+    doc.setTextColor(...colorTexto);
     const nombreCompleto = `${certificateInfo.APELLIDOS || ''} ${certificateInfo.NOMBRES || ''}`.trim();
     doc.text(nombreCompleto, centerX, 105, { align: "center" });
 
@@ -516,18 +517,18 @@ const EstudianteCourseDetail = () => {
     doc.setFont("times", "normal");
     doc.setFontSize(11);
     const textoCuerpo = `En reconocimiento a su excepcional dedicación, perseverancia y compromiso con la excelencia en la finalización del curso "${certificateInfo.TITULO}". Su destacado desempeño con una calificación de ${certificateInfo.NOTA || 0}/10 y ${certificateInfo.ASISTENCIA || 0}% de asistencia en ${certificateInfo.HORAS || 0} horas refleja su pasión por el aprendizaje y su impulso por alcanzar el éxito. Este certificado es símbolo de sus logros y el impacto positivo de sus esfuerzos.`;
-    
+
     // Dividir texto para que quepa en el ancho
     const splitText = doc.splitTextToSize(textoCuerpo, 200);
     doc.text(splitText, centerX, 130, { align: "center" });
 
     // --- FIRMAS ---
-    
+
     // Línea Izquierda
     doc.setDrawColor(40, 44, 52);
     doc.setLineWidth(0.5);
     doc.line(40, 175, 110, 175); // x1, y1, x2, y2
-    
+
     // Texto Izquierda
     doc.setFont("times", "bold");
     doc.setFontSize(12);
@@ -700,6 +701,11 @@ const EstudianteCourseDetail = () => {
               <CalificacionesTab
                 courseData={courseData}
                 eventType={courseData?.CODIGOTIPOEVENTO || 'CUR'}
+              />
+            )}
+            {activeTab === 'asistencia' && (
+              <AsistenciaTab
+                courseData={courseData}
               />
             )}
             {activeTab === 'certificado' && showCertificateTab && (

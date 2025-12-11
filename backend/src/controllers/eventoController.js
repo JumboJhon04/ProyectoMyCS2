@@ -322,19 +322,19 @@ const actualizarEvento = async (req, res) => {
     // Verificar estado actual del evento
     const [currentEvent] = await connection.execute('SELECT ESTADO FROM evento WHERE SECUENCIAL = ?', [eventoId]);
     if (currentEvent.length === 0) {
-        await connection.rollback();
-        return res.status(404).json({ error: 'Evento no encontrado' });
+      await connection.rollback();
+      return res.status(404).json({ error: 'Evento no encontrado' });
     }
 
     if (currentEvent[0].ESTADO === 'FINALIZADO') {
-        await connection.rollback();
-        return res.status(403).json({ error: 'No se puede editar un evento finalizado.' });
+      await connection.rollback();
+      return res.status(403).json({ error: 'No se puede editar un evento finalizado.' });
     }
-    
+
     // if (!title || !type) {
     if (!title) {
-      return res.status(400).json({ 
-        error: 'El nombre del evento es obligatorio' 
+      return res.status(400).json({
+        error: 'El nombre del evento es obligatorio'
       });
     }
 
@@ -1017,7 +1017,7 @@ const obtenerInscritosEvento = async (req, res) => {
 const actualizarNotas = async (req, res) => {
   const eventoId = req.params.id;
   const { grades } = req.body; // Array de { usuarioId, nota, asistencia }
-  
+
   if (!Array.isArray(grades)) {
     return res.status(400).json({ error: 'Formato de notas inválido' });
   }
@@ -1041,7 +1041,7 @@ const actualizarNotas = async (req, res) => {
         [g.nota, g.asistencia, eventoId, g.usuarioId]
       );
     }
-    
+
     await connection.commit();
     res.json({ success: true, message: 'Notas actualizadas correctamente' });
   } catch (error) {
@@ -1058,22 +1058,22 @@ const finalizarEvento = async (req, res) => {
   const { enviarEmailCertificado } = require('../services/emailService');
   const eventoId = req.params.id;
   let connection;
-  
+
   try {
     connection = await pool.getConnection();
     await connection.beginTransaction();
-    
+
     // Actualizar estado del evento
     const [result] = await connection.execute(
       "UPDATE evento SET ESTADO = 'FINALIZADO' WHERE SECUENCIAL = ?",
       [eventoId]
     );
-    
+
     if (result.affectedRows === 0) {
       await connection.rollback();
       return res.status(404).json({ error: 'Evento no encontrado' });
     }
-    
+
     // Obtener info del evento
     const [evento] = await connection.execute(
       `SELECT e.TITULO, e.HORAS, e.FECHAFIN, e.NOTAAPROBACION, e.ASISTENCIAMINIMA, 
@@ -1083,17 +1083,17 @@ const finalizarEvento = async (req, res) => {
        WHERE e.SECUENCIAL = ?`,
       [eventoId]
     );
-    
+
     if (!evento.length) {
       await connection.rollback();
       return res.status(404).json({ error: 'Evento no encontrado' });
     }
-    
+
     const eventoData = evento[0];
     const notaMinima = Number(eventoData.NOTAAPROBACION || 0);
     const asistenciaMinima = Number(eventoData.ASISTENCIAMINIMA || 0);
     const docente = `${eventoData.docenteNombres || ''} ${eventoData.docenteApellidos || ''}`.trim();
-    
+
     // Obtener estudiantes elegibles para certificado
     const [estudiantes] = await connection.execute(
       `SELECT DISTINCT
@@ -1111,13 +1111,13 @@ const finalizarEvento = async (req, res) => {
          AND CAST(i.ASISTENCIA AS DECIMAL(10,2)) >= ?`,
       [eventoId, notaMinima, asistenciaMinima]
     );
-    
+
     await connection.commit();
-    
+
     // Enviar certificados por email (fuera de la transacción para no bloquear)
     let certificadosEnviados = 0;
     let certificadosError = 0;
-    
+
     for (const estudiante of estudiantes) {
       try {
         const nombreCompleto = `${estudiante.NOMBRES} ${estudiante.APELLIDOS}`;
@@ -1129,7 +1129,7 @@ const finalizarEvento = async (req, res) => {
           eventoData.FECHAFIN,
           docente
         );
-        
+
         if (resultado.success) {
           certificadosEnviados++;
           console.log(`✅ Certificado enviado a ${estudiante.CORREO}`);
@@ -1142,9 +1142,9 @@ const finalizarEvento = async (req, res) => {
         console.error(`❌ Excepción enviando certificado a ${estudiante.CORREO}:`, err.message);
       }
     }
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       message: 'Evento finalizado correctamente',
       certificados: {
         elegibles: estudiantes.length,
@@ -1163,11 +1163,11 @@ const finalizarEvento = async (req, res) => {
 
 // 9. Obtener Reporte Detallado (Estudiantes + Tareas + Notas)
 const obtenerReporteDetallado = async (req, res) => {
-    const { id } = req.params;
-    try {
-        // 1. Obtener Estudiantes Inscritos
-        const [estudiantes] = await pool.execute(
-            `SELECT 
+  const { id } = req.params;
+  try {
+    // 1. Obtener Estudiantes Inscritos
+    const [estudiantes] = await pool.execute(
+      `SELECT 
                 u.SECUENCIAL as usuarioId,
                 u.NOMBRES,
                 u.APELLIDOS,
@@ -1180,12 +1180,12 @@ const obtenerReporteDetallado = async (req, res) => {
              INNER JOIN usuario u ON i.SECUENCIALUSUARIO = u.SECUENCIAL
              WHERE i.SECUENCIALEVENTO = ? AND i.CODIGOESTADOINSCRIPCION = 'ACE'
              ORDER BY u.APELLIDOS ASC`,
-            [id]
-        );
+      [id]
+    );
 
-        // 3. Obtener Tareas (Deberes)
-        const [tareas] = await pool.execute(
-            `SELECT 
+    // 3. Obtener Tareas (Deberes)
+    const [tareas] = await pool.execute(
+      `SELECT 
                 t.SECUENCIAL,
                 t.TITULO,
                 t.PUNTOS_MAXIMOS,
@@ -1194,12 +1194,12 @@ const obtenerReporteDetallado = async (req, res) => {
              INNER JOIN modulo m ON t.SECUENCIALMODULO = m.SECUENCIAL
              WHERE m.SECUENCIALEVENTO = ?
              ORDER BY m.SECUENCIAL ASC, t.FECHA_LIMITE ASC`,
-            [id]
-        );
+      [id]
+    );
 
-        // 4. Obtener Evaluaciones (Exámenes)
-        const [evaluaciones] = await pool.execute(
-            `SELECT 
+    // 4. Obtener Evaluaciones (Exámenes)
+    const [evaluaciones] = await pool.execute(
+      `SELECT 
                 e.SECUENCIAL,
                 e.TITULO,
                 'EXAMEN' as TIPO
@@ -1207,12 +1207,12 @@ const obtenerReporteDetallado = async (req, res) => {
              INNER JOIN modulo m ON e.SECUENCIALMODULO = m.SECUENCIAL
              WHERE m.SECUENCIALEVENTO = ?
              ORDER BY m.SECUENCIAL ASC, e.FECHA_INICIO ASC`,
-            [id]
-        );
+      [id]
+    );
 
-        // 5. Obtener Entregas Tareas
-        const [entregas] = await pool.execute(
-            `SELECT 
+    // 5. Obtener Entregas Tareas
+    const [entregas] = await pool.execute(
+      `SELECT 
                 et.SECUENCIALESTUDIANTE,
                 et.SECUENCIALTAREA,
                 et.CALIFICACION
@@ -1220,12 +1220,12 @@ const obtenerReporteDetallado = async (req, res) => {
              INNER JOIN tarea t ON et.SECUENCIALTAREA = t.SECUENCIAL
              INNER JOIN modulo m ON t.SECUENCIALMODULO = m.SECUENCIAL
              WHERE m.SECUENCIALEVENTO = ?`,
-            [id]
-        );
+      [id]
+    );
 
-        // 6. Obtener Intentos Evaluaciones (Notas Exámenes)
-        const [intentos] = await pool.execute(
-            `SELECT 
+    // 6. Obtener Intentos Evaluaciones (Notas Exámenes)
+    const [intentos] = await pool.execute(
+      `SELECT 
                 ie.SECUENCIALESTUDIANTE,
                 ie.SECUENCIALEVALUACION,
                 ie.CALIFICACION_FINAL as CALIFICACION
@@ -1233,54 +1233,54 @@ const obtenerReporteDetallado = async (req, res) => {
              INNER JOIN evaluacion e ON ie.SECUENCIALEVALUACION = e.SECUENCIAL
              INNER JOIN modulo m ON e.SECUENCIALMODULO = m.SECUENCIAL
              WHERE m.SECUENCIALEVENTO = ?`,
-            [id]
-        );
+      [id]
+    );
 
-        // 7. Estructurar Datos
-        const gradesMap = {};
-        
-        // Mapear Tareas
-        entregas.forEach(e => {
-            if (!gradesMap[e.SECUENCIALESTUDIANTE]) gradesMap[e.SECUENCIALESTUDIANTE] = {};
-            gradesMap[e.SECUENCIALESTUDIANTE][`T-${e.SECUENCIALTAREA}`] = e.CALIFICACION;
-        });
+    // 7. Estructurar Datos
+    const gradesMap = {};
 
-        // Mapear Exámenes
-        intentos.forEach(i => {
-            if (!gradesMap[i.SECUENCIALESTUDIANTE]) gradesMap[i.SECUENCIALESTUDIANTE] = {};
-            gradesMap[i.SECUENCIALESTUDIANTE][`E-${i.SECUENCIALEVALUACION}`] = i.CALIFICACION;
-        });
+    // Mapear Tareas
+    entregas.forEach(e => {
+      if (!gradesMap[e.SECUENCIALESTUDIANTE]) gradesMap[e.SECUENCIALESTUDIANTE] = {};
+      gradesMap[e.SECUENCIALESTUDIANTE][`T-${e.SECUENCIALTAREA}`] = e.CALIFICACION;
+    });
 
-        // Combinar Todo
-        const evaluables = [
-            ...tareas.map(t => ({ ...t, ID_REF: `T-${t.SECUENCIAL}` })), 
-            ...evaluaciones.map(e => ({ ...e, ID_REF: `E-${e.SECUENCIAL}`, PUNTOS_MAXIMOS: 10 })) // Asumimos 10 por defecto para exámenes si no hay campo
-        ];
+    // Mapear Exámenes
+    intentos.forEach(i => {
+      if (!gradesMap[i.SECUENCIALESTUDIANTE]) gradesMap[i.SECUENCIALESTUDIANTE] = {};
+      gradesMap[i.SECUENCIALESTUDIANTE][`E-${i.SECUENCIALEVALUACION}`] = i.CALIFICACION;
+    });
 
-        const data = estudiantes.map(student => {
-            const studentGrades = {};
-            evaluables.forEach(item => {
-                studentGrades[item.ID_REF] = gradesMap[student.usuarioId]?.[item.ID_REF] || 0;
-            });
+    // Combinar Todo
+    const evaluables = [
+      ...tareas.map(t => ({ ...t, ID_REF: `T-${t.SECUENCIAL}` })),
+      ...evaluaciones.map(e => ({ ...e, ID_REF: `E-${e.SECUENCIAL}`, PUNTOS_MAXIMOS: 10 })) // Asumimos 10 por defecto para exámenes si no hay campo
+    ];
 
-            return {
-                ...student,
-                grades: studentGrades
-            };
-        });
+    const data = estudiantes.map(student => {
+      const studentGrades = {};
+      evaluables.forEach(item => {
+        studentGrades[item.ID_REF] = gradesMap[student.usuarioId]?.[item.ID_REF] || 0;
+      });
 
-        res.json({
-            success: true,
-            data: {
-                students: data,
-                evaluables: evaluables // Lista unificada de Tareas y Exámenes
-            }
-        });
+      return {
+        ...student,
+        grades: studentGrades
+      };
+    });
 
-    } catch (error) {
-        console.error('Error al generar reporte detallado:', error);
-        res.status(500).json({ error: 'Error al generar reporte detallado' });
-    }
+    res.json({
+      success: true,
+      data: {
+        students: data,
+        evaluables: evaluables // Lista unificada de Tareas y Exámenes
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al generar reporte detallado:', error);
+    res.status(500).json({ error: 'Error al generar reporte detallado' });
+  }
 };
 
 module.exports = {
